@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { ViewTabNav } from './view-tab-nav'
+import { PublicViewGrid } from './public-view-grid'
 
 interface PublicViewPageProps {
   params: Promise<{ org: string; collection: string; view: string }>
@@ -103,9 +104,20 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
           <SpecimenList specimens={specimens} basePath={basePath} />
         )}
         {tab === 'grid' && (
-          <div className="py-12 text-center text-sm text-muted-foreground">
-            Grid view coming soon.
-          </div>
+          <PublicViewGrid
+            rows={view.gridRows}
+            cols={view.gridCols}
+            specimens={specimens
+              .filter((s): s is typeof s & { gridCell: string } => s.gridCell !== null)
+              .map((s) => ({
+                id: s.id,
+                slug: s.slug,
+                gridCell: s.gridCell,
+                commonName: s.species.commonName,
+                scientificName: s.species.scientificName,
+              }))}
+            basePath={basePath}
+          />
         )}
       </div>
     </div>
