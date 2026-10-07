@@ -10,7 +10,7 @@ interface SpeciesPageProps {
 export default async function SpeciesPage({ params, searchParams }: SpeciesPageProps) {
   const { org: orgSlug } = await params
   const { q } = await searchParams
-  await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  await requireOrgAccess(orgSlug, 'can_edit_view')
 
   const query = q?.trim() ?? ''
 
@@ -36,7 +36,7 @@ export default async function SpeciesPage({ params, searchParams }: SpeciesPageP
           Browse the shared species catalogue used when adding specimens.
         </p>
       </div>
-      <SpeciesBrowser species={species} orgSlug={orgSlug} initialQuery={query} />
+      <SpeciesBrowser species={species} initialQuery={query} />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useRef } from 'react'
 import { useRouter, usePathname } from 'next/navigation'
 import { Search, ExternalLink } from 'lucide-react'
 import { Input } from '@/components/ui/input'
@@ -17,7 +17,6 @@ import type { Species } from '@prisma/client'
 
 interface SpeciesBrowserProps {
   species: Species[]
-  orgSlug: string
   initialQuery: string
 }
 
@@ -67,18 +66,22 @@ function SpeciesDetail({ species }: SpeciesDetailProps) {
   )
 }
 
-export function SpeciesBrowser({ species, orgSlug: _orgSlug, initialQuery }: SpeciesBrowserProps) {
+export function SpeciesBrowser({ species, initialQuery }: SpeciesBrowserProps) {
   const router = useRouter()
   const pathname = usePathname()
   const [selected, setSelected] = useState<Species | null>(null)
   const [sheetOpen, setSheetOpen] = useState(false)
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const handleSearch = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const q = e.target.value
-      const params = new URLSearchParams()
-      if (q) params.set('q', q)
-      router.replace(`${pathname}${params.size ? `?${params}` : ''}`)
+      if (debounceRef.current) clearTimeout(debounceRef.current)
+      debounceRef.current = setTimeout(() => {
+        const params = new URLSearchParams()
+        if (q) params.set('q', q)
+        router.replace(`${pathname}${params.size ? `?${params}` : ''}`)
+      }, 250)
     },
     [router, pathname],
   )
@@ -87,6 +90,8 @@ export function SpeciesBrowser({ species, orgSlug: _orgSlug, initialQuery }: Spe
     setSelected(s)
     setSheetOpen(true)
   }
+
+  const truncatedQuery = initialQuery.length > 60 ? `${initialQuery.slice(0, 60)}…` : initialQuery
 
   return (
     <div className="space-y-4">
@@ -107,7 +112,7 @@ export function SpeciesBrowser({ species, orgSlug: _orgSlug, initialQuery }: Spe
       {species.length === 0 ? (
         <div className="rounded-xl border bg-card py-16 text-center">
           <p className="text-sm font-medium text-muted-foreground">
-            {initialQuery ? `No species found matching "${initialQuery}"` : 'No species in the catalogue yet.'}
+            {initialQuery ? `No species found matching "${truncatedQuery}"` : 'No species in the catalogue yet.'}
           </p>
           <p className="mt-2 text-xs text-muted-foreground">
             Need a species added?{' '}
@@ -123,7 +128,7 @@ export function SpeciesBrowser({ species, orgSlug: _orgSlug, initialQuery }: Spe
       ) : (
         <div className="rounded-xl border bg-card overflow-hidden">
           <p className="border-b px-4 py-2 text-xs text-muted-foreground">
-            {species.length} {species.length === 1 ? 'species' : 'species'} found
+            {species.length} species found
           </p>
           <ul role="list">
             {species.map((s) => (
@@ -132,7 +137,7 @@ export function SpeciesBrowser({ species, orgSlug: _orgSlug, initialQuery }: Spe
                   type="button"
                   onClick={() => handleRowClick(s)}
                   className="flex w-full items-start gap-4 px-4 py-3 text-left hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                  aria-expanded={selected?.id === s.id && sheetOpen}
+                  aria-haspopup="dialog"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="font-medium text-sm">{s.commonName}</p>
