@@ -5,7 +5,8 @@ security definer set search_path = ''
 as $$
 begin
   insert into public."User" (id, email, "createdAt", "updatedAt")
-  values (new.id, new.email, now(), now());
+  values (new.id, new.email, now(), now())
+  on conflict (id) do nothing;
   return new;
 end;
 $$;
