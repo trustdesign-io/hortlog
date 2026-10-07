@@ -2,6 +2,7 @@ import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { OrgSettingsForm } from './org-settings-form'
+import { OrgLogoCard } from './org-logo-card'
 
 interface OrgSettingsPageProps {
   params: Promise<{ org: string }>
@@ -13,7 +14,7 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
-    select: { name: true, slug: true, managerLabel: true, memberLabel: true },
+    select: { name: true, slug: true, logoUrl: true, managerLabel: true, memberLabel: true },
   })
 
   if (!org) return notFound()
@@ -26,6 +27,7 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
           Manage your organisation&apos;s name, URL, and role labels.
         </p>
       </div>
+      <OrgLogoCard orgSlug={orgSlug} orgName={org.name} logoUrl={org.logoUrl} />
       <OrgSettingsForm org={org} orgSlug={orgSlug} />
     </div>
   )

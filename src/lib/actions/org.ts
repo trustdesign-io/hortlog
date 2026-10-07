@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAuth, requireOrgAccess } from '@/lib/auth/permissions'
+import { uploadOrgLogo } from '@/lib/storage'
 import type { ActionResult } from '@trustdesign/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
@@ -116,6 +117,36 @@ export async function updateOrgSettings(
     revalidatePath(`/${orgSlug}/settings`)
     redirect(`/${slug}/settings`)
   }
+
+  revalidatePath(`/${orgSlug}/settings`)
+  return { success: true }
+}
+
+export async function uploadOrgLogoAction(
+  orgSlug: string,
+  _prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_org_settings')
+
+  const org = await prisma.organisation.findUnique({
+    where: { slug: orgSlug },
+    select: { id: true },
+  })
+  if (!org) return { success: false, error: 'Organisation not found.' }
+
+  const file = formData.get('logo')
+  if (!(file instanceof File) || file.size === 0) {
+    return { success: false, error: 'Please select an image file.' }
+  }
+
+  const result = await uploadOrgLogo(file, org.id)
+  if (!result.success) return result
+
+  await prisma.organisation.update({
+    where: { id: org.id },
+    data: { logoUrl: result.url },
+  })
 
   revalidatePath(`/${orgSlug}/settings`)
   return { success: true }

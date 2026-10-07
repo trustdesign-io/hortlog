@@ -124,6 +124,7 @@ model Specimen {
   slug            String
   accessionNumber String?
   notes           String?
+  imageUrl        String?
   gridCell        String?    // e.g. "2,3" (row,col)
   latitude        Float?
   longitude       Float?
