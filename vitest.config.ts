@@ -15,7 +15,18 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     exclude: ['**/node_modules/**', '**/tests/e2e/**'],
-    projects: [{
+    projects: [
+    // Unit tests (jsdom, no browser)
+    {
+      extends: true,
+      test: {
+        name: 'unit',
+        include: ['src/**/*.test.ts', 'src/**/*.test.tsx'],
+        exclude: ['**/node_modules/**', '**/tests/e2e/**'],
+      },
+    },
+    // Storybook component tests (Playwright browser)
+    {
       extends: true,
       plugins: [
       // The plugin will run tests for the stories defined in your Storybook config
@@ -35,7 +46,8 @@ export default defineConfig({
         },
         setupFiles: ['.storybook/vitest.setup.ts']
       }
-    }]
+    }
+    ]
   },
   resolve: {
     alias: {
