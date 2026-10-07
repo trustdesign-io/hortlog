@@ -127,8 +127,12 @@ export async function deleteSpecies(speciesId: string): Promise<ActionResult> {
   try {
     await prisma.species.delete({ where: { id: speciesId } })
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
-      return { success: false, error: 'Species not found.' }
+    if (err instanceof Prisma.PrismaClientKnownRequestError) {
+      if (err.code === 'P2025') return { success: false, error: 'Species not found.' }
+      // FK violation: a specimen was added between the count check and the delete
+      if (err.code === 'P2003') {
+        return { success: false, error: 'Cannot delete — specimens still reference this species.' }
+      }
     }
     console.error('[deleteSpecies] error:', err)
     return { success: false, error: 'Failed to delete species. Please try again.' }

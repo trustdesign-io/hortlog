@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useTransition, useState, useEffect } from 'react'
+import { useActionState, useTransition, useState, useEffect, useMemo } from 'react'
 import { createSpecies, updateSpecies, deleteSpecies } from '@/lib/actions/species'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Button } from '@/components/ui/button'
@@ -155,7 +155,7 @@ interface EditSpeciesDialogProps {
 
 export function EditSpeciesDialog({ species }: EditSpeciesDialogProps) {
   const [open, setOpen] = useState(false)
-  const boundAction = updateSpecies.bind(null, species.id)
+  const boundAction = useMemo(() => updateSpecies.bind(null, species.id), [species.id])
   const [state, action, isPending] = useActionState<ActionResult | null, FormData>(
     boundAction,
     null,
