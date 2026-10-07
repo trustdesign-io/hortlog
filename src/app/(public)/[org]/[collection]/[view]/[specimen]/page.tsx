@@ -67,13 +67,20 @@ const resolveData = cache(async function resolveData(
 })
 
 export async function generateMetadata({ params }: PublicSpecimenInViewPageProps) {
-  const { org, collection, view, specimen: specimenSlug } = await params
-  const data = await resolveData(org, collection, view, specimenSlug)
+  const { org: orgSlug, collection: collectionSlug, view: viewSlug, specimen: specimenSlug } = await params
+  const data = await resolveData(orgSlug, collectionSlug, viewSlug, specimenSlug)
   if (!data) return {}
 
+  const { scientificName, commonName, description } = data.specimen.species
+  const title = `${scientificName} — ${commonName}`
+  const metaDescription = description?.slice(0, 150) ?? `${commonName} specimen record at ${data.org.name}.`
+  const canonical = `/${orgSlug}/${collectionSlug}/${viewSlug}/${specimenSlug}`
+
   return {
-    title: `${data.specimen.species.commonName} — ${data.view.name}`,
-    description: data.specimen.species.description?.slice(0, 160) ?? undefined,
+    title,
+    description: metaDescription,
+    alternates: { canonical },
+    openGraph: { title, description: metaDescription },
   }
 }
 

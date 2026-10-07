@@ -1,8 +1,13 @@
+import type { Metadata } from 'next'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import { OrgSettingsForm } from './org-settings-form'
 import { OrgLogoCard } from './org-logo-card'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 interface OrgSettingsPageProps {
   params: Promise<{ org: string }>

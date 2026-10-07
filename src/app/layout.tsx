@@ -16,7 +16,11 @@ const figtree = Figtree({
 })
 
 export const metadata: Metadata = {
-  title: 'hortlog',
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'),
+  title: {
+    default: 'hortlog',
+    template: '%s | hortlog',
+  },
   description: 'A living record for botanical collections.',
 }
 
