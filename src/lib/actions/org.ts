@@ -83,7 +83,7 @@ export async function createOrg(
     const supabase = createAdminClient()
     const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(managerEmail, {
       redirectTo: `${APP_URL}/auth/callback`,
-      data: { pending_org_slug: slug },
+      data: { pending_org_slug: slug, pending_role: 'MANAGER' },
     })
     if (inviteError) {
       await prisma.organisation.delete({ where: { id: org.id } })
