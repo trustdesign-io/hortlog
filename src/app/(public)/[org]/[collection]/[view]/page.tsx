@@ -18,9 +18,15 @@ export async function generateMetadata({ params }: Pick<PublicViewPageProps, 'pa
   const data = await resolveView(orgSlug, collectionSlug, viewSlug)
   if (!data) return {}
 
+  const title = `${data.view.name} — ${data.org.name}`
+  const description = `Browse specimens in the ${data.view.name} view from ${data.org.name}.`
+  const canonical = `/${orgSlug}/${collectionSlug}/${viewSlug}`
+
   return {
-    title: `${data.view.name} — ${data.org.name}`,
-    description: `Browse specimens in ${data.view.name}`,
+    title,
+    description,
+    alternates: { canonical },
+    openGraph: { title, description },
   }
 }
 

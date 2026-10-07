@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
 import { GaEvent } from '@/components/ga-event'
+import { truncateDescription } from '@/lib/seo'
 
 interface PublicSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -41,13 +42,21 @@ const resolveData = cache(async function resolveData(orgSlug: string, specimenSl
 })
 
 export async function generateMetadata({ params }: PublicSpecimenPageProps) {
-  const { org, specimen: specimenSlug } = await params
-  const data = await resolveData(org, specimenSlug)
+  const { org: orgSlug, specimen: specimenSlug } = await params
+  const data = await resolveData(orgSlug, specimenSlug)
   if (!data) return {}
 
+  const { scientificName, commonName, description } = data.specimen.species
+  const title = `${scientificName} — ${commonName}`
+  const metaDescription = description
+    ? truncateDescription(description)
+    : `${commonName} specimen record at ${data.org.name}.`
+
   return {
-    title: `${data.specimen.species.commonName} — ${data.org.name}`,
-    description: data.specimen.species.description?.slice(0, 160) ?? undefined,
+    title,
+    description: metaDescription,
+    alternates: { canonical: `/${orgSlug}/specimens/${specimenSlug}` },
+    openGraph: { title, description: metaDescription },
   }
 }
 

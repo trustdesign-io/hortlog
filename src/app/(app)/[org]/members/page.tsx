@@ -1,7 +1,12 @@
+import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { MemberList } from './member-list'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 interface MembersPageProps {
   params: Promise<{ org: string }>

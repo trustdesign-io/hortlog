@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
@@ -5,6 +6,13 @@ import { Logo } from '@/components/layout/logo'
 import { buttonVariants } from '@/components/ui/button'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { cn } from '@/lib/utils'
+
+export const metadata: Metadata = {
+  title: { absolute: 'hortlog — horticultural tools for gardens and woodlands' },
+  description:
+    'hortlog gives every specimen its own page — identification, provenance, conservation status — readable from a QR code at the vantage point.',
+  alternates: { canonical: '/' },
+}
 
 export default async function HomePage() {
   const supabase = await createClient()

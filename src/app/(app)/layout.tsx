@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
@@ -5,6 +6,10 @@ import { AuthProvider } from '@/components/auth-provider'
 import { Sidebar } from '@/components/sidebar'
 import type { User } from '@prisma/client'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
+
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+}
 
 export default async function AppLayout({
   children,
