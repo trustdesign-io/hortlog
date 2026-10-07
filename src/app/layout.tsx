@@ -20,27 +20,13 @@ export const metadata: Metadata = {
   description: 'A living record for botanical collections.',
 }
 
-const themeScript = `
-(function(){
-  try {
-    var t = localStorage.getItem('theme');
-    var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (t === 'dark' || ((!t || t === 'system') && prefersDark)) {
-      document.documentElement.classList.add('dark');
-    }
-  } catch(e) {}
-})();
-`
-
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${figtree.variable}`}>
-      <head>
-        {/* Blocking script prevents flash of wrong theme before hydration */}
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body>
-        <ThemeProvider>{children}</ThemeProvider>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
