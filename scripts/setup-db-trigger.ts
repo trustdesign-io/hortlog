@@ -28,8 +28,17 @@ async function main() {
     security definer set search_path = ''
     as $$
     begin
-      insert into public."User" (id, email, "createdAt", "updatedAt")
-      values (new.id, new.email, now(), now())
+      insert into public."User" (id, email, name, "createdAt", "updatedAt")
+      values (
+        new.id,
+        new.email,
+        coalesce(
+          new.raw_user_meta_data->>'name',
+          new.raw_user_meta_data->>'full_name'
+        ),
+        now(),
+        now()
+      )
       on conflict (id) do nothing;
       return new;
     end;
@@ -47,10 +56,14 @@ async function main() {
   console.log('Backfilling existing auth.users without a User row...')
 
   const result = await prisma.$executeRaw`
-    insert into public."User" (id, email, "createdAt", "updatedAt")
+    insert into public."User" (id, email, name, "createdAt", "updatedAt")
     select
       au.id,
       au.email,
+      coalesce(
+        au.raw_user_meta_data->>'name',
+        au.raw_user_meta_data->>'full_name'
+      ),
       coalesce(au.created_at, now()),
       now()
     from auth.users au
