@@ -25,6 +25,10 @@ export default async function AppLayout({
     redirect('/sign-in')
   }
 
+  if (!authUser.email_confirmed_at) {
+    redirect(`/check-email?email=${encodeURIComponent(authUser.email ?? '')}`)
+  }
+
   const meta = authUser.user_metadata
   const now = new Date()
   const fallbackUser: User = {
