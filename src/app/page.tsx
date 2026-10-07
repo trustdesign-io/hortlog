@@ -25,7 +25,7 @@ export default async function HomePage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="force-light min-h-screen bg-background text-foreground">
       {/* Nav */}
       <header className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
         <Logo href="/" />
