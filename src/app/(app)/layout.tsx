@@ -80,7 +80,7 @@ export default async function AppLayout({
           Skip to main content
         </a>
         <Sidebar user={user} />
-        <main id="main-content" className="flex-1 overflow-y-auto pt-14 p-6 pb-16 md:pt-0 md:pb-6">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto pt-14 p-6 pb-16 md:pb-6">{children}</main>
       </div>
     </AuthProvider>
   )
