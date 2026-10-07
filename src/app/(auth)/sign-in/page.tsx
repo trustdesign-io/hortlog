@@ -35,7 +35,7 @@ export default function SignInPage() {
     <Card className="w-full max-w-md">
       <CardHeader>
         {/* CardTitle renders as div; role+aria-level needed for a11y and heading selectors */}
-        <CardTitle role="heading" aria-level={1}>Sign in</CardTitle>
+        <CardTitle role="heading" aria-level={1} className="font-heading text-lg">Sign in to hortlog</CardTitle>
         <CardDescription>Enter your email and password to continue.</CardDescription>
       </CardHeader>
       <form action={formAction} aria-busy={isPending}>

@@ -3,4 +3,10 @@
      bypasses that pipeline — fonts must be loaded explicitly here.
      IMPORTANT: whenever a new Google Font is added to src/app/layout.tsx,
      add its @import here too. -->
-<!-- No custom fonts in template — add your project's Google Fonts @import here -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@300..900&family=Fraunces:ital,opsz,wght@0,9..144,100..900;1,9..144,100..900&display=swap" rel="stylesheet">
+<style>
+  html { font-family: 'Figtree', system-ui, sans-serif; }
+  h1, h2, h3, h4, h5, h6 { font-family: 'Fraunces', Georgia, serif; }
+</style>

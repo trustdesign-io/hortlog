@@ -8,7 +8,6 @@ const meta: Meta<typeof Logo> = {
     layout: 'centered',
   },
   args: {
-    name: 'YourBrand',
     href: '/',
   },
 }
@@ -19,16 +18,16 @@ type Story = StoryObj<typeof Logo>
 
 export const Default: Story = {}
 
-export const CustomName: Story = {
-  args: { name: 'Acme Corp' },
+export const MarkOnly: Story = {
+  args: { name: false },
 }
 
 export const Large: Story = {
-  args: { className: 'text-xl' },
+  args: { className: 'scale-150 origin-left' },
 }
 
-export const Mobile: Story = {
+export const OnDarkBackground: Story = {
   parameters: {
-    viewport: { defaultViewport: 'mobile1' },
+    backgrounds: { default: 'dark' },
   },
 }
