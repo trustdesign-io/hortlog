@@ -97,9 +97,9 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref }: Spe
             #{specimen.accessionNumber}
           </p>
         )}
-        {conservationLabel && (
+        {conservationLabel && species.conservationStatus && (
           <div className="mt-2">
-            <Badge variant={conservationBadgeVariant(species.conservationStatus!)}>
+            <Badge variant={conservationBadgeVariant(species.conservationStatus)}>
               {conservationLabel}
             </Badge>
           </div>
@@ -149,11 +149,13 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref }: Spe
   )
 }
 
-export function specimenJsonLd(scientificName: string, commonName: string) {
-  return {
+export function specimenJsonLdString(scientificName: string, commonName: string): string {
+  const obj = {
     '@context': 'https://schema.org',
     '@type': 'Taxon',
     name: scientificName,
     alternateName: commonName,
   }
+  // Escape </script> sequences to prevent tag injection in inline scripts
+  return JSON.stringify(obj).replace(/</g, '\\u003c')
 }

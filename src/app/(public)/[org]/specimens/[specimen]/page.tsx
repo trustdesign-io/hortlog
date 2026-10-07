@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { SpecimenDetail, specimenJsonLd } from '@/app/(public)/specimen-detail'
+import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
 
 interface PublicSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -62,16 +62,16 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
     { label: specimen.species.commonName, href: `/${orgSlug}/specimens/${specimenSlug}` },
   ]
 
-  const jsonLd = specimenJsonLd(
-    specimen.species.scientificName,
-    specimen.species.commonName,
-  )
-
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: specimenJsonLdString(
+            specimen.species.scientificName,
+            specimen.species.commonName,
+          ),
+        }}
       />
       <SpecimenDetail
         species={specimen.species}

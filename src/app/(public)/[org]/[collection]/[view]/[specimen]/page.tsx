@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { SpecimenDetail, specimenJsonLd } from '@/app/(public)/specimen-detail'
+import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
 
 interface PublicSpecimenInViewPageProps {
   params: Promise<{
@@ -58,6 +58,9 @@ const resolveData = cache(async function resolveData(
   })
   if (!specimen) return null
 
+  // Specimen must belong to this specific view
+  if (specimen.viewId !== view.id) return null
+
   return { org, collection, view, specimen }
 })
 
@@ -91,16 +94,16 @@ export default async function PublicSpecimenInViewPage({
     { label: specimen.species.commonName, href: `${viewPath}/${specimenSlug}` },
   ]
 
-  const jsonLd = specimenJsonLd(
-    specimen.species.scientificName,
-    specimen.species.commonName,
-  )
-
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: specimenJsonLdString(
+            specimen.species.scientificName,
+            specimen.species.commonName,
+          ),
+        }}
       />
       <SpecimenDetail
         species={specimen.species}
