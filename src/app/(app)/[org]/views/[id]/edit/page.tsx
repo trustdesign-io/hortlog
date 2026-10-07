@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { GridEditor } from './grid-editor'
+import { QRPanel } from './qr-panel'
 
 interface ViewEditPageProps {
   params: Promise<{ org: string; id: string }>
@@ -56,8 +57,10 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
     }),
   ])
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <Link
           href={`/${orgSlug}/views`}
@@ -70,8 +73,6 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
         <p className="mt-1 text-sm text-muted-foreground">
           {view.gridRows}×{view.gridCols} grid
           {view.primaryCollection && ` · ${view.primaryCollection.name}`}
-          {' · '}
-          <span className="font-mono">{view.shortCode}</span>
         </p>
       </div>
       <GridEditor
@@ -92,6 +93,12 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
           commonName: s.species.commonName,
           scientificName: s.species.scientificName,
         }))}
+      />
+      <QRPanel
+        orgSlug={orgSlug}
+        viewId={view.id}
+        shortCode={view.shortCode}
+        siteUrl={siteUrl}
       />
     </div>
   )

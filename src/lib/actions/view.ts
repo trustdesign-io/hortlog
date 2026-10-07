@@ -156,6 +156,43 @@ export async function placeSpecimen(
   return { success: true }
 }
 
+export async function regenerateShortCode(
+  orgSlug: string,
+  viewId: string,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_view')
+
+  const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
+  if (!org) return { success: false, error: 'Organisation not found.' }
+
+  const view = await prisma.view.findUnique({
+    where: { id: viewId, organisationId: org.id },
+    select: { id: true },
+  })
+  if (!view) return { success: false, error: 'View not found.' }
+
+  let shortCode: string
+  try {
+    shortCode = await uniqueShortCode()
+  } catch {
+    return { success: false, error: 'Could not generate a unique short code. Please try again.' }
+  }
+
+  try {
+    await prisma.view.update({
+      where: { id: viewId, organisationId: org.id },
+      data: { shortCode },
+    })
+  } catch (err) {
+    console.error('[regenerateShortCode] error:', err)
+    return { success: false, error: 'Failed to regenerate short code. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/views`)
+  revalidatePath(`/${orgSlug}/views/${viewId}/edit`)
+  return { success: true }
+}
+
 export async function removeSpecimenFromCell(
   orgSlug: string,
   viewId: string,
