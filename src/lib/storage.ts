@@ -64,3 +64,21 @@ export async function uploadSpecimenImage(
   const { data } = supabase.storage.from('specimen-images').getPublicUrl(path)
   return { success: true, url: data.publicUrl }
 }
+
+export async function uploadAvatar(file: File, userId: string): Promise<UploadResult> {
+  const err = validateImageFile(file)
+  if (err) return { success: false, error: err }
+
+  const supabase = createAdminClient()
+  const path = `${userId}/${sanitisedFilename(file.type)}`
+  const bytes = await file.arrayBuffer()
+
+  const { error } = await supabase.storage
+    .from('avatars')
+    .upload(path, bytes, { contentType: file.type, upsert: true })
+
+  if (error) return { success: false, error: error.message }
+
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  return { success: true, url: data.publicUrl }
+}
