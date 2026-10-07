@@ -54,7 +54,7 @@ function buildOrgNav(orgSlug: string): NavItem[] {
 
 const appNav: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/settings', label: 'Account', icon: Settings },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ]
 
 const adminNav: NavItem[] = [
@@ -240,9 +240,9 @@ function SidebarContent({ user, onNavigate }: SidebarContentProps) {
         )}
         <div>
           <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-            Account
+            Settings
           </p>
-          <NavLinks items={appNav} onNavigate={onNavigate} label="Account navigation" />
+          <NavLinks items={appNav} onNavigate={onNavigate} label="Settings navigation" />
         </div>
         {user.isAdmin && (
           <div>
@@ -272,7 +272,7 @@ function MobileBottomNav() {
         { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
         { href: `/${orgSlug}/views`, label: 'Views', icon: Grid3x3 },
         { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen },
-        { href: '/settings', label: 'Account', icon: Settings },
+        { href: '/settings', label: 'Settings', icon: Settings },
       ]
     : mobileNav
 
