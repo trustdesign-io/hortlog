@@ -8,6 +8,7 @@ import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { UserMenu } from '@/components/user-menu'
+import { Logo } from '@/components/layout/logo'
 import type { User } from '@/types'
 
 interface SidebarProps {
@@ -58,8 +59,8 @@ interface SidebarContentProps {
 function SidebarContent({ user, onNavigate }: SidebarContentProps) {
   return (
     <div className="flex h-full flex-col">
-      <div className="flex h-14 items-center border-b px-6">
-        <span className="font-semibold">App Name</span>
+      <div className="flex h-14 items-center border-b px-4">
+        <Logo href="/dashboard" />
       </div>
       <div className="flex-1 overflow-y-auto py-4">
         <NavLinks onNavigate={onNavigate} />

@@ -35,8 +35,8 @@ export default function SignUpPage() {
     <Card className="w-full max-w-md">
       <CardHeader>
         {/* CardTitle renders as div; role+aria-level needed for a11y and heading selectors */}
-        <CardTitle role="heading" aria-level={1}>Create an account</CardTitle>
-        <CardDescription>Enter your details to get started.</CardDescription>
+        <CardTitle role="heading" aria-level={1} className="font-heading text-lg">Create your account</CardTitle>
+        <CardDescription>Join hortlog to manage your botanical collections.</CardDescription>
       </CardHeader>
       <form action={formAction} aria-busy={isPending}>
         <CardContent className="flex flex-col gap-4">
