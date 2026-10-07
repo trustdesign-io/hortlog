@@ -62,6 +62,27 @@ export const WithTrailingIcon: Story = {
   },
 }
 
+// hortlog domain usage
+export const MembershipRoles: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-2 p-4">
+      <Badge variant="default">Manager</Badge>
+      <Badge variant="secondary">Member</Badge>
+    </div>
+  ),
+}
+
+export const ConservationStatus: Story = {
+  render: () => (
+    <div className="flex flex-wrap items-center gap-2 p-4">
+      <Badge variant="destructive">Critically Endangered</Badge>
+      <Badge variant="outline">Endangered</Badge>
+      <Badge variant="secondary">Vulnerable</Badge>
+      <Badge variant="ghost">Least Concern</Badge>
+    </div>
+  ),
+}
+
 // All variants at once
 export const AllVariants: Story = {
   render: () => (
