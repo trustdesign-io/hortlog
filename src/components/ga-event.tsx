@@ -5,7 +5,7 @@ import { sendGAEvent } from '@next/third-parties/google'
 
 interface GaEventProps {
   name: string
-  params?: Record<string, string>
+  params?: Record<string, string | number | boolean>
 }
 
 /** Fire a single GA4 custom event on mount. */
