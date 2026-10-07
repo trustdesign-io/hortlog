@@ -15,42 +15,59 @@ export async function inviteMember(
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_manage_members')
 
-  const email = (formData.get('email') as string | null)?.trim().toLowerCase() ?? ''
-  if (!email) return { success: false, error: 'Email is required.' }
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { success: false, error: 'Please enter a valid email address.' }
+  const raw = (formData.get('email') as string | null) ?? ''
+  const emails = [...new Set(raw.split(',').map(e => e.trim().toLowerCase()).filter(Boolean))]
+
+  if (emails.length === 0) return { success: false, error: 'At least one email address is required.' }
+  if (emails.length > 20) return { success: false, error: 'You can invite up to 20 members at a time.' }
+
+  const invalid = emails.filter(e => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e))
+  if (invalid.length > 0) {
+    return { success: false, error: `Invalid email address${invalid.length > 1 ? 'es' : ''}: ${invalid.join(', ')}` }
   }
 
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  const existingUser = await prisma.user.findUnique({ where: { email }, select: { id: true } })
-  if (existingUser) {
-    const existingMembership = await prisma.membership.findUnique({
-      where: { userId_organisationId: { userId: existingUser.id, organisationId: org.id } },
-    })
-    if (existingMembership) {
-      return { success: false, error: 'This user is already a member of this organisation.' }
+  const supabase = createAdminClient()
+  const failures: string[] = []
+
+  for (const email of emails) {
+    const existingUser = await prisma.user.findUnique({ where: { email }, select: { id: true } })
+    if (existingUser) {
+      const existingMembership = await prisma.membership.findUnique({
+        where: { userId_organisationId: { userId: existingUser.id, organisationId: org.id } },
+      })
+      if (existingMembership) {
+        failures.push(`${email} (already a member)`)
+        continue
+      }
+      await prisma.membership.create({
+        data: { userId: existingUser.id, organisationId: org.id, role: 'MEMBER' },
+      })
+      continue
     }
-    await prisma.membership.create({
-      data: { userId: existingUser.id, organisationId: org.id, role: 'MEMBER' },
+
+    const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${APP_URL}/auth/callback`,
+      data: { pending_org_slug: orgSlug },
     })
-    revalidatePath(`/${orgSlug}/members`)
-    return { success: true }
+    if (error) {
+      console.error('[inviteMember] Supabase invite error:', error)
+      failures.push(email)
+    }
   }
 
-  const supabase = createAdminClient()
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
-    redirectTo: `${APP_URL}/auth/callback`,
-    data: { pending_org_slug: orgSlug },
-  })
-
-  if (error) {
-    console.error('[inviteMember] Supabase invite error:', error)
-    return { success: false, error: 'Failed to send invite. Please try again.' }
+  if (failures.length === emails.length) {
+    return { success: false, error: `Failed to invite: ${failures.join(', ')}` }
   }
 
   revalidatePath(`/${orgSlug}/members`)
+
+  if (failures.length > 0) {
+    return { success: false, error: `Some invites failed: ${failures.join(', ')}` }
+  }
+
   return { success: true }
 }
 

@@ -156,23 +156,30 @@ export function MemberList({ orgSlug, managerLabel, memberLabel, members }: Memb
       {/* Invite form */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Invite a member</CardTitle>
+          <CardTitle className="text-base">Invite members</CardTitle>
         </CardHeader>
         <CardContent>
-          <form action={inviteAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex flex-1 flex-col gap-2">
-              <Label htmlFor="invite-email">Email address</Label>
+          <form action={inviteAction} className="flex flex-col gap-3">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="invite-email">
+                Email addresses
+                <span className="ml-1 font-normal text-xs text-muted-foreground">(comma-separated)</span>
+              </Label>
               <Input
                 id="invite-email"
                 name="email"
-                type="email"
+                type="text"
                 required
-                placeholder="colleague@example.com"
-                autoComplete="email"
+                placeholder="alice@example.com, bob@example.com"
+                autoComplete="off"
+                aria-describedby="invite-hint"
               />
+              <p id="invite-hint" className="text-xs text-muted-foreground">
+                Invite up to 20 people at once. Each will receive an email invitation.
+              </p>
             </div>
-            <Button type="submit" disabled={inviteIsPending} className="shrink-0">
-              {inviteIsPending ? 'Sending…' : 'Send invite'}
+            <Button type="submit" disabled={inviteIsPending} className="self-start">
+              {inviteIsPending ? 'Sending…' : 'Send invites'}
             </Button>
           </form>
           {inviteState !== null && !inviteState.success && inviteState.error && (
@@ -180,7 +187,7 @@ export function MemberList({ orgSlug, managerLabel, memberLabel, members }: Memb
           )}
           {inviteState !== null && inviteState.success && (
             <p className="mt-2 text-sm text-green-600 dark:text-green-400" role="status" aria-live="polite">
-              Invite sent successfully.
+              Invites sent successfully.
             </p>
           )}
         </CardContent>
