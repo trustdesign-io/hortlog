@@ -1,9 +1,9 @@
+import { cache, Suspense } from 'react'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { ViewTabNav } from './view-tab-nav'
-import { Suspense } from 'react'
 
 interface PublicViewPageProps {
   params: Promise<{ org: string; collection: string; view: string }>
@@ -22,7 +22,7 @@ export async function generateMetadata({ params }: Pick<PublicViewPageProps, 'pa
   }
 }
 
-async function resolveView(orgSlug: string, collectionSlug: string, viewSlug: string) {
+const resolveView = cache(async function resolveView(orgSlug: string, collectionSlug: string, viewSlug: string) {
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
     select: { id: true, name: true, slug: true },
@@ -46,11 +46,12 @@ async function resolveView(orgSlug: string, collectionSlug: string, viewSlug: st
   if (!view) return null
 
   return { org, collection, view }
-}
+})
 
 export default async function PublicViewPage({ params, searchParams }: PublicViewPageProps) {
   const { org: orgSlug, collection: collectionSlug, view: viewSlug } = await params
-  const { tab = 'list' } = await searchParams
+  const rawTab = (await searchParams).tab
+  const tab = rawTab === 'grid' ? 'grid' : 'list'
 
   const data = await resolveView(orgSlug, collectionSlug, viewSlug)
   if (!data) return notFound()
@@ -73,6 +74,7 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
       },
     },
     orderBy: { species: { commonName: 'asc' } },
+    take: 500,
   })
 
   const basePath = `/${orgSlug}/${collectionSlug}/${viewSlug}`
@@ -91,7 +93,7 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
       </header>
 
       {/* Tab switcher */}
-      <Suspense>
+      <Suspense fallback={<div className="h-[42px] rounded-xl border bg-muted" />}>
         <ViewTabNav basePath={basePath} />
       </Suspense>
 
