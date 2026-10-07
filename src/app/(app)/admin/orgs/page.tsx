@@ -64,7 +64,12 @@ export default async function AdminOrgsPage({ searchParams }: AdminOrgsPageProps
           <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Admin
         </Link>
-        <h1 className="font-heading text-2xl font-medium">Organisations</h1>
+        <div className="flex items-center justify-between gap-4">
+          <h1 className="font-heading text-2xl font-medium">Organisations</h1>
+          <Link href="/orgs/new" className={buttonVariants({ size: 'sm' })}>
+            New organisation
+          </Link>
+        </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {total} organisation{total === 1 ? '' : 's'} on the platform.
         </p>
