@@ -6,21 +6,8 @@ description: Update any field on a Mission Control ticket — priority, size, ca
 
 Update one or more fields on a GitHub issue in the Mission Control project board.
 
-> **CRITICAL — GraphQL quoting rule:**
-> ALL `gh api graphql -f query=` strings MUST use **single quotes** `'...'`.
-> Never use double quotes or heredocs for the query string. Shell variables are
-> passed via `-F` flags only. `$` inside single-quoted query strings is a
-> GraphQL variable, NOT a shell variable — this is correct and required.
-
----
-
-## Config (never change these)
-
-```
-ORG=trustdesign-io
-PROJECT_NUMBER=3
-PROJECT_ID=PVT_kwDODlnZic4BRn_o
-```
+> **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
+> bot token usage, GraphQL quoting rules, and git workflow rules.
 
 ---
 
@@ -42,7 +29,7 @@ Parse out:
 - **Issue number** — required (strip leading `#`)
 - **priority:** — fuzzy-match: Critical / High / Medium / Low
 - **size:** — fuzzy-match: XS / S / M / L / XL
-- **category:** — fuzzy-match: Feature / Bug / Chore / Design / Docs / Research
+- **category:** — fuzzy-match: Feature / Bug / Chore / Design / Documentation / Research
 - **status:** — fuzzy-match: Backlog / Todo / In Progress / In Review / Done
 - **title:** — new issue title (quoted string)
 - **body:** — new issue body (quoted string)
@@ -117,15 +104,10 @@ gh api graphql -f query='
 If not found in project, add it:
 
 ```bash
-CONTENT_ID=$(gh api repos/$REPO/issues/$ISSUE_NUMBER --jq .node_id)
-ITEM_ID=$(gh api graphql -f query='
-  mutation($projectId: ID!, $contentId: ID!) {
-    addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
-      item { id }
-    }
-  }
-' -F projectId="$PROJECT_ID" \
-  -F contentId="$CONTENT_ID" --jq '.data.addProjectV2ItemById.item.id')
+ITEM_ID=$(gh project item-add "$PROJECT_NUMBER" \
+  --owner "$ORG" \
+  --url "https://github.com/$REPO/issues/$ISSUE_NUMBER" \
+  --format json | python3 -c "import sys,json; print(json.load(sys.stdin)['id'])")
 ```
 
 ---
