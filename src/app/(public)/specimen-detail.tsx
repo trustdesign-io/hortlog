@@ -91,12 +91,13 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref }: Spe
       {/* Hero */}
       <header className="mb-6">
         {specimen.imageUrl !== undefined && (
-          <div className="mb-4 h-48 w-full overflow-hidden rounded-xl border bg-muted sm:h-64">
+          <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl border bg-muted sm:h-64">
             <SpecimenImage
               imageUrl={specimen.imageUrl}
               alt={species.commonName}
-              size={256}
-              className="h-full w-full"
+              fill
+              priority
+              sizes="(max-width: 640px) calc(100vw - 2rem), 640px"
             />
           </div>
         )}

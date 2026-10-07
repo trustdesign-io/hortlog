@@ -7,12 +7,15 @@ const fraunces = Fraunces({
   subsets: ['latin'],
   variable: '--font-fraunces',
   display: 'swap',
+  preload: true,
+  style: ['normal', 'italic'],
 })
 
 const figtree = Figtree({
   subsets: ['latin'],
   variable: '--font-figtree',
   display: 'swap',
+  preload: true,
 })
 
 export const metadata: Metadata = {
