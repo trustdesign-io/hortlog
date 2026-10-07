@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Fraunces, Figtree } from 'next/font/google'
+import { ThemeProvider } from '@/components/theme-provider'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -21,8 +22,12 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${fraunces.variable} ${figtree.variable}`}>
-      <body>{children}</body>
+    <html lang="en" suppressHydrationWarning className={`${fraunces.variable} ${figtree.variable}`}>
+      <body>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   )
 }
