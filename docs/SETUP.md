@@ -96,6 +96,32 @@ If that also fails with `P1000: Authentication failed`, the connection string cr
 are wrong. Re-read the connection string from the Supabase dashboard (the password may
 have been rotated) and update `.env.local`.
 
+### Apply the handle_new_user database trigger
+
+Supabase does not sync Postgres triggers via Prisma. After pushing the schema,
+run this script once to install the trigger and backfill any existing auth users:
+
+```bash
+npm run setup:trigger
+```
+
+This script (`scripts/setup-db-trigger.ts`) does three things:
+
+1. Creates or replaces the `handle_new_user` trigger function in the `public` schema.
+   The trigger inserts a `User` row whenever a new row appears in `auth.users`,
+   ensuring every Supabase login has a matching application user.
+2. Attaches the trigger to `auth.users` as an `AFTER INSERT` trigger.
+3. Backfills any `auth.users` rows that do not yet have a `User` row.
+
+> **Required for**: initial setup, new Supabase projects (e.g. preview environments),
+> and any environment where users existed in Supabase Auth before the trigger was installed.
+
+> **Requires**: `DIRECT_URL` in `.env.local` — the non-pooled Supabase connection
+> string. The pooled `DATABASE_URL` does not have auth-schema access.
+
+The script exits with a non-zero code and prints an error if the trigger is not
+installed after the run, so failures are immediately visible.
+
 ### Generate the Prisma client
 
 ```bash
