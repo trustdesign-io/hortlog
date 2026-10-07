@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { ViewTabNav } from './view-tab-nav'
 import { PublicViewGrid } from './public-view-grid'
+import { GaEvent } from '@/components/ga-event'
 
 interface PublicViewPageProps {
   params: Promise<{ org: string; collection: string; view: string }>
@@ -82,6 +83,7 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+      <GaEvent name="view_page_load" params={{ view_id: view.id, org: orgSlug }} />
       {/* Header */}
       <header className="mb-6">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

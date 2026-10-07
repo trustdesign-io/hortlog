@@ -120,7 +120,10 @@ export function CreateSpeciesDialog() {
   )
 
   useEffect(() => {
-    if (state?.success) setOpen(false)
+    if (state?.success) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpen(false)
+    }
   }, [state])
 
   return (
@@ -162,7 +165,10 @@ export function EditSpeciesDialog({ species }: EditSpeciesDialogProps) {
   )
 
   useEffect(() => {
-    if (state?.success) setOpen(false)
+    if (state?.success) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setOpen(false)
+    }
   }, [state])
 
   return (
