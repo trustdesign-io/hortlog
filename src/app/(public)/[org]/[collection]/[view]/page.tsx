@@ -108,11 +108,11 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
             rows={view.gridRows}
             cols={view.gridCols}
             specimens={specimens
-              .filter((s) => s.gridCell !== null)
+              .filter((s): s is typeof s & { gridCell: string } => s.gridCell !== null)
               .map((s) => ({
                 id: s.id,
                 slug: s.slug,
-                gridCell: s.gridCell!,
+                gridCell: s.gridCell,
                 commonName: s.species.commonName,
                 scientificName: s.species.scientificName,
               }))}

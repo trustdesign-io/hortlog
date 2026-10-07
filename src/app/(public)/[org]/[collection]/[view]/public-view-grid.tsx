@@ -17,9 +17,25 @@ interface PublicViewGridProps {
 }
 
 export function PublicViewGrid({ rows, cols, specimens, basePath }: PublicViewGridProps) {
+  if (rows <= 0 || cols <= 0) {
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">
+        Grid is not configured.
+      </p>
+    )
+  }
+
+  if (specimens.length === 0) {
+    return (
+      <p className="py-12 text-center text-sm text-muted-foreground">
+        No specimens have been placed in this grid yet.
+      </p>
+    )
+  }
+
   const cellMap: Record<string, GridSpecimen> = {}
   for (const s of specimens) {
-    if (s.gridCell) cellMap[s.gridCell] = s
+    cellMap[s.gridCell] = s
   }
 
   return (
@@ -64,8 +80,7 @@ export function PublicViewGrid({ rows, cols, specimens, basePath }: PublicViewGr
               <div
                 key={cell}
                 className="min-h-[80px] rounded-lg bg-muted/50"
-                aria-label={`Empty cell at row ${row + 1}, column ${col + 1}`}
-                role="presentation"
+                aria-hidden="true"
               />
             )
           }),
