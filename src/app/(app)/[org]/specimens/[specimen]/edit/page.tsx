@@ -9,11 +9,11 @@ import { SpecimenEditForm } from './specimen-edit-form'
 import { SpecimenImageCard } from './specimen-image-card'
 
 interface EditSpecimenPageProps {
-  params: Promise<{ org: string; id: string }>
+  params: Promise<{ org: string; specimen: string }>
 }
 
 export default async function EditSpecimenPage({ params }: EditSpecimenPageProps) {
-  const { org: orgSlug, id: specimenId } = await params
+  const { org: orgSlug, specimen: specimenId } = await params
   await requireOrgAccess(orgSlug, 'can_edit_specimen')
 
   const org = await prisma.organisation.findUnique({
