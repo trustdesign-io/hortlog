@@ -1,8 +1,6 @@
 'use client'
 
-import { useState, useActionState } from 'react'
-import Link from 'next/link'
-import { signInWithGoogle } from '@/lib/supabase/google-oauth'
+import { useActionState } from 'react'
 import { signInWithEmail } from '@/lib/actions/auth'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -21,15 +19,8 @@ const initialState: ActionResult = { success: true }
 
 export default function SignInPage() {
   const [state, formAction, isPending] = useActionState(signInWithEmail, initialState)
-  const [oauthError, setOauthError] = useState<string | null>(null)
 
-  async function handleGoogleSignIn() {
-    setOauthError(null)
-    const { error } = await signInWithGoogle()
-    if (error) setOauthError(error)
-  }
-
-  const errorMessage = (!state.success && state.error) ? state.error : oauthError
+  const errorMessage = !state.success && state.error ? state.error : null
 
   return (
     <Card className="w-full max-w-md">
@@ -66,24 +57,10 @@ export default function SignInPage() {
             />
           </div>
         </CardContent>
-        <CardFooter className="flex flex-col gap-3">
+        <CardFooter>
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? 'Signing in…' : 'Sign in'}
           </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-          >
-            Continue with Google
-          </Button>
-          <p className="text-sm text-muted-foreground">
-            Don&apos;t have an account?{' '}
-            <Link href="/sign-up" className="underline underline-offset-4">
-              Sign up
-            </Link>
-          </p>
         </CardFooter>
       </form>
     </Card>
