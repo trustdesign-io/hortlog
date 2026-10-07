@@ -50,7 +50,7 @@ export async function inviteMember(
 
     const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${APP_URL}/auth/callback`,
-      data: { pending_org_slug: orgSlug },
+      data: { pending_org_slug: orgSlug, pending_role: 'MEMBER' },
     })
     if (error) {
       console.error('[inviteMember] Supabase invite error:', error)
