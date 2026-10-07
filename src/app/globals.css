@@ -56,38 +56,64 @@
 
 /* ── hortlog light theme ────────────────────────────────────────────────── */
 :root {
-  --background: #F2F1E4;
-  --foreground: #1C2620;
-  --card: #FBFAF3;
-  --card-foreground: #1C2620;
-  --popover: #FBFAF3;
-  --popover-foreground: #1C2620;
-  --primary: #305834;
-  --primary-foreground: #FBFAF3;
-  --secondary: #DCE5D3;
-  --secondary-foreground: #1C2620;
-  --muted: #DCE5D3;
-  --muted-foreground: #5F6F60;
-  --accent: #DCE5D3;
-  --accent-foreground: #305834;
+  --background: #EDEEE0;
+  --foreground: #192419;
+  --card: #F5F5EC;
+  --card-foreground: #192419;
+  --popover: #F5F5EC;
+  --popover-foreground: #192419;
+  --primary: #2B5A32;
+  --primary-foreground: #F5F5EC;
+  --secondary: #D6E5CB;
+  --secondary-foreground: #192419;
+  --muted: #D6E5CB;
+  --muted-foreground: #526655;
+  --accent: #D6E5CB;
+  --accent-foreground: #2B5A32;
   --destructive: #A84A22;
-  --border: #C8D4C4;
-  --input: #C8D4C4;
-  --ring: #305834;
-  --chart-1: #305834;
-  --chart-2: #5F8C60;
+  --border: #C2D4BA;
+  --input: #C2D4BA;
+  --ring: #2B5A32;
+  --chart-1: #2B5A32;
+  --chart-2: #5A8C5E;
   --chart-3: #A84A22;
-  --chart-4: #DCE5D3;
-  --chart-5: #5F6F60;
+  --chart-4: #D6E5CB;
+  --chart-5: #526655;
   --radius: 0.5rem;
-  --sidebar: #F7F6EE;
-  --sidebar-foreground: #1C2620;
-  --sidebar-primary: #305834;
-  --sidebar-primary-foreground: #FBFAF3;
-  --sidebar-accent: #DCE5D3;
-  --sidebar-accent-foreground: #1C2620;
-  --sidebar-border: #C8D4C4;
-  --sidebar-ring: #305834;
+  --sidebar: #F0F0E6;
+  --sidebar-foreground: #192419;
+  --sidebar-primary: #2B5A32;
+  --sidebar-primary-foreground: #F5F5EC;
+  --sidebar-accent: #D6E5CB;
+  --sidebar-accent-foreground: #192419;
+  --sidebar-border: #C2D4BA;
+  --sidebar-ring: #2B5A32;
+}
+
+/* Force light mode — applied to the public homepage to prevent system dark
+   mode from inverting the landing page palette. CSS custom properties are
+   inherited from the nearest ancestor, so these definitions shadow the dark
+   values set on <html class="dark"> by next-themes. */
+.force-light {
+  color-scheme: light;
+  --background: #EDEEE0;
+  --foreground: #192419;
+  --card: #F5F5EC;
+  --card-foreground: #192419;
+  --popover: #F5F5EC;
+  --popover-foreground: #192419;
+  --primary: #2B5A32;
+  --primary-foreground: #F5F5EC;
+  --secondary: #D6E5CB;
+  --secondary-foreground: #192419;
+  --muted: #D6E5CB;
+  --muted-foreground: #526655;
+  --accent: #D6E5CB;
+  --accent-foreground: #2B5A32;
+  --destructive: #A84A22;
+  --border: #C2D4BA;
+  --input: #C2D4BA;
+  --ring: #2B5A32;
 }
 
 /* ── hortlog dark theme ─────────────────────────────────────────────────── */
