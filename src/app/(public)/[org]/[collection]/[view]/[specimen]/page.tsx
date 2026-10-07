@@ -2,6 +2,7 @@ import { cache } from 'react'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
+import { GaEvent } from '@/components/ga-event'
 
 interface PublicSpecimenInViewPageProps {
   params: Promise<{
@@ -96,6 +97,7 @@ export default async function PublicSpecimenInViewPage({
 
   return (
     <>
+      <GaEvent name="specimen_view" params={{ specimen_slug: specimenSlug, org: orgSlug }} />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
