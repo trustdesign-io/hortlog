@@ -34,5 +34,7 @@ export function hasCapability(
   isAdmin = false,
 ): boolean {
   if (isAdmin) return true
-  return (ROLE_CAPABILITIES[role] as readonly string[]).includes(capability)
+  const caps = ROLE_CAPABILITIES[role as keyof typeof ROLE_CAPABILITIES]
+  if (!caps) return false
+  return caps.includes(capability)
 }
