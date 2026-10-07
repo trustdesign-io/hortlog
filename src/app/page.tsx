@@ -34,7 +34,7 @@ export default async function HomePage() {
             Sign in
           </Link>
           <Link href="/sign-up" className={cn(buttonVariants({ size: 'sm' }))}>
-            Get started
+            Sign up
           </Link>
         </nav>
       </header>
@@ -52,7 +52,7 @@ export default async function HomePage() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Link href="/sign-up" className={cn(buttonVariants({ size: 'lg' }))}>
-              Create an organisation
+              Sign up
             </Link>
             <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
               Sign in
@@ -117,7 +117,7 @@ export default async function HomePage() {
             to a glasshouse bed of ten thousand specimens — hortlog scales to your collection.
           </p>
           <Link href="/sign-up" className={cn(buttonVariants({ size: 'lg' }))}>
-            Start your organisation
+            Sign up
           </Link>
         </section>
       </main>
