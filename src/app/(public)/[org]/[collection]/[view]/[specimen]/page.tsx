@@ -44,6 +44,7 @@ const resolveData = cache(async function resolveData(
       slug: true,
       accessionNumber: true,
       notes: true,
+      imageUrl: true,
       viewId: true,
       species: {
         select: {
@@ -109,7 +110,7 @@ export default async function PublicSpecimenInViewPage({
       />
       <SpecimenDetail
         species={specimen.species}
-        specimen={{ accessionNumber: specimen.accessionNumber, notes: specimen.notes }}
+        specimen={{ accessionNumber: specimen.accessionNumber, notes: specimen.notes, imageUrl: specimen.imageUrl }}
         breadcrumbs={breadcrumbs}
         backHref={viewPath}
       />

@@ -22,6 +22,7 @@ const resolveData = cache(async function resolveData(orgSlug: string, specimenSl
       slug: true,
       accessionNumber: true,
       notes: true,
+      imageUrl: true,
       species: {
         select: {
           commonName: true,
@@ -77,7 +78,7 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
       />
       <SpecimenDetail
         species={specimen.species}
-        specimen={{ accessionNumber: specimen.accessionNumber, notes: specimen.notes }}
+        specimen={{ accessionNumber: specimen.accessionNumber, notes: specimen.notes, imageUrl: specimen.imageUrl }}
         breadcrumbs={breadcrumbs}
         backHref={`/${orgSlug}`}
       />

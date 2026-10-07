@@ -6,6 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import { SpecimenEditForm } from './specimen-edit-form'
+import { SpecimenImageCard } from './specimen-image-card'
 
 interface EditSpecimenPageProps {
   params: Promise<{ org: string; id: string }>
@@ -29,6 +30,7 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
         slug: true,
         accessionNumber: true,
         notes: true,
+        imageUrl: true,
         latitude: true,
         longitude: true,
         viewId: true,
@@ -63,6 +65,12 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
           <span lang="la" className="italic">{specimen.species.scientificName}</span>
         </p>
       </div>
+      <SpecimenImageCard
+        orgSlug={orgSlug}
+        specimenId={specimen.id}
+        commonName={specimen.species.commonName}
+        imageUrl={specimen.imageUrl}
+      />
       <SpecimenEditForm
         orgSlug={orgSlug}
         specimen={{

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { ChevronRight, ChevronLeft } from 'lucide-react'
 import { ScientificName } from '@/components/ui/scientific-name'
+import { SpecimenImage } from '@/components/ui/specimen-image'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -22,6 +23,7 @@ interface SpecimenDetailProps {
   specimen: {
     accessionNumber: string | null
     notes: string | null
+    imageUrl?: string | null
   }
   breadcrumbs?: BreadcrumbItem[]
   backHref?: string
@@ -88,6 +90,16 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref }: Spe
 
       {/* Hero */}
       <header className="mb-6">
+        {specimen.imageUrl !== undefined && (
+          <div className="mb-4 h-48 w-full overflow-hidden rounded-xl border bg-muted sm:h-64">
+            <SpecimenImage
+              imageUrl={specimen.imageUrl}
+              alt={species.commonName}
+              size={256}
+              className="h-full w-full"
+            />
+          </div>
+        )}
         <ScientificName className="text-3xl font-medium leading-tight">
           {species.scientificName}
         </ScientificName>
