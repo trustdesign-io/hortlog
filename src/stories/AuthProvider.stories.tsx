@@ -48,7 +48,7 @@ const mockUser: User = {
   email: 'sarah.chen@company.com',
   name: 'Sarah Chen',
   avatarUrl: null,
-  role: 'USER',
+  isAdmin: false,
   onboardingCompletedAt: null,
   createdAt: new Date('2025-01-10'),
   updatedAt: new Date('2025-03-01'),
