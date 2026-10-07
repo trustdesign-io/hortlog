@@ -1,0 +1,76 @@
+name: Auto-rebase open PRs
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  rebase:
+    name: Rebase open PRs onto main
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Rebase all open PRs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Fetching all open PRs..."
+          prs=$(gh pr list --state open --json number,headRefName --jq '.[] | "\(.number) \(.headRefName)"')
+
+          if [ -z "$prs" ]; then
+            echo "No open PRs to rebase."
+            exit 0
+          fi
+
+          while IFS=' ' read -r pr_number branch; do
+            echo ""
+            echo "=== Rebasing PR #${pr_number} (${branch}) ==="
+
+            # Fetch the branch
+            git fetch origin "$branch" 2>/dev/null || {
+              echo "Branch $branch not found, skipping."
+              continue
+            }
+
+            git checkout "$branch" || {
+              echo "Failed to checkout $branch, skipping."
+              continue
+            }
+
+            # Attempt rebase
+            if git rebase origin/main; then
+              echo "Rebase succeeded, pushing..."
+              git push --force-with-lease origin "$branch" || {
+                echo "Push failed for $branch, skipping."
+                git rebase --abort 2>/dev/null
+                git checkout main
+                continue
+              }
+              echo "PR #${pr_number} rebased successfully."
+            else
+              echo "Rebase conflicts on PR #${pr_number}, skipping."
+              git rebase --abort
+              gh pr comment "$pr_number" --body "Auto-rebase failed due to merge conflicts. Please rebase manually or run \`/fix-prs\` in Claude Code."
+            fi
+
+            git checkout main
+
+          done <<< "$prs"
+
+          echo ""
+          echo "Done."
