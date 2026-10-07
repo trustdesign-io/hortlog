@@ -3,10 +3,10 @@
 import { useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuthStore } from '@/stores/auth-store'
-import type { User } from '@/types'
+import type { UserWithMemberships } from '@/lib/auth/current-user'
 
 interface AuthProviderProps {
-  initialUser: User | null
+  initialUser: UserWithMemberships | null
   children: React.ReactNode
 }
 

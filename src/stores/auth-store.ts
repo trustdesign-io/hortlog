@@ -1,10 +1,10 @@
 import { create } from 'zustand'
-import type { User } from '@/types'
+import type { UserWithMemberships } from '@/lib/auth/current-user'
 
 interface AuthState {
-  user: User | null
+  user: UserWithMemberships | null
   isLoading: boolean
-  setUser: (user: User | null) => void
+  setUser: (user: UserWithMemberships | null) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({

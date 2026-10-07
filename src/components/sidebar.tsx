@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -36,7 +36,7 @@ interface NavItem {
 
 function getOrgSlug(pathname: string): string | null {
   const parts = pathname.split('/').filter(Boolean)
-  const reserved = new Set(['dashboard', 'settings', 'orgs', 'admin'])
+  const reserved = new Set(['dashboard', 'settings', 'orgs', 'admin', 'auth'])
   if (parts.length > 0 && !reserved.has(parts[0])) return parts[0]
   return null
 }
@@ -91,7 +91,7 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
                 ? 'bg-primary/10 text-primary dark:bg-primary/20'
                 : 'text-muted-foreground hover:bg-muted hover:text-foreground'
             )}
-            aria-current={pathname === item.href ? 'page' : undefined}
+            aria-current={isActive ? 'page' : undefined}
           >
             <item.icon className="h-4 w-4 shrink-0" aria-hidden={true} />
             {item.label}
@@ -109,7 +109,18 @@ interface OrgSwitcherProps {
 
 function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
   const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
   const currentOrg = user.memberships.find(m => m.organisation.slug === currentSlug)?.organisation
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false)
+      }
+    }
+    if (open) document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [open])
 
   if (user.memberships.length === 0) {
     return (
@@ -126,7 +137,7 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
   }
 
   return (
-    <div className="relative px-3 py-2">
+    <div className="relative px-3 py-2" ref={ref}>
       <button
         onClick={() => setOpen(o => !o)}
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
@@ -159,7 +170,7 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
               </Link>
             </li>
           ))}
-          <li role="separator" className="border-t my-1" />
+          <li role="presentation" className="border-t my-1" />
           <li>
             <Link
               href="/orgs/new"
@@ -262,7 +273,7 @@ function MobileBottomNav({ user }: { user: UserWithMemberships }) {
               'flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
               isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
             )}
-            aria-current={pathname === item.href ? 'page' : undefined}
+            aria-current={isActive ? 'page' : undefined}
           >
             <item.icon className="h-5 w-5" aria-hidden={true} />
             <span>{item.label}</span>

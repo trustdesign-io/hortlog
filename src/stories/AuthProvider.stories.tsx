@@ -2,7 +2,7 @@ import { vi } from 'vitest'
 import type { Meta, StoryObj } from '@storybook/nextjs-vite'
 
 import { AuthProvider } from '@/components/auth-provider'
-import type { User } from '@/types'
+import type { UserWithMemberships } from '@/lib/auth/current-user'
 
 // Mock the Supabase client so these stories work in CI without real credentials.
 // AuthProvider only uses onAuthStateChange — we return a no-op subscription.
@@ -43,7 +43,7 @@ export default meta
 
 type Story = StoryObj<typeof AuthProvider>
 
-const mockUser: User = {
+const mockUser: UserWithMemberships = {
   id: 'user-1',
   email: 'sarah.chen@company.com',
   name: 'Sarah Chen',
@@ -52,6 +52,7 @@ const mockUser: User = {
   onboardingCompletedAt: null,
   createdAt: new Date('2025-01-10'),
   updatedAt: new Date('2025-03-01'),
+  memberships: [],
 }
 
 export const WithAuthenticatedUser: Story = {
