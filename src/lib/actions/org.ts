@@ -67,7 +67,7 @@ export async function createOrg(
 
 export async function updateOrgSettings(
   orgSlug: string,
-  _prevState: ActionResult,
+  _prevState: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_edit_org_settings')
@@ -92,6 +92,8 @@ export async function updateOrgSettings(
   if (memberLabel.length > 60) return { success: false, error: 'Member label must be 60 characters or fewer.' }
 
   if (slug !== orgSlug) {
+    // Best-effort pre-check for a friendlier error message.
+    // The P2002 catch below is the authoritative uniqueness guard.
     const existing = await prisma.organisation.findUnique({ where: { slug } })
     if (existing) {
       return { success: false, error: `The slug "${slug}" is already taken. Please choose a different one.` }
@@ -111,6 +113,7 @@ export async function updateOrgSettings(
   }
 
   if (slug !== orgSlug) {
+    revalidatePath(`/${orgSlug}/settings`)
     redirect(`/${slug}/settings`)
   }
 

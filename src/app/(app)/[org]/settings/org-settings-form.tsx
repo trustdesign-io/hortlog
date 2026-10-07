@@ -28,11 +28,9 @@ interface OrgSettingsFormProps {
   orgSlug: string
 }
 
-const initialState: ActionResult = { success: true }
-
 export function OrgSettingsForm({ org, orgSlug }: OrgSettingsFormProps) {
   const boundAction = updateOrgSettings.bind(null, orgSlug)
-  const [state, formAction, isPending] = useActionState(boundAction, initialState)
+  const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(boundAction, null)
 
   const [slug, setSlug] = useState(org.slug)
   const [slugEdited, setSlugEdited] = useState(false)
@@ -60,12 +58,12 @@ export function OrgSettingsForm({ org, orgSlug }: OrgSettingsFormProps) {
             <CardDescription>Update your organisation&apos;s name and URL slug.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
-            {!state.success && state.error && (
+            {state !== null && !state.success && state.error && (
               <p className="text-sm text-destructive" role="alert">
                 {state.error}
               </p>
             )}
-            {state.success && !isPending && slugChanged === false && (
+            {state !== null && state.success && !isPending && (
               <p className="text-sm text-green-600 dark:text-green-400" role="status" aria-live="polite">
                 Settings saved.
               </p>
