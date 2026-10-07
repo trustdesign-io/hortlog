@@ -30,7 +30,7 @@ export default function SignInPage() {
         <CardDescription>Enter your email and password to continue.</CardDescription>
       </CardHeader>
       <form action={formAction} aria-busy={isPending}>
-        <CardContent className="flex flex-col gap-4 pb-2">
+        <CardContent className="flex flex-col gap-4">
           {errorMessage && (
             <p className="text-sm text-destructive" role="alert">
               {errorMessage}
