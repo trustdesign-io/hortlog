@@ -123,15 +123,29 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
   }, [open])
 
   if (user.memberships.length === 0) {
+    if (user.isAdmin) {
+      return (
+        <div className="px-3 py-2">
+          <Link
+            href="/orgs/new"
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Plus className="h-4 w-4" aria-hidden="true" />
+            New organisation
+          </Link>
+        </div>
+      )
+    }
     return (
       <div className="px-3 py-2">
-        <Link
-          href="/orgs/new"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Plus className="h-4 w-4" aria-hidden="true" />
-          New organisation
-        </Link>
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          You&apos;re not part of an organisation yet. If you&apos;re expecting an invitation,
+          check your email, or contact{' '}
+          <a href="mailto:danny@trustdesign.io" className="underline underline-offset-2">
+            danny@trustdesign.io
+          </a>
+          .
+        </p>
       </div>
     )
   }
@@ -170,17 +184,21 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
               </Link>
             </li>
           ))}
-          <li role="presentation" className="border-t my-1" />
-          <li>
-            <Link
-              href="/orgs/new"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-            >
-              <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-              New organisation
-            </Link>
-          </li>
+          {user.isAdmin && (
+            <>
+              <li role="presentation" className="border-t my-1" />
+              <li>
+                <Link
+                  href="/orgs/new"
+                  onClick={() => setOpen(false)}
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
+                  New organisation
+                </Link>
+              </li>
+            </>
+          )}
         </ul>
       )}
     </div>

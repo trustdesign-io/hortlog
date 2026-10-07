@@ -4,11 +4,16 @@ import { Prisma } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
-import { requireAuth, requireOrgAccess } from '@/lib/auth/permissions'
+import { requireAuth, requireOrgAccess, isAdmin } from '@/lib/auth/permissions'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { uploadOrgLogo } from '@/lib/storage'
 import type { ActionResult } from '@trustdesign/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
+const APP_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('.supabase.co', '.vercel.app') ??
+  'http://localhost:3000'
 
 export async function createOrg(
   _prevState: ActionResult,
@@ -16,8 +21,13 @@ export async function createOrg(
 ): Promise<ActionResult> {
   const user = await requireAuth()
 
+  if (!isAdmin(user)) {
+    return { success: false, error: 'Only platform admins can create organisations.' }
+  }
+
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''
+  const managerEmail = (formData.get('managerEmail') as string | null)?.trim().toLowerCase() ?? ''
 
   if (!name) return { success: false, error: 'Organisation name is required.' }
   if (name.length > 120) return { success: false, error: 'Organisation name must be 120 characters or fewer.' }
@@ -31,6 +41,10 @@ export async function createOrg(
       error: 'Slug may only contain lowercase letters, numbers, and hyphens.',
     }
   }
+  if (!managerEmail) return { success: false, error: 'First manager email is required.' }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(managerEmail)) {
+    return { success: false, error: 'Please enter a valid email address for the first manager.' }
+  }
 
   const existing = await prisma.organisation.findUnique({ where: { slug } })
   if (existing) {
@@ -40,18 +54,11 @@ export async function createOrg(
     }
   }
 
+  let org: { id: string; slug: string }
   try {
-    await prisma.organisation.create({
-      data: {
-        slug,
-        name,
-        memberships: {
-          create: {
-            userId: user.id,
-            role: 'MANAGER',
-          },
-        },
-      },
+    org = await prisma.organisation.create({
+      data: { slug, name },
+      select: { id: true, slug: true },
     })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -63,7 +70,28 @@ export async function createOrg(
     throw err
   }
 
-  redirect(`/${slug}`)
+  const existingManager = await prisma.user.findUnique({
+    where: { email: managerEmail },
+    select: { id: true },
+  })
+
+  if (existingManager) {
+    await prisma.membership.create({
+      data: { userId: existingManager.id, organisationId: org.id, role: 'MANAGER' },
+    })
+  } else {
+    const supabase = createAdminClient()
+    const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(managerEmail, {
+      redirectTo: `${APP_URL}/auth/callback`,
+      data: { pending_org_slug: slug },
+    })
+    if (inviteError) {
+      await prisma.organisation.delete({ where: { id: org.id } })
+      return { success: false, error: 'Failed to invite the manager. Please try again.' }
+    }
+  }
+
+  redirect('/dashboard')
 }
 
 export async function updateOrgSettings(
