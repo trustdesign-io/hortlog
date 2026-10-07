@@ -26,7 +26,7 @@ export default async function AppLayout({
     email: authUser.email!,
     name: meta?.full_name ?? null,
     avatarUrl: meta?.avatar_url ?? null,
-    role: 'USER',
+    isAdmin: false,
     onboardingCompletedAt: null,
     createdAt: now,
     updatedAt: now,

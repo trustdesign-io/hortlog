@@ -8,7 +8,7 @@ const baseUser: User = {
   email: 'sarah.chen@company.com',
   name: 'Sarah Chen',
   avatarUrl: 'https://github.com/shadcn.png',
-  role: 'USER',
+  isAdmin: false,
   onboardingCompletedAt: new Date('2025-01-15'),
   createdAt: new Date('2025-01-10'),
   updatedAt: new Date('2025-03-01'),
@@ -71,7 +71,7 @@ export const AdminRole: Story = {
     user: {
       ...baseUser,
       name: 'Priya Nair',
-      role: 'ADMIN',
+      isAdmin: true,
       avatarUrl: null,
     },
   },
