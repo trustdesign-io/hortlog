@@ -7,7 +7,6 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 
 interface OrgPageProps {
   params: Promise<{ org: string }>
@@ -32,6 +31,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
       },
       collections: {
         orderBy: { name: 'asc' },
+        take: 5,
         include: {
           _count: { select: { specimens: true } },
         },
@@ -39,7 +39,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
     },
   })
 
-  if (!org) notFound()
+  if (!org) return notFound()
 
   const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
   const roleLabel =
@@ -74,14 +74,14 @@ export default async function OrgPage({ params }: OrgPageProps) {
         <div className="flex gap-2 shrink-0">
           <Link
             href={`/${orgSlug}/specimens/new`}
-            className={cn(buttonVariants({ variant: 'default', size: 'sm' }))}
+            className={buttonVariants({ variant: 'default', size: 'sm' })}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add Specimen
           </Link>
           <Link
             href={`/${orgSlug}/views/new`}
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+            className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             New View
