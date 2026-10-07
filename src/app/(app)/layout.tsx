@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { AuthProvider } from '@/components/auth-provider'
 import { Sidebar } from '@/components/sidebar'
 import type { User } from '@prisma/client'
+import type { UserWithMemberships } from '@/lib/auth/current-user'
 
 export default async function AppLayout({
   children,
@@ -21,7 +22,7 @@ export default async function AppLayout({
 
   const meta = authUser.user_metadata
   const now = new Date()
-  const fallback: User = {
+  const fallbackUser: User = {
     id: authUser.id,
     email: authUser.email!,
     name: meta?.full_name ?? null,
@@ -32,9 +33,9 @@ export default async function AppLayout({
     updatedAt: now,
   }
 
-  let user: User = fallback
+  let user: UserWithMemberships = { ...fallbackUser, memberships: [] }
   try {
-    user = await prisma.user.upsert({
+    const dbUser = await prisma.user.upsert({
       where: { id: authUser.id },
       create: {
         id: authUser.id,
@@ -47,7 +48,15 @@ export default async function AppLayout({
         name: meta?.full_name ?? null,
         avatarUrl: meta?.avatar_url ?? null,
       },
+      include: {
+        memberships: {
+          include: {
+            organisation: { select: { id: true, slug: true, name: true } },
+          },
+        },
+      },
     })
+    user = dbUser
   } catch (err) {
     console.error('[AppLayout] Failed to upsert user:', err)
   }
@@ -56,7 +65,7 @@ export default async function AppLayout({
     <AuthProvider initialUser={user}>
       <div className="flex h-screen overflow-hidden">
         <Sidebar user={user} />
-        <main className="flex-1 overflow-y-auto p-6">{children}</main>
+        <main className="flex-1 overflow-y-auto pt-14 p-6 pb-16 md:pt-0 md:pb-6">{children}</main>
       </div>
     </AuthProvider>
   )

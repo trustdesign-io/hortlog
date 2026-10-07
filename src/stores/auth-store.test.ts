@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest'
 import { useAuthStore } from './auth-store'
+import type { UserWithMemberships } from '@/lib/auth/current-user'
+
+const mockUser = { id: 'abc', email: 'test@example.com', memberships: [] } as unknown as UserWithMemberships
 
 describe('useAuthStore', () => {
   beforeEach(() => { useAuthStore.setState({ user: null, isLoading: true }) })
@@ -11,14 +14,12 @@ describe('useAuthStore', () => {
   })
 
   it('setUser updates user and sets isLoading false', () => {
-    const mockUser = { id: 'abc', email: 'test@example.com' } as unknown as import('@/types').User
     useAuthStore.getState().setUser(mockUser)
     expect(useAuthStore.getState().user).toEqual(mockUser)
     expect(useAuthStore.getState().isLoading).toBe(false)
   })
 
   it('setUser with null clears the user', () => {
-    const mockUser = { id: 'abc', email: 'test@example.com' } as unknown as import('@/types').User
     useAuthStore.getState().setUser(mockUser)
     useAuthStore.getState().setUser(null)
     expect(useAuthStore.getState().user).toBeNull()
