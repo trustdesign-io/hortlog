@@ -6,18 +6,152 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─── Users ────────────────────────────────────────────────────────────────────
+
 model User {
-  id                    String    @id
-  email                 String    @unique
+  id                    String       @id
+  email                 String       @unique
   name                  String?
   avatarUrl             String?
-  role                  Role      @default(USER)
+  isAdmin               Boolean      @default(false)
   onboardingCompletedAt DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  memberships           Membership[]
 }
 
-enum Role {
-  USER
-  ADMIN
+// ─── Organisations ────────────────────────────────────────────────────────────
+
+model Organisation {
+  id             String       @id @default(cuid())
+  slug           String       @unique
+  name           String
+  logoUrl        String?
+  managerLabel   String       @default("Manager")
+  memberLabel    String       @default("Member")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  memberships    Membership[]
+  specimens      Specimen[]
+  views          View[]
+  collections    Collection[]
+}
+
+model Membership {
+  id             String           @id @default(cuid())
+  role           MembershipRole
+  createdAt      DateTime         @default(now())
+
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  organisationId String
+  organisation   Organisation     @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+}
+
+enum MembershipRole {
+  MANAGER
+  MEMBER
+}
+
+// ─── Species (shared across all organisations) ────────────────────────────────
+
+model Species {
+  id                 String     @id @default(cuid())
+  slug               String     @unique
+  commonName         String
+  scientificName     String
+  family             String?
+  origin             String?
+  description        String?
+  conservationStatus String?
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  specimens          Specimen[]
+}
+
+// ─── Collections ──────────────────────────────────────────────────────────────
+
+model Collection {
+  id             String                @id @default(cuid())
+  slug           String
+  name           String
+  description    String?
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+
+  organisationId String
+  organisation   Organisation          @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  specimens      CollectionMembership[]
+  primaryViews   View[]                @relation("PrimaryCollection")
+
+  @@unique([slug, organisationId])
+}
+
+// ─── Views ────────────────────────────────────────────────────────────────────
+
+model View {
+  id                  String     @id @default(cuid())
+  slug                String
+  name                String
+  gridRows            Int        @default(4)
+  gridCols            Int        @default(4)
+  shortCode           String     @unique
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  organisationId      String
+  organisation        Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  primaryCollectionId String?
+  primaryCollection   Collection?  @relation("PrimaryCollection", fields: [primaryCollectionId], references: [id], onDelete: SetNull)
+
+  specimens           Specimen[]
+
+  @@unique([slug, organisationId])
+}
+
+// ─── Specimens ────────────────────────────────────────────────────────────────
+
+model Specimen {
+  id              String     @id @default(cuid())
+  slug            String
+  accessionNumber String?
+  notes           String?
+  gridCell        String?    // e.g. "2,3" (row,col)
+  latitude        Float?
+  longitude       Float?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  organisationId  String
+  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  speciesId       String
+  species         Species      @relation(fields: [speciesId], references: [id])
+
+  viewId          String?
+  view            View?        @relation(fields: [viewId], references: [id], onDelete: SetNull)
+
+  collections     CollectionMembership[]
+
+  @@unique([slug, organisationId])
+}
+
+// ─── Collection membership (specimen ↔ collection, many-to-many) ──────────────
+
+model CollectionMembership {
+  specimenId    String
+  specimen      Specimen   @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+
+  collectionId  String
+  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+
+  @@id([specimenId, collectionId])
 }
