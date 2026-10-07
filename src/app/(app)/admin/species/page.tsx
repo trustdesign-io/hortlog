@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { ChevronLeft } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { CreateSpeciesDialog, SpeciesAdminList } from './species-admin'
 

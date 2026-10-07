@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { ChevronLeft, Search, ExternalLink } from 'lucide-react'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 

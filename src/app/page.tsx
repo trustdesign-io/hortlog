@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { Logo } from '@/components/layout/logo'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { cn } from '@/lib/utils'
 

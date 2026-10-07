@@ -3,7 +3,7 @@ import { ChevronRight, ChevronLeft } from 'lucide-react'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { Badge } from '@/components/ui/badge'
-import { buttonVariants } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 
 interface BreadcrumbItem {
