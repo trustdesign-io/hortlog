@@ -30,9 +30,12 @@ export async function signUpWithEmail(_prevState: ActionResult, formData: FormDa
 }
 
 export async function resendVerificationEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
-  const email = (formData.get('email') as string | null) ?? ''
-  if (!email) return { success: false, error: 'Email address is missing.' }
   const supabase = await createClient()
+  // Prefer session-derived email to prevent unauthenticated callers spamming arbitrary addresses
+  const { data: { user } } = await supabase.auth.getUser()
+  const email = user?.email ?? (formData.get('email') as string | null) ?? ''
+  if (!email) return { success: false, error: 'Email address is missing.' }
+  if (user?.email_confirmed_at) return { success: false, error: 'Email already confirmed.' }
   const { error } = await supabase.auth.resend({ type: 'signup', email })
   if (error) return { success: false, error: 'Failed to resend. Please try again.' }
   return { success: true }

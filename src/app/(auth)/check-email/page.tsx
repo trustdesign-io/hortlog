@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useActionState, useState, useEffect } from 'react'
+import { Suspense, useActionState, useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { resendVerificationEmail } from '@/lib/actions/auth'
@@ -24,6 +24,7 @@ function CheckEmailContent() {
   const [state, formAction, isPending] = useActionState(resendVerificationEmail, initialState)
   const [cooldown, setCooldown] = useState(0)
   const [submitCount, setSubmitCount] = useState(0)
+  const prevSubmitCountRef = useRef(0)
 
   useEffect(() => {
     if (cooldown <= 0) return
@@ -31,11 +32,12 @@ function CheckEmailContent() {
     return () => clearTimeout(id)
   }, [cooldown])
 
+  // Only start cooldown when a NEW submission completes successfully
   useEffect(() => {
-    if (submitCount > 0 && state.success && !isPending) {
+    if (submitCount > prevSubmitCountRef.current && state.success && !isPending) {
+      prevSubmitCountRef.current = submitCount
       setCooldown(COOLDOWN_SECONDS)
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submitCount, state.success, isPending])
 
   const canResend = cooldown === 0 && !isPending
