@@ -64,8 +64,14 @@ export default async function AppLayout({
   return (
     <AuthProvider initialUser={user}>
       <div className="flex h-screen overflow-hidden">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+        >
+          Skip to main content
+        </a>
         <Sidebar user={user} />
-        <main className="flex-1 overflow-y-auto pt-14 p-6 pb-16 md:pt-0 md:pb-6">{children}</main>
+        <main id="main-content" className="flex-1 overflow-y-auto pt-14 p-6 pb-16 md:pt-0 md:pb-6">{children}</main>
       </div>
     </AuthProvider>
   )
