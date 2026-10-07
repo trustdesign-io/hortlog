@@ -10,7 +10,12 @@ export async function signInWithEmail(_prevState: ActionResult, formData: FormDa
   if (!result.success) return { success: false, error: result.error.issues[0].message }
   const supabase = await createClient()
   const { error } = await supabase.auth.signInWithPassword(result.data)
-  if (error) return { success: false, error: 'Invalid email or password.' }
+  if (error) {
+    if (error.message.toLowerCase().includes('email not confirmed')) {
+      redirect(`/check-email?email=${encodeURIComponent(result.data.email)}`)
+    }
+    return { success: false, error: 'Invalid email or password.' }
+  }
   redirect('/dashboard')
 }
 
@@ -20,7 +25,17 @@ export async function signUpWithEmail(_prevState: ActionResult, formData: FormDa
   const supabase = await createClient()
   const { error } = await supabase.auth.signUp({ email: result.data.email, password: result.data.password, options: { data: { name: result.data.name } } })
   if (error) return { success: false, error: error.message }
-  redirect('/dashboard')
+  // Redirect to confirmation screen regardless — don't reveal whether email already existed
+  redirect(`/check-email?email=${encodeURIComponent(result.data.email)}`)
+}
+
+export async function resendVerificationEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
+  const email = (formData.get('email') as string | null) ?? ''
+  if (!email) return { success: false, error: 'Email address is missing.' }
+  const supabase = await createClient()
+  const { error } = await supabase.auth.resend({ type: 'signup', email })
+  if (error) return { success: false, error: 'Failed to resend. Please try again.' }
+  return { success: true }
 }
 
 export async function signOut(): Promise<void> {
