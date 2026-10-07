@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
 import { GaEvent } from '@/components/ga-event'
+import { truncateDescription } from '@/lib/seo'
 
 interface PublicSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -47,7 +48,9 @@ export async function generateMetadata({ params }: PublicSpecimenPageProps) {
 
   const { scientificName, commonName, description } = data.specimen.species
   const title = `${scientificName} — ${commonName}`
-  const metaDescription = description?.slice(0, 150) ?? `${commonName} specimen record at ${data.org.name}.`
+  const metaDescription = description
+    ? truncateDescription(description)
+    : `${commonName} specimen record at ${data.org.name}.`
 
   return {
     title,
