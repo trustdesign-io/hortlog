@@ -21,7 +21,7 @@ export default async function HomePage() {
       {/* Nav */}
       <header className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
         <Logo href="/" />
-        <nav className="flex items-center gap-3">
+        <nav aria-label="Primary" className="flex items-center gap-3">
           <Link href="/sign-in" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
             Sign in
           </Link>
@@ -119,7 +119,7 @@ export default async function HomePage() {
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <Logo href="/" />
           <p>&copy; {new Date().getFullYear()} hortlog. All rights reserved.</p>
-          <nav className="flex gap-4">
+          <nav aria-label="Footer" className="flex gap-4">
             <Link href="/sign-in" className="hover:text-foreground transition-colors">Sign in</Link>
             <Link href="/sign-up" className="hover:text-foreground transition-colors">Sign up</Link>
           </nav>
