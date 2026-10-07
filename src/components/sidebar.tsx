@@ -244,7 +244,7 @@ function SidebarContent({ user, onNavigate }: SidebarContentProps) {
   )
 }
 
-function MobileBottomNav({ user }: { user: UserWithMemberships }) {
+function MobileBottomNav({ user: _user }: { user: UserWithMemberships }) {
   const pathname = usePathname()
   const orgSlug = getOrgSlug(pathname)
 
