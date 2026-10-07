@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/card'
 import type { ActionResult } from '@trustdesign/shared/types'
 
-const initialState: ActionResult = { success: true }
+const initialState: ActionResult<undefined> = { success: true }
 
 export default function NewOrgPage() {
   const [state, formAction, isPending] = useActionState(createOrg, initialState)
@@ -39,7 +39,7 @@ export default function NewOrgPage() {
     <div className="flex min-h-[calc(100vh-3.5rem)] items-start justify-center p-6">
       <Card className="w-full max-w-md mt-8">
         <CardHeader>
-          <CardTitle role="heading" aria-level={1} className="font-heading text-lg">
+          <CardTitle className="font-heading text-lg">
             Create an organisation
           </CardTitle>
           <CardDescription>
