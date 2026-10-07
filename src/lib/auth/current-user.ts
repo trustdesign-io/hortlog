@@ -13,6 +13,10 @@ export type UserWithMemberships = User & {
 /**
  * Returns the authenticated user with their org memberships, or null if unauthenticated.
  * Always reads from the database — do not call in a hot path without caching.
+ *
+ * Syncs name from Supabase auth metadata when the User row has no name set.
+ * This handles the gap between sign-up (trigger creates User without name) and
+ * first sign-in if the trigger was applied before the name column was added.
  */
 export async function getCurrentUser(): Promise<UserWithMemberships | null> {
   const supabase = await createClient()
@@ -20,7 +24,7 @@ export async function getCurrentUser(): Promise<UserWithMemberships | null> {
 
   if (!authUser) return null
 
-  return prisma.user.findUnique({
+  const dbUser = await prisma.user.findUnique({
     where: { id: authUser.id },
     include: {
       memberships: {
@@ -32,4 +36,28 @@ export async function getCurrentUser(): Promise<UserWithMemberships | null> {
       },
     },
   })
+
+  if (!dbUser) return null
+
+  if (!dbUser.name) {
+    const meta = authUser.user_metadata ?? {}
+    const name = (meta.name ?? meta.full_name ?? null) as string | null
+    if (name) {
+      return prisma.user.update({
+        where: { id: authUser.id },
+        data: { name },
+        include: {
+          memberships: {
+            include: {
+              organisation: {
+                select: { id: true, slug: true, name: true },
+              },
+            },
+          },
+        },
+      })
+    }
+  }
+
+  return dbUser
 }
