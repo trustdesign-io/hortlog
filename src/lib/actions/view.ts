@@ -107,3 +107,75 @@ export async function createView(
   revalidatePath(`/${orgSlug}/views`)
   redirect(`/${orgSlug}/views/${newId}/edit`)
 }
+
+export async function placeSpecimen(
+  orgSlug: string,
+  viewId: string,
+  specimenId: string,
+  row: number,
+  col: number,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_view')
+
+  const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
+  if (!org) return { success: false, error: 'Organisation not found.' }
+
+  const view = await prisma.view.findUnique({
+    where: { id: viewId, organisationId: org.id },
+    select: { id: true },
+  })
+  if (!view) return { success: false, error: 'View not found.' }
+
+  const specimen = await prisma.specimen.findUnique({
+    where: { id: specimenId, organisationId: org.id },
+    select: { id: true },
+  })
+  if (!specimen) return { success: false, error: 'Specimen not found.' }
+
+  const cell = `${row},${col}`
+
+  try {
+    await prisma.$transaction([
+      // Evict any current occupant of this cell
+      prisma.specimen.updateMany({
+        where: { viewId, gridCell: cell, id: { not: specimenId } },
+        data: { viewId: null, gridCell: null },
+      }),
+      // Place (or move) the specimen into this cell
+      prisma.specimen.update({
+        where: { id: specimenId, organisationId: org.id },
+        data: { viewId, gridCell: cell },
+      }),
+    ])
+  } catch (err) {
+    console.error('[placeSpecimen] error:', err)
+    return { success: false, error: 'Failed to place specimen. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/views/${viewId}/edit`)
+  return { success: true }
+}
+
+export async function removeSpecimenFromCell(
+  orgSlug: string,
+  viewId: string,
+  specimenId: string,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_view')
+
+  const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
+  if (!org) return { success: false, error: 'Organisation not found.' }
+
+  try {
+    await prisma.specimen.update({
+      where: { id: specimenId, organisationId: org.id, viewId },
+      data: { viewId: null, gridCell: null },
+    })
+  } catch (err) {
+    console.error('[removeSpecimenFromCell] error:', err)
+    return { success: false, error: 'Failed to remove specimen. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/views/${viewId}/edit`)
+  return { success: true }
+}
