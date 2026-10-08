@@ -19,13 +19,15 @@ function getOrgsToShow(
   return memberships.map(m => m.organisation)
 }
 
+const ROLE_DISPLAY: Record<string, string> = { MANAGER: 'Manager', MEMBER: 'Member' }
+
 function getRoleLabel(
   org: OrgOption,
   memberships: Membership[],
   isAdmin: boolean,
 ): string | null {
   const membership = memberships.find(m => m.organisation.slug === org.slug)
-  if (membership) return membership.role === 'MANAGER' ? 'Manager' : 'Member'
+  if (membership) return ROLE_DISPLAY[membership.role] ?? membership.role
   if (isAdmin) return 'Admin access'
   return null
 }

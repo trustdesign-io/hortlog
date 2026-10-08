@@ -2,8 +2,12 @@ import { test, expect } from '@playwright/test'
 
 /**
  * Smoke E2E for admin org switcher (ticket #108).
- * Full authenticated flows require a seeded DB — these tests verify
- * unauthenticated redirects and page-level access control.
+ *
+ * Scope: unauthenticated redirect behaviour only.
+ * The core feature (admin sees all orgs in the switcher, non-admin sees only
+ * memberships, role labels, org-name link) requires an authenticated session
+ * with a seeded database and is not covered here. Manual verification is
+ * needed until a seeded E2E environment is available.
  */
 
 test.describe('Admin org switcher — unauthenticated redirects', () => {

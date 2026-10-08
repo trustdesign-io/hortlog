@@ -108,6 +108,11 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
   )
 }
 
+const ROLE_DISPLAY: Record<string, string> = {
+  MANAGER: 'Manager',
+  MEMBER: 'Member',
+}
+
 interface OrgSwitcherProps {
   user: UserWithMemberships
   currentSlug: string | null
@@ -171,6 +176,7 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls="org-switcher-listbox"
       >
         <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="flex-1 truncate text-left">
@@ -180,6 +186,7 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
       </button>
       {open && (
         <ul
+          id="org-switcher-listbox"
           role="listbox"
           aria-label="Organisations"
           className="absolute left-3 right-3 top-full z-50 mt-1 rounded-md border bg-popover shadow-md py-1"
@@ -187,7 +194,7 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
           {orgsToShow.map(org => {
             const membership = user.memberships.find(m => m.organisation.slug === org.slug)
             const roleLabel = membership
-              ? membership.role === 'MANAGER' ? 'Manager' : 'Member'
+              ? ROLE_DISPLAY[membership.role] ?? membership.role
               : isAdmin ? 'Admin access' : null
             return (
               <li key={org.id} role="option" aria-selected={org.slug === currentSlug}>

@@ -70,12 +70,19 @@ export default async function AppLayout({
     console.error('[AppLayout] Failed to upsert user:', err)
   }
 
-  const allOrgs = user.isAdmin
-    ? await prisma.organisation.findMany({
+  // Admins see all orgs in the sidebar switcher. Unbounded at current scale;
+  // add pagination or unstable_cache if org count grows large.
+  let allOrgs: { id: string; slug: string; name: string }[] | undefined
+  if (user.isAdmin) {
+    try {
+      allOrgs = await prisma.organisation.findMany({
         select: { id: true, slug: true, name: true },
         orderBy: { name: 'asc' },
       })
-    : undefined
+    } catch (err) {
+      console.error('[AppLayout] Failed to fetch allOrgs:', err)
+    }
+  }
 
   return (
     <AuthProvider initialUser={user}>
