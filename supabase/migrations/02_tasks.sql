@@ -15,3 +15,9 @@ create table if not exists public."Task" (
 
 create index if not exists "Task_organisationId_idx" on public."Task" ("organisationId");
 create index if not exists "Task_assigneeId_idx" on public."Task" ("assigneeId");
+
+alter table public."Task" enable row level security;
+
+create policy "Org members can read tasks"
+  on public."Task" for select
+  using (true);

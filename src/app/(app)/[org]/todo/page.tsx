@@ -9,6 +9,8 @@ interface TodoPageProps {
 
 export default async function TodoPage({ params }: TodoPageProps) {
   const { org: orgSlug } = await params
+  // can_edit_specimen is the minimum capability held by every org member (MANAGER + MEMBER).
+  // All members can view tasks; canManage below determines who sees mutation controls.
   const { user } = await requireOrgAccess(orgSlug, 'can_edit_specimen')
 
   const org = await prisma.organisation.findUnique({

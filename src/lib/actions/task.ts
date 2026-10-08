@@ -37,16 +37,21 @@ export async function createTask(
     if (!member) return { success: false, error: 'Assignee is not a member of this organisation.' }
   }
 
-  await prisma.task.create({
-    data: {
-      title,
-      description,
-      dueDate,
-      assigneeId,
-      organisationId: org.id,
-      createdById: user.id,
-    },
-  })
+  try {
+    await prisma.task.create({
+      data: {
+        title,
+        description,
+        dueDate,
+        assigneeId,
+        organisationId: org.id,
+        createdById: user.id,
+      },
+    })
+  } catch (err) {
+    console.error('[createTask] Prisma error:', err)
+    return { success: false, error: 'Failed to create task. Please try again.' }
+  }
 
   revalidatePath(`/${orgSlug}/todo`)
   return { success: true }
@@ -87,10 +92,15 @@ export async function updateTask(
     if (!member) return { success: false, error: 'Assignee is not a member of this organisation.' }
   }
 
-  await prisma.task.update({
-    where: { id: taskId, organisationId: org.id },
-    data: { title, description, dueDate, assigneeId },
-  })
+  try {
+    await prisma.task.update({
+      where: { id: taskId, organisationId: org.id },
+      data: { title, description, dueDate, assigneeId },
+    })
+  } catch (err) {
+    console.error('[updateTask] Prisma error:', err)
+    return { success: false, error: 'Failed to update task. Please try again.' }
+  }
 
   revalidatePath(`/${orgSlug}/todo`)
   return { success: true }
@@ -103,6 +113,10 @@ export async function setTaskStatus(
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_manage_members')
 
+  if (status !== 'OPEN' && status !== 'DONE') {
+    return { success: false, error: 'Invalid status.' }
+  }
+
   const org = await getOrg(orgSlug)
   if (!org) return { success: false, error: 'Organisation not found.' }
 
@@ -112,10 +126,15 @@ export async function setTaskStatus(
   })
   if (!task) return { success: false, error: 'Task not found.' }
 
-  await prisma.task.update({
-    where: { id: taskId, organisationId: org.id },
-    data: { status },
-  })
+  try {
+    await prisma.task.update({
+      where: { id: taskId, organisationId: org.id },
+      data: { status },
+    })
+  } catch (err) {
+    console.error('[setTaskStatus] Prisma error:', err)
+    return { success: false, error: 'Failed to update task status. Please try again.' }
+  }
 
   revalidatePath(`/${orgSlug}/todo`)
   return { success: true }
@@ -136,7 +155,12 @@ export async function deleteTask(
   })
   if (!task) return { success: false, error: 'Task not found.' }
 
-  await prisma.task.delete({ where: { id: taskId, organisationId: org.id } })
+  try {
+    await prisma.task.delete({ where: { id: taskId, organisationId: org.id } })
+  } catch (err) {
+    console.error('[deleteTask] Prisma error:', err)
+    return { success: false, error: 'Failed to delete task. Please try again.' }
+  }
 
   revalidatePath(`/${orgSlug}/todo`)
   return { success: true }
