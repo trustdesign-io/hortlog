@@ -70,6 +70,20 @@ export default async function AppLayout({
     console.error('[AppLayout] Failed to upsert user:', err)
   }
 
+  // Admins see all orgs in the sidebar switcher. Unbounded at current scale;
+  // add pagination or unstable_cache if org count grows large.
+  let allOrgs: { id: string; slug: string; name: string }[] | undefined
+  if (user.isAdmin) {
+    try {
+      allOrgs = await prisma.organisation.findMany({
+        select: { id: true, slug: true, name: true },
+        orderBy: { name: 'asc' },
+      })
+    } catch (err) {
+      console.error('[AppLayout] Failed to fetch allOrgs:', err)
+    }
+  }
+
   return (
     <AuthProvider initialUser={user}>
       <div className="flex h-screen overflow-hidden">
@@ -79,7 +93,7 @@ export default async function AppLayout({
         >
           Skip to main content
         </a>
-        <Sidebar user={user} />
+        <Sidebar user={user} allOrgs={allOrgs} />
         <main id="main-content" className="flex-1 overflow-y-auto pt-14 p-6 pb-16 md:pb-6">{children}</main>
       </div>
     </AuthProvider>

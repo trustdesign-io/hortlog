@@ -24,8 +24,11 @@ import { Logo } from '@/components/layout/logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 
+type OrgOption = { id: string; slug: string; name: string }
+
 interface SidebarProps {
   user: UserWithMemberships
+  allOrgs?: OrgOption[]
 }
 
 interface NavItem {
@@ -105,15 +108,27 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
   )
 }
 
+const ROLE_DISPLAY: Record<string, string> = {
+  MANAGER: 'Manager',
+  MEMBER: 'Member',
+}
+
 interface OrgSwitcherProps {
   user: UserWithMemberships
   currentSlug: string | null
+  allOrgs?: OrgOption[]
 }
 
-function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
+function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
-  const currentOrg = user.memberships.find(m => m.organisation.slug === currentSlug)?.organisation
+
+  const isAdmin = user.isAdmin && allOrgs !== undefined
+  const orgsToShow: OrgOption[] = isAdmin
+    ? allOrgs
+    : user.memberships.map(m => m.organisation)
+
+  const currentOrg = orgsToShow.find(o => o.slug === currentSlug)
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -125,7 +140,7 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [open])
 
-  if (user.memberships.length === 0) {
+  if (!isAdmin && user.memberships.length === 0) {
     return (
       <div className="px-3 py-2">
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -140,6 +155,20 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
     )
   }
 
+  if (isAdmin && orgsToShow.length === 0) {
+    return (
+      <div className="px-3 py-2">
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          No organisations yet.{' '}
+          <Link href="/admin/organisations" className="underline underline-offset-2">
+            Create one
+          </Link>
+          .
+        </p>
+      </div>
+    )
+  }
+
   return (
     <div className="relative px-3 py-2" ref={ref}>
       <button
@@ -147,6 +176,7 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
         className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
         aria-expanded={open}
         aria-haspopup="listbox"
+        aria-controls="org-switcher-listbox"
       >
         <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="flex-1 truncate text-left">
@@ -156,24 +186,34 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
       </button>
       {open && (
         <ul
+          id="org-switcher-listbox"
           role="listbox"
           aria-label="Organisations"
           className="absolute left-3 right-3 top-full z-50 mt-1 rounded-md border bg-popover shadow-md py-1"
         >
-          {user.memberships.map(m => (
-            <li key={m.organisation.id} role="option" aria-selected={m.organisation.slug === currentSlug}>
-              <Link
-                href={`/${m.organisation.slug}`}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  'block px-3 py-2 text-sm hover:bg-muted transition-colors',
-                  m.organisation.slug === currentSlug ? 'text-primary font-medium' : 'text-foreground'
-                )}
-              >
-                {m.organisation.name}
-              </Link>
-            </li>
-          ))}
+          {orgsToShow.map(org => {
+            const membership = user.memberships.find(m => m.organisation.slug === org.slug)
+            const roleLabel = membership
+              ? ROLE_DISPLAY[membership.role] ?? membership.role
+              : isAdmin ? 'Admin access' : null
+            return (
+              <li key={org.id} role="option" aria-selected={org.slug === currentSlug}>
+                <Link
+                  href={`/${org.slug}`}
+                  onClick={() => setOpen(false)}
+                  className={cn(
+                    'flex items-center justify-between gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors',
+                    org.slug === currentSlug ? 'text-primary font-medium' : 'text-foreground'
+                  )}
+                >
+                  <span className="truncate">{org.name}</span>
+                  {roleLabel && (
+                    <span className="shrink-0 text-xs text-muted-foreground">{roleLabel}</span>
+                  )}
+                </Link>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>
@@ -183,9 +223,10 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
 interface SidebarContentProps {
   user: UserWithMemberships
   onNavigate?: () => void
+  allOrgs?: OrgOption[]
 }
 
-function SidebarContent({ user, onNavigate }: SidebarContentProps) {
+function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
   const pathname = usePathname()
   const orgSlug = getOrgSlug(pathname)
   const orgNav = orgSlug ? buildOrgNav(orgSlug) : []
@@ -200,7 +241,7 @@ function SidebarContent({ user, onNavigate }: SidebarContentProps) {
 
       {/* Org switcher */}
       <div className="border-b py-2">
-        <OrgSwitcher user={user} currentSlug={orgSlug} />
+        <OrgSwitcher user={user} currentSlug={orgSlug} allOrgs={allOrgs} />
       </div>
 
       {/* Nav */}
@@ -277,14 +318,14 @@ function MobileBottomNav() {
   )
 }
 
-export function Sidebar({ user }: SidebarProps) {
+export function Sidebar({ user, allOrgs }: SidebarProps) {
   const [open, setOpen] = useState(false)
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r md:flex md:flex-col">
-        <SidebarContent user={user} />
+        <SidebarContent user={user} allOrgs={allOrgs} />
       </aside>
 
       {/* Mobile top bar */}
@@ -306,7 +347,7 @@ export function Sidebar({ user }: SidebarProps) {
             </SheetTrigger>
             <SheetContent side="left" className="w-60 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
-              <SidebarContent user={user} onNavigate={() => setOpen(false)} />
+              <SidebarContent user={user} onNavigate={() => setOpen(false)} allOrgs={allOrgs} />
             </SheetContent>
           </Sheet>
         </div>

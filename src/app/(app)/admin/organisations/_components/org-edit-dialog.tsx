@@ -32,6 +32,7 @@ export function OrgEditDialog({ orgSlug, orgName, managerLabel, memberLabel }: O
 
   useEffect(() => {
     if (state?.success === true) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setOpen(false)
       router.refresh()
     }

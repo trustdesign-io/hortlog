@@ -36,6 +36,7 @@ function CheckEmailContent() {
   useEffect(() => {
     if (submitCount > prevSubmitCountRef.current && state.success && !isPending) {
       prevSubmitCountRef.current = submitCount
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCooldown(COOLDOWN_SECONDS)
     }
   }, [submitCount, state.success, isPending])
