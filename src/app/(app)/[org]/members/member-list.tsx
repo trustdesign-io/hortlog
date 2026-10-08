@@ -178,6 +178,18 @@ export function MemberList({ orgSlug, managerLabel, memberLabel, members }: Memb
                 Invite up to 20 people at once. Each will receive an email invitation.
               </p>
             </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="invite-role">Role</Label>
+              <Select name="role" defaultValue="MEMBER">
+                <SelectTrigger id="invite-role" className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MEMBER">{memberLabel}</SelectItem>
+                  <SelectItem value="MANAGER">{managerLabel}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <Button type="submit" disabled={inviteIsPending} className="self-start">
               {inviteIsPending ? 'Sending…' : 'Send invites'}
             </Button>
