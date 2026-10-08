@@ -58,6 +58,8 @@ vi.mock('@/lib/supabase/admin', () => ({
   }),
 }))
 
+import { Prisma } from '@prisma/client'
+
 import {
   adminDeleteOrg,
   adminCreateOrg,
@@ -332,9 +334,8 @@ describe('adminAddMembership', () => {
   it('returns error on duplicate membership', async () => {
     requireAuth.mockResolvedValue(ADMIN_USER)
     org.findUnique.mockResolvedValue(ORG)
-    const { PrismaClientKnownRequestError } = await import('@prisma/client')
     membership.create.mockRejectedValue(
-      new PrismaClientKnownRequestError('Unique constraint', { code: 'P2002', clientVersion: '5.0.0' })
+      new Prisma.PrismaClientKnownRequestError('Unique constraint', { code: 'P2002', clientVersion: '5.0.0' })
     )
     const result = await adminAddMembership('u1', 'test-org', 'MEMBER')
     expect(result).toMatchObject({ success: false })
