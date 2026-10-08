@@ -3,7 +3,7 @@
 import { useActionState } from 'react'
 import { changePassword } from '@/lib/actions/account'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import type { ActionResult } from '@trustdesign/shared/types'
@@ -32,10 +32,9 @@ export function PasswordCard() {
           )}
           <div className="flex flex-col gap-2">
             <Label htmlFor="currentPassword">Current password</Label>
-            <Input
+            <PasswordInput
               id="currentPassword"
               name="currentPassword"
-              type="password"
               required
               autoComplete="current-password"
               disabled={isPending}
@@ -43,10 +42,9 @@ export function PasswordCard() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="newPassword">New password</Label>
-            <Input
+            <PasswordInput
               id="newPassword"
               name="newPassword"
-              type="password"
               required
               autoComplete="new-password"
               minLength={8}
@@ -56,10 +54,9 @@ export function PasswordCard() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="confirmPassword">Confirm new password</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               required
               autoComplete="new-password"
               disabled={isPending}

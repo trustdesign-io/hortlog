@@ -3,7 +3,7 @@
 import { useActionState } from 'react'
 import { acceptInvite } from '@/lib/actions/invite'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
+import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import {
   Card,
@@ -38,10 +38,9 @@ export default function AcceptInvitePage() {
           )}
           <div className="flex flex-col gap-2">
             <Label htmlFor="password">Password</Label>
-            <Input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               required
               minLength={8}
               autoComplete="new-password"
@@ -53,10 +52,9 @@ export default function AcceptInvitePage() {
           </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="confirmPassword">Confirm password</Label>
-            <Input
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              type="password"
               required
               minLength={8}
               autoComplete="new-password"
