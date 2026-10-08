@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useTransition, useState } from 'react'
+import { useActionState, useTransition, useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createTask, updateTask, setTaskStatus, deleteTask } from '@/lib/actions/task'
 import { Button } from '@/components/ui/button'
@@ -81,10 +81,12 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
 
   const [assigneeId, setAssigneeId] = useState<string>(task?.assignee?.id ?? '')
 
-  if (state?.success) {
-    router.refresh()
-    onClose()
-  }
+  useEffect(() => {
+    if (state?.success) {
+      router.refresh()
+      onClose()
+    }
+  }, [state]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -269,29 +271,38 @@ function DeleteTaskDialog({ orgSlug, task }: { orgSlug: string; task: Task }) {
 function ToggleStatusButton({ orgSlug, task }: { orgSlug: string; task: Task }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [error, setError] = useState<string | null>(null)
 
   function handleToggle() {
+    setError(null)
     startTransition(async () => {
       const next = task.status === 'OPEN' ? 'DONE' : 'OPEN'
       const result = await setTaskStatus(orgSlug, task.id, next)
-      if (result.success) router.refresh()
+      if (result.success) {
+        router.refresh()
+      } else {
+        setError(result.error ?? 'Failed to update status.')
+      }
     })
   }
 
   return (
-    <button
-      onClick={handleToggle}
-      disabled={isPending}
-      aria-label={task.status === 'OPEN' ? `Mark "${task.title}" done` : `Reopen "${task.title}"`}
-      aria-pressed={task.status === 'DONE'}
-      className="shrink-0 text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
-    >
-      {task.status === 'DONE' ? (
-        <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
-      ) : (
-        <Circle className="h-5 w-5" aria-hidden="true" />
-      )}
-    </button>
+    <div className="flex flex-col items-center gap-1">
+      <button
+        onClick={handleToggle}
+        disabled={isPending}
+        aria-label={task.status === 'OPEN' ? `Mark "${task.title}" done` : `Reopen "${task.title}"`}
+        aria-pressed={task.status === 'DONE'}
+        className="shrink-0 text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
+      >
+        {task.status === 'DONE' ? (
+          <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
+        ) : (
+          <Circle className="h-5 w-5" aria-hidden="true" />
+        )}
+      </button>
+      {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
+    </div>
   )
 }
 

@@ -20,4 +20,9 @@ alter table public."Task" enable row level security;
 
 create policy "Org members can read tasks"
   on public."Task" for select
-  using (true);
+  using (
+    "organisationId" in (
+      select "organisationId" from public."Membership"
+      where "userId" = auth.uid()
+    )
+  );
