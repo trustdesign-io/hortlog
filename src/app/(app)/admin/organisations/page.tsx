@@ -108,7 +108,9 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
                 <tr key={org.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
                     <div>
-                      <p className="font-medium">{org.name}</p>
+                      <Link href={`/${org.slug}`} className="font-medium hover:underline underline-offset-2">
+                        {org.name}
+                      </Link>
                       <p className="text-xs text-muted-foreground font-mono">{org.slug}</p>
                     </div>
                   </td>
