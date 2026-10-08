@@ -12,8 +12,10 @@ export default async function CollectionsPage({ params }: CollectionsPageProps) 
   const { org: orgSlug } = await params
   const { user } = await requireOrgAccess(orgSlug, 'can_edit_view')
 
-  const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)!
-  const canDelete = hasCapability(membership.role, 'can_edit_org_settings', user.isAdmin)
+  const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
+  const canDelete = membership
+    ? hasCapability(membership.role, 'can_edit_org_settings', user.isAdmin)
+    : user.isAdmin
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
