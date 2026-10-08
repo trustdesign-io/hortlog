@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Pencil } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -23,6 +24,7 @@ interface OrgEditDialogProps {
 }
 
 export function OrgEditDialog({ orgSlug, orgName, managerLabel, memberLabel }: OrgEditDialogProps) {
+  const router = useRouter()
   const [open, setOpen] = useState(false)
   const boundAction = adminUpdateOrg.bind(null, orgSlug)
   const [state, action, pending] = useActionState(boundAction, null)
@@ -31,8 +33,9 @@ export function OrgEditDialog({ orgSlug, orgName, managerLabel, memberLabel }: O
   useEffect(() => {
     if (state?.success === true) {
       setOpen(false)
+      router.refresh()
     }
-  }, [state])
+  }, [state]) // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -83,6 +86,9 @@ export function OrgEditDialog({ orgSlug, orgName, managerLabel, memberLabel }: O
               minLength={2}
               maxLength={48}
             />
+            <p className="text-xs text-muted-foreground">
+              Changing the slug will break existing links to this organisation.
+            </p>
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field>

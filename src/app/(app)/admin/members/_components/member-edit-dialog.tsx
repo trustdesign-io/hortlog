@@ -63,6 +63,7 @@ function MembershipRow({ userId, membership, onRefresh }: MembershipRowProps) {
       const addResult = await adminAddMembership(userId, membership.organisation.slug, newRole)
       if (!addResult.success) {
         setError(addResult.error ?? 'Failed to change role.')
+        return
       }
       onRefresh()
     })
@@ -123,6 +124,7 @@ export function MemberEditDialog({
 }: MemberEditDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
+  const [currentIsAdmin, setCurrentIsAdmin] = useState(isUserAdmin)
   const [adminTogglePending, startAdminToggle] = useTransition()
   const [addPending, startAdd] = useTransition()
   const [adminError, setAdminError] = useState<string | null>(null)
@@ -140,10 +142,11 @@ export function MemberEditDialog({
   function handleAdminToggle() {
     setAdminError(null)
     startAdminToggle(async () => {
-      const result = await adminSetUserAdmin(userId, !isUserAdmin)
+      const result = await adminSetUserAdmin(userId, !currentIsAdmin)
       if (!result.success) {
         setAdminError(result.error ?? 'Failed to update admin status.')
       } else {
+        setCurrentIsAdmin((prev) => !prev)
         router.refresh()
       }
     })
@@ -234,23 +237,23 @@ export function MemberEditDialog({
               <div className="flex items-center justify-between rounded-lg border px-3 py-2">
                 <div>
                   <p className="text-sm font-medium">
-                    {isUserAdmin ? 'Platform admin' : 'Standard user'}
+                    {currentIsAdmin ? 'Platform admin' : 'Standard user'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {isUserAdmin
+                    {currentIsAdmin
                       ? 'Can manage all organisations and users.'
                       : 'Access limited to their organisations.'}
                   </p>
                 </div>
                 <Button
                   type="button"
-                  variant={isUserAdmin ? 'destructive' : 'outline'}
+                  variant={currentIsAdmin ? 'destructive' : 'outline'}
                   size="sm"
                   onClick={handleAdminToggle}
                   disabled={adminTogglePending}
                   aria-busy={adminTogglePending}
                 >
-                  {adminTogglePending ? '…' : isUserAdmin ? 'Revoke admin' : 'Grant admin'}
+                  {adminTogglePending ? '…' : currentIsAdmin ? 'Revoke admin' : 'Grant admin'}
                 </Button>
               </div>
             </section>
