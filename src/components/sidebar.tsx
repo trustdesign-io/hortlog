@@ -13,7 +13,6 @@ import {
   FlaskConical,
   Building2,
   Menu,
-  Plus,
   ChevronDown,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -34,7 +33,8 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
 }
 
-function getOrgSlug(pathname: string): string | null {
+function getOrgSlug(pathname: string | null): string | null {
+  if (!pathname) return null
   const parts = pathname.split('/').filter(Boolean)
   const reserved = new Set(['dashboard', 'settings', 'orgs', 'admin', 'auth'])
   if (parts.length > 0 && !reserved.has(parts[0])) return parts[0]
@@ -54,7 +54,7 @@ function buildOrgNav(orgSlug: string): NavItem[] {
 
 const appNav: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/settings', label: 'Account', icon: Settings },
 ]
 
 const adminNav: NavItem[] = [
@@ -65,7 +65,7 @@ const adminNav: NavItem[] = [
 
 const mobileNav: NavItem[] = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/settings', label: 'Account', icon: Settings },
 ]
 
 interface NavLinksProps {
@@ -80,7 +80,7 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
   return (
     <nav className="flex flex-col gap-0.5 px-3" aria-label={label ?? 'Navigation'}>
       {items.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        const isActive = !!pathname && (pathname === item.href || pathname.startsWith(item.href + '/'))
         return (
           <Link
             key={item.href}
@@ -124,19 +124,6 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
   }, [open])
 
   if (user.memberships.length === 0) {
-    if (user.isAdmin) {
-      return (
-        <div className="px-3 py-2">
-          <Link
-            href="/orgs/new"
-            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Plus className="h-4 w-4" aria-hidden="true" />
-            New organisation
-          </Link>
-        </div>
-      )
-    }
     return (
       <div className="px-3 py-2">
         <p className="text-xs text-muted-foreground leading-relaxed">
@@ -185,21 +172,6 @@ function OrgSwitcher({ user, currentSlug }: OrgSwitcherProps) {
               </Link>
             </li>
           ))}
-          {user.isAdmin && (
-            <>
-              <li role="presentation" className="border-t my-1" />
-              <li>
-                <Link
-                  href="/orgs/new"
-                  onClick={() => setOpen(false)}
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  <Plus className="h-3.5 w-3.5" aria-hidden="true" />
-                  New organisation
-                </Link>
-              </li>
-            </>
-          )}
         </ul>
       )}
     </div>
@@ -243,7 +215,7 @@ function SidebarContent({ user, onNavigate }: SidebarContentProps) {
           <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
             Settings
           </p>
-          <NavLinks items={appNav} onNavigate={onNavigate} label="Settings navigation" />
+          <NavLinks items={appNav} onNavigate={onNavigate} label="Account navigation" />
         </div>
         {user.isAdmin && (
           <div>
@@ -273,7 +245,7 @@ function MobileBottomNav() {
         { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
         { href: `/${orgSlug}/views`, label: 'Views', icon: Grid3x3 },
         { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen },
-        { href: '/settings', label: 'Settings', icon: Settings },
+        { href: '/settings', label: 'Account', icon: Settings },
       ]
     : mobileNav
 
@@ -283,7 +255,7 @@ function MobileBottomNav() {
       className="fixed bottom-0 left-0 right-0 z-40 flex border-t bg-background md:hidden"
     >
       {items.map((item) => {
-        const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+        const isActive = !!pathname && (pathname === item.href || pathname.startsWith(item.href + '/'))
         return (
           <Link
             key={item.href}
