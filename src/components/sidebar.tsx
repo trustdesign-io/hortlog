@@ -215,7 +215,7 @@ function SidebarContent({ user, onNavigate }: SidebarContentProps) {
           <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
             Settings
           </p>
-          <NavLinks items={appNav} onNavigate={onNavigate} label="Settings navigation" />
+          <NavLinks items={appNav} onNavigate={onNavigate} label="Account navigation" />
         </div>
         {user.isAdmin && (
           <div>
