@@ -19,6 +19,8 @@ model User {
   updatedAt             DateTime     @updatedAt
 
   memberships           Membership[]
+  viewAssignments       ViewAssignment[]
+  viewAssignmentsGiven  ViewAssignment[] @relation("AssignedBy")
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -113,8 +115,27 @@ model View {
   primaryCollection   Collection?  @relation("PrimaryCollection", fields: [primaryCollectionId], references: [id], onDelete: SetNull)
 
   specimens           Specimen[]
+  assignments         ViewAssignment[]
 
   @@unique([slug, organisationId])
+}
+
+// ─── View assignments (member ↔ view responsibility) ─────────────────────────
+
+model ViewAssignment {
+  id           String   @id @default(cuid())
+  assignedAt   DateTime @default(now())
+
+  viewId       String
+  view         View     @relation(fields: [viewId], references: [id], onDelete: Cascade)
+
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  assignedById String
+  assignedBy   User     @relation("AssignedBy", fields: [assignedById], references: [id])
+
+  @@unique([viewId, userId])
 }
 
 // ─── Specimens ────────────────────────────────────────────────────────────────

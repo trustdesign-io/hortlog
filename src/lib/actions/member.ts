@@ -15,6 +15,9 @@ export async function inviteMember(
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_manage_members')
 
+  const roleRaw = formData.get('role')
+  const role: 'MANAGER' | 'MEMBER' = roleRaw === 'MANAGER' ? 'MANAGER' : 'MEMBER'
+
   const raw = (formData.get('email') as string | null) ?? ''
   const emails = [...new Set(raw.split(',').map(e => e.trim().toLowerCase()).filter(Boolean))]
 
@@ -43,14 +46,14 @@ export async function inviteMember(
         continue
       }
       await prisma.membership.create({
-        data: { userId: existingUser.id, organisationId: org.id, role: 'MEMBER' },
+        data: { userId: existingUser.id, organisationId: org.id, role },
       })
       continue
     }
 
     const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${APP_URL}/auth/callback`,
-      data: { pending_org_slug: orgSlug, pending_role: 'MEMBER' },
+      data: { pending_org_slug: orgSlug, pending_role: role },
     })
     if (error) {
       console.error('[inviteMember] Supabase invite error:', error)
