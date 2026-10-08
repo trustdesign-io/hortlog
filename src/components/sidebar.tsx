@@ -14,6 +14,7 @@ import {
   Building2,
   Menu,
   ChevronDown,
+  CheckSquare,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -48,6 +49,7 @@ function buildOrgNav(orgSlug: string): NavItem[] {
     { href: `/${orgSlug}/views`, label: 'Views', icon: Grid3x3 },
     { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen },
     { href: `/${orgSlug}/members`, label: 'Members', icon: Users },
+    { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
     { href: `/${orgSlug}/settings`, label: 'Org Settings', icon: Settings },
   ]
 }
@@ -244,7 +246,7 @@ function MobileBottomNav() {
         { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
         { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
         { href: `/${orgSlug}/views`, label: 'Views', icon: Grid3x3 },
-        { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen },
+        { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
         { href: '/settings', label: 'Account', icon: Settings },
       ]
     : mobileNav
