@@ -42,7 +42,7 @@ export function UserMenu({ user }: UserMenuProps) {
       </Avatar>
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium leading-none">
-          {user.name ?? 'User'}
+          {user.name ?? user.email}
         </p>
         <p className="truncate text-xs text-muted-foreground">{user.email}</p>
       </div>
