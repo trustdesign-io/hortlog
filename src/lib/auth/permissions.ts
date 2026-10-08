@@ -1,4 +1,5 @@
-import { redirect, notFound } from 'next/navigation'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
 import { getCurrentUser, type UserWithMemberships } from './current-user'
 import { hasCapability, type Capability } from './capabilities'
 import type { User } from '@prisma/client'
@@ -23,10 +24,23 @@ export async function requireAuth(): Promise<UserWithMemberships> {
   return user
 }
 
+/** Explains that the user can't open this organisation page. */
+export const NO_ACCESS_PATH = '/no-access'
+
+/** True if an organisation with this slug exists. */
+async function orgExists(orgSlug: string): Promise<boolean> {
+  const org = await prisma.organisation.findUnique({
+    where: { slug: orgSlug },
+    select: { id: true },
+  })
+  return org !== null
+}
+
 /**
  * Asserts the current user is a member of `orgSlug` and holds `capability`.
- * Triggers notFound() (404) on failure — this prevents information leakage
- * about whether an org exists to unauthorised visitors.
+ * Platform admins can access every organisation without a membership.
+ * On failure redirects to the no-access page. That page is the same whether the
+ * org is missing or just not theirs, so it doesn't reveal which orgs exist.
  * For API route handlers that need a true 403, use `checkOrgAccess` instead.
  */
 export async function requireOrgAccess(
@@ -39,10 +53,13 @@ export async function requireOrgAccess(
     (m) => m.organisation.slug === orgSlug,
   )
 
-  if (!membership) notFound()
+  if (!membership) {
+    if (user.isAdmin && (await orgExists(orgSlug))) return { user, orgSlug }
+    redirect(NO_ACCESS_PATH)
+  }
 
   const allowed = hasCapability(membership.role, capability, user.isAdmin)
-  if (!allowed) notFound()
+  if (!allowed) redirect(NO_ACCESS_PATH)
 
   return { user, orgSlug }
 }
@@ -62,7 +79,10 @@ export async function checkOrgAccess(
     (m) => m.organisation.slug === orgSlug,
   )
 
-  if (!membership) return { allowed: false, user: null }
+  if (!membership) {
+    if (user.isAdmin && (await orgExists(orgSlug))) return { allowed: true, user }
+    return { allowed: false, user: null }
+  }
 
   const allowed = hasCapability(membership.role, capability, user.isAdmin)
   if (!allowed) return { allowed: false, user: null }

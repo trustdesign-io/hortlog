@@ -42,8 +42,9 @@ export default async function OrgPage({ params }: OrgPageProps) {
   if (!org) return notFound()
 
   const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
-  const roleLabel =
-    membership?.role === 'MANAGER'
+  const roleLabel = !membership
+    ? 'Platform admin'
+    : membership.role === 'MANAGER'
       ? org.managerLabel
       : org.memberLabel
 
