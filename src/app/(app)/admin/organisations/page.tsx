@@ -8,6 +8,7 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { OrgCreateDialog } from './_components/org-create-dialog'
 import { OrgDeleteDialog } from './_components/org-delete-dialog'
+import { OrgEditDialog } from './_components/org-edit-dialog'
 
 const PAGE_SIZE = 50
 
@@ -45,6 +46,8 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
         id: true,
         name: true,
         slug: true,
+        managerLabel: true,
+        memberLabel: true,
         createdAt: true,
         _count: { select: { memberships: true, specimens: true, views: true } },
       },
@@ -130,6 +133,12 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
                       >
                         <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                       </Link>
+                      <OrgEditDialog
+                        orgSlug={org.slug}
+                        orgName={org.name}
+                        managerLabel={org.managerLabel}
+                        memberLabel={org.memberLabel}
+                      />
                       <OrgDeleteDialog orgSlug={org.slug} orgName={org.name} />
                     </div>
                   </td>

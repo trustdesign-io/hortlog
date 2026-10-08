@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { MemberInviteDialog } from './_components/member-invite-dialog'
 import { MemberDeleteDialog } from './_components/member-delete-dialog'
+import { MemberEditDialog } from './_components/member-edit-dialog'
 
 const PAGE_SIZE = 50
 
@@ -110,7 +111,11 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                   <td className="px-4 py-3">
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">{u.name ?? '—'}</p>
+                        <p className="font-medium">
+                          {u.name ?? (
+                            <span className="text-muted-foreground italic">Add name</span>
+                          )}
+                        </p>
                         {u.isAdmin && (
                           <Badge variant="secondary" className="text-xs">Admin</Badge>
                         )}
@@ -145,12 +150,23 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                     {u.createdAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3 text-right">
-                    {u.id !== user.id && (
-                      <MemberDeleteDialog
+                    <div className="flex items-center justify-end gap-1">
+                      <MemberEditDialog
                         userId={u.id}
-                        userName={u.name ?? u.email}
+                        userName={u.name}
+                        userEmail={u.email}
+                        isAdmin={u.isAdmin}
+                        memberships={u.memberships}
+                        allOrgs={orgs}
+                        currentUserId={user.id}
                       />
-                    )}
+                      {u.id !== user.id && (
+                        <MemberDeleteDialog
+                          userId={u.id}
+                          userName={u.name ?? u.email}
+                        />
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}
