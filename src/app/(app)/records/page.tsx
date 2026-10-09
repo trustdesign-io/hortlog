@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { redirect } from 'next/navigation'
 import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
@@ -11,6 +12,10 @@ export const metadata = {
 
 export default async function RecordsPage() {
   const user = await requireAuth()
+
+  if (user.isAdmin && user.memberships.length === 0) {
+    redirect('/admin/organisations')
+  }
 
   const records = await prisma.workRecord.findMany({
     where: { userId: user.id },

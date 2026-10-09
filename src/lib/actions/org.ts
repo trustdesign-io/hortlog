@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth, requireOrgAccess, isAdmin } from '@/lib/auth/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { uploadOrgLogo } from '@/lib/storage'
+import { RESERVED_ORG_SLUGS } from '@/lib/reserved-slugs'
 import type { ActionResult } from '@trustdesign/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
@@ -39,6 +40,12 @@ export async function createOrg(
     return {
       success: false,
       error: 'Slug may only contain lowercase letters, numbers, and hyphens.',
+    }
+  }
+  if (RESERVED_ORG_SLUGS.has(slug)) {
+    return {
+      success: false,
+      error: `The slug "${slug}" is reserved and cannot be used for an organisation.`,
     }
   }
   if (!managerEmail) return { success: false, error: 'First manager email is required.' }
@@ -91,7 +98,7 @@ export async function createOrg(
     }
   }
 
-  redirect('/dashboard')
+  redirect('/admin/organisations')
 }
 
 export async function updateOrgSettings(
@@ -114,6 +121,9 @@ export async function updateOrgSettings(
   }
   if (!SLUG_PATTERN.test(slug)) {
     return { success: false, error: 'Slug may only contain lowercase letters, numbers, and hyphens.' }
+  }
+  if (RESERVED_ORG_SLUGS.has(slug)) {
+    return { success: false, error: `The slug "${slug}" is reserved and cannot be used for an organisation.` }
   }
   if (!managerLabel) return { success: false, error: 'Manager label is required.' }
   if (managerLabel.length > 60) return { success: false, error: 'Manager label must be 60 characters or fewer.' }
