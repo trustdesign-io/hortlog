@@ -186,26 +186,6 @@ export async function adminUpdateUserName(
   return { success: true }
 }
 
-export async function adminSetUserAdmin(
-  userId: string,
-  makeAdmin: boolean,
-): Promise<ActionResult> {
-  const currentUser = await requireAuth()
-  if (!isAdmin(currentUser)) return { success: false, error: 'Admin access required.' }
-  if (currentUser.id === userId && !makeAdmin) {
-    return { success: false, error: 'You cannot remove your own admin flag.' }
-  }
-
-  if (!makeAdmin) {
-    const adminCount = await prisma.user.count({ where: { isAdmin: true } })
-    if (adminCount <= 1) return { success: false, error: 'Cannot remove the last platform admin.' }
-  }
-
-  await prisma.user.update({ where: { id: userId }, data: { isAdmin: makeAdmin } })
-
-  revalidatePath('/admin/members')
-  return { success: true }
-}
 
 export async function adminAddMembership(
   userId: string,

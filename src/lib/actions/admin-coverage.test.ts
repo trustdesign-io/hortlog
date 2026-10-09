@@ -37,6 +37,18 @@ function getUiSources(dirs: string[]): string {
   }).join('\n')
 }
 
+describe('Admin action security', () => {
+  const adminSrc = readFile(ADMIN_ACTIONS_FILE)
+
+  it('no exported admin action writes isAdmin via Prisma data', () => {
+    // platform-admin flag must only be changed via the database directly,
+    // never through a server action.
+    // [^}]* stops at the first closing brace so it only matches within a single
+    // data: { ... } block (safe against cross-function false positives).
+    expect(adminSrc).not.toMatch(/data:\s*\{[^}]*isAdmin\s*:/)
+  })
+})
+
 describe('Admin action coverage', () => {
   const adminSrc = readFile(ADMIN_ACTIONS_FILE)
   const exportedActions = getExportedFunctions(adminSrc)

@@ -65,7 +65,6 @@ import {
   adminCreateOrg,
   adminUpdateOrg,
   adminDeleteUser,
-  adminSetUserAdmin,
   adminAddMembership,
   adminRemoveMembership,
   adminInviteUser,
@@ -283,37 +282,6 @@ describe('adminDeleteUser', () => {
   })
 })
 
-// ─── adminSetUserAdmin ────────────────────────────────────────────────────────
-
-describe('adminSetUserAdmin', () => {
-  it('rejects non-admins', async () => {
-    requireAuth.mockResolvedValue(PLAIN_USER)
-    const result = await adminSetUserAdmin('u-other', true)
-    expect(result).toEqual({ success: false, error: 'Admin access required.' })
-  })
-
-  it('prevents removing your own admin flag', async () => {
-    requireAuth.mockResolvedValue(ADMIN_USER)
-    const result = await adminSetUserAdmin(ADMIN_USER.id, false)
-    expect(result).toEqual({ success: false, error: 'You cannot remove your own admin flag.' })
-  })
-
-  it('prevents removing the last platform admin', async () => {
-    requireAuth.mockResolvedValue(ADMIN_USER)
-    user.count.mockResolvedValue(1)
-    const result = await adminSetUserAdmin('u-other', false)
-    expect(result).toMatchObject({ success: false })
-    expect(result.success === false && result.error).toContain('last')
-  })
-
-  it('grants admin flag and returns success', async () => {
-    requireAuth.mockResolvedValue(ADMIN_USER)
-    user.update.mockResolvedValue({})
-    const result = await adminSetUserAdmin('u-other', true)
-    expect(result).toEqual({ success: true })
-    expect(user.update).toHaveBeenCalledWith({ where: { id: 'u-other' }, data: { isAdmin: true } })
-  })
-})
 
 // ─── adminAddMembership ───────────────────────────────────────────────────────
 
