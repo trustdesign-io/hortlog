@@ -4,6 +4,8 @@ import { prisma } from '@/lib/prisma'
 import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
 import { GaEvent } from '@/components/ga-event'
 import { truncateDescription } from '@/lib/seo'
+import { getCurrentUser } from '@/lib/auth/current-user'
+import { SpecimenWorkHistory } from '@/components/specimen-work-history'
 
 interface PublicSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -63,7 +65,10 @@ export async function generateMetadata({ params }: PublicSpecimenPageProps) {
 export default async function PublicSpecimenPage({ params }: PublicSpecimenPageProps) {
   const { org: orgSlug, specimen: specimenSlug } = await params
 
-  const data = await resolveData(orgSlug, specimenSlug)
+  const [data, currentUser] = await Promise.all([
+    resolveData(orgSlug, specimenSlug),
+    getCurrentUser(),
+  ])
   if (!data) return notFound()
 
   const { org, specimen } = data
@@ -72,6 +77,8 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
     { label: org.name, href: `/${orgSlug}` },
     { label: specimen.species.commonName, href: `/${orgSlug}/specimens/${specimenSlug}` },
   ]
+
+  const isMember = currentUser?.memberships.some((m) => m.organisation.slug === orgSlug)
 
   return (
     <>
@@ -90,7 +97,15 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
         specimen={{ accessionNumber: specimen.accessionNumber, notes: specimen.notes, imageUrl: specimen.imageUrl }}
         breadcrumbs={breadcrumbs}
         backHref={`/${orgSlug}`}
-      />
+      >
+        {isMember && currentUser && (
+          <SpecimenWorkHistory
+            orgSlug={orgSlug}
+            specimenId={specimen.id}
+            userId={currentUser.id}
+          />
+        )}
+      </SpecimenDetail>
     </>
   )
 }

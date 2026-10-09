@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Combobox,
@@ -58,6 +58,7 @@ export function MemberPicker({
   }
 
   const [inputValue, setInputValue] = useState(() => getMemberLabel(value))
+  const [prevValue, setPrevValue] = useState(value)
   const selected = value ? (members.find((m) => m.id === value) ?? null) : null
 
   // Base UI fires onValueChange then onInputValueChange when an item is selected.
@@ -65,13 +66,14 @@ export function MemberPicker({
   // instead of the item's full text content (which includes avatar fallback initials).
   const pendingLabel = useRef<string | null>(null)
 
-  // Sync inputValue if value is reset externally (e.g. form unmount/remount).
-  // pendingLabel is null between selection events, so this won't conflict.
-  useEffect(() => {
-    if (pendingLabel.current === null) {
-      setInputValue(getMemberLabel(value))
-    }
-  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
+  // Sync inputValue when value changes externally (e.g. form reset).
+  // Uses the setState-during-render pattern — safe because getMemberLabel(value)
+  // matches what handleInputValueChange would set after a selection, so React
+  // deduplicates the update and the extra render is absorbed.
+  if (value !== prevValue) {
+    setPrevValue(value)
+    setInputValue(getMemberLabel(value))
+  }
 
   function handleValueChange(v: string | null) {
     const newVal = v ?? ''

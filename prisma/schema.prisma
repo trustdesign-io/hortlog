@@ -20,9 +20,12 @@ model User {
 
   memberships           Membership[]
   viewAssignments       ViewAssignment[]
-  viewAssignmentsGiven  ViewAssignment[] @relation("AssignedBy")
-  assignedTasks         Task[]           @relation("AssignedTasks")
-  createdTasks          Task[]           @relation("CreatedTasks")
+  viewAssignmentsGiven  ViewAssignment[]   @relation("AssignedBy")
+  assignedTasks         Task[]             @relation("AssignedTasks")
+  createdTasks          Task[]             @relation("CreatedTasks")
+  workRecords           WorkRecord[]
+  workRecordEdits       WorkRecordEdit[]   @relation("WorkRecordEditedBy")
+  workLogEntryEdits     WorkLogEntryEdit[] @relation("WorkLogEntryEditedBy")
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -42,6 +45,7 @@ model Organisation {
   views          View[]
   collections    Collection[]
   tasks          Task[]
+  workRecords    WorkRecord[]
 }
 
 model Membership {
@@ -74,6 +78,7 @@ model Species {
   origin             String?
   description        String?
   conservationStatus String?
+  powoUrl            String?
   createdAt          DateTime   @default(now())
   updatedAt          DateTime   @updatedAt
 
@@ -191,6 +196,7 @@ model Specimen {
   view            View?        @relation(fields: [viewId], references: [id], onDelete: SetNull)
 
   collections     CollectionMembership[]
+  workRecords     WorkRecord[]
 
   @@unique([slug, organisationId])
 }
@@ -205,4 +211,115 @@ model CollectionMembership {
   collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
   @@id([specimenId, collectionId])
+}
+
+// ─── Work records ─────────────────────────────────────────────────────────────
+
+enum WorkAction {
+  PLANTED
+  POTTED_ON
+  REPOTTED
+  PRUNED
+  WATERED
+  FED
+  PROPAGATED
+  DIVIDED
+  STAKED
+  WEEDED
+  MULCHED
+  PEST_DISEASE_TREATMENT
+  LABELLED
+  SURVEYED
+  OTHER
+}
+
+// One per member per specimen. recordNumber is sequential per user (their personal record book).
+model WorkRecord {
+  id              String   @id @default(cuid())
+  recordNumber    Int
+
+  // Date of first work (date portion used; stored as DateTime for Prisma compatibility)
+  firstWorkedDate DateTime
+
+  // Species fields denormalised at record creation for archival integrity
+  scientificName  String
+  family          String?
+
+  // Botany-standard fields (all optional; null = not yet recorded)
+  determination   String?
+  labelText       String?
+  provenance      String?
+  workDone        String?
+  observed        String?
+  note            String?
+  sources         String?
+  openQuestions   String?
+
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  specimenId      String
+  specimen        Specimen     @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+
+  organisationId  String
+  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  logEntries      WorkLogEntry[]
+  editHistory     WorkRecordEdit[]
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, specimenId])
+  @@unique([userId, recordNumber])
+  @@index([specimenId])
+  @@index([userId])
+}
+
+model WorkLogEntry {
+  id           String     @id @default(cuid())
+  date         DateTime
+  action       WorkAction
+  actionNote   String?    // free text; always shown when action = OTHER
+  location     String?
+  text         String?
+
+  workRecordId String
+  workRecord   WorkRecord @relation(fields: [workRecordId], references: [id], onDelete: Cascade)
+
+  editHistory  WorkLogEntryEdit[]
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([workRecordId, date])
+  @@index([date])
+}
+
+model WorkRecordEdit {
+  id           String     @id @default(cuid())
+  field        String
+  oldValue     String?
+  newValue     String?
+  editedAt     DateTime   @default(now())
+
+  editedById   String
+  editedBy     User       @relation("WorkRecordEditedBy", fields: [editedById], references: [id])
+
+  workRecordId String
+  workRecord   WorkRecord @relation(fields: [workRecordId], references: [id], onDelete: Cascade)
+}
+
+model WorkLogEntryEdit {
+  id             String       @id @default(cuid())
+  field          String
+  oldValue       String?
+  newValue       String?
+  editedAt       DateTime     @default(now())
+
+  editedById     String
+  editedBy       User         @relation("WorkLogEntryEditedBy", fields: [editedById], references: [id])
+
+  workLogEntryId String
+  workLogEntry   WorkLogEntry @relation(fields: [workLogEntryId], references: [id], onDelete: Cascade)
 }
