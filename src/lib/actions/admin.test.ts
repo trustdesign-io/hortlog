@@ -8,6 +8,7 @@ const {
   revalidatePath,
   org,
   user,
+  workRecord,
   membership,
   adminDelete,
   adminInvite,
@@ -28,6 +29,9 @@ const {
     delete: vi.fn(),
     count: vi.fn(),
   },
+  workRecord: {
+    count: vi.fn(),
+  },
   membership: {
     create: vi.fn(),
     delete: vi.fn(),
@@ -45,7 +49,7 @@ vi.mock('@/lib/auth/permissions', () => ({
   isAdmin: (u: { isAdmin: boolean }) => u.isAdmin,
 }))
 vi.mock('@/lib/prisma', () => ({
-  prisma: { organisation: org, user, membership },
+  prisma: { organisation: org, user, membership, workRecord },
 }))
 vi.mock('@/lib/supabase/admin', () => ({
   createAdminClient: () => ({
@@ -252,25 +256,32 @@ describe('adminDeleteUser', () => {
     expect(result.success === false && result.error).toContain('last')
   })
 
-  it('deletes auth and db user then redirects', async () => {
+  it('deletes DB row first then auth, then redirects', async () => {
     requireAuth.mockResolvedValue(ADMIN_USER)
     user.count.mockResolvedValue(2)
     user.findUnique.mockResolvedValue({ isAdmin: false })
-    adminDelete.mockResolvedValue({ error: null })
     user.delete.mockResolvedValue({})
+    adminDelete.mockResolvedValue({ error: null })
+    const callOrder: string[] = []
+    user.delete.mockImplementation(() => { callOrder.push('db'); return Promise.resolve({}) })
+    adminDelete.mockImplementation(() => { callOrder.push('auth'); return Promise.resolve({ error: null }) })
     await expect(adminDeleteUser('u-other')).rejects.toThrow('NEXT_REDIRECT')
-    expect(adminDelete).toHaveBeenCalledWith('u-other')
     expect(user.delete).toHaveBeenCalledWith({ where: { id: 'u-other' } })
+    expect(adminDelete).toHaveBeenCalledWith('u-other')
+    expect(callOrder).toEqual(['db', 'auth'])
   })
 
-  it('returns error when Supabase delete fails', async () => {
+  it('returns error (with db already deleted) when Supabase auth delete fails', async () => {
     requireAuth.mockResolvedValue(ADMIN_USER)
     user.count.mockResolvedValue(2)
     user.findUnique.mockResolvedValue({ isAdmin: false })
-    adminDelete.mockResolvedValue({ error: new Error('auth failed') })
+    user.delete.mockResolvedValue({})
+    adminDelete.mockResolvedValue({ error: { message: 'auth failed' } })
     const result = await adminDeleteUser('u-other')
     expect(result).toMatchObject({ success: false })
-    expect(user.delete).not.toHaveBeenCalled()
+    expect(result.success === false && result.error).toContain('auth failed')
+    // DB row IS deleted even though auth failed
+    expect(user.delete).toHaveBeenCalled()
   })
 
   it('returns error when user not found', async () => {

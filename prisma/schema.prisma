@@ -141,8 +141,8 @@ model ViewAssignment {
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  assignedById String
-  assignedBy   User     @relation("AssignedBy", fields: [assignedById], references: [id])
+  assignedById String?
+  assignedBy   User?    @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
 
   @@unique([viewId, userId])
 }
@@ -163,8 +163,8 @@ model Task {
 
   assignees      TaskAssignee[]
 
-  createdById    String
-  createdBy      User         @relation("CreatedTasks", fields: [createdById], references: [id])
+  createdById    String?
+  createdBy      User?        @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([organisationId])
 }
@@ -179,8 +179,8 @@ model TaskAssignee {
   userId       String
   user         User     @relation("AssignedTasks", fields: [userId], references: [id], onDelete: Cascade)
 
-  assignedById String
-  assignedBy   User     @relation("TaskAssignedBy", fields: [assignedById], references: [id])
+  assignedById String?
+  assignedBy   User?    @relation("TaskAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
 
   @@unique([taskId, userId])
   @@index([userId])
@@ -325,8 +325,8 @@ model WorkRecordEdit {
   newValue     String?
   editedAt     DateTime   @default(now())
 
-  editedById   String
-  editedBy     User       @relation("WorkRecordEditedBy", fields: [editedById], references: [id])
+  editedById   String?
+  editedBy     User?      @relation("WorkRecordEditedBy", fields: [editedById], references: [id], onDelete: SetNull)
 
   workRecordId String
   workRecord   WorkRecord @relation(fields: [workRecordId], references: [id], onDelete: Cascade)
@@ -339,8 +339,8 @@ model WorkLogEntryEdit {
   newValue       String?
   editedAt       DateTime     @default(now())
 
-  editedById     String
-  editedBy       User         @relation("WorkLogEntryEditedBy", fields: [editedById], references: [id])
+  editedById     String?
+  editedBy       User?        @relation("WorkLogEntryEditedBy", fields: [editedById], references: [id], onDelete: SetNull)
 
   workLogEntryId String
   workLogEntry   WorkLogEntry @relation(fields: [workLogEntryId], references: [id], onDelete: Cascade)

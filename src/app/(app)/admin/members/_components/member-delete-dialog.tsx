@@ -19,9 +19,10 @@ import { adminDeleteUser } from '@/lib/actions/admin'
 interface MemberDeleteDialogProps {
   userId: string
   userName: string
+  workRecordCount: number
 }
 
-export function MemberDeleteDialog({ userId, userName }: MemberDeleteDialogProps) {
+export function MemberDeleteDialog({ userId, userName, workRecordCount }: MemberDeleteDialogProps) {
   const [pending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
@@ -31,6 +32,10 @@ export function MemberDeleteDialog({ userId, userName }: MemberDeleteDialogProps
       if (result && !result.success) setError(result.error ?? 'Something went wrong.')
     })
   }
+
+  const recordsNote = workRecordCount > 0
+    ? ` Their ${workRecordCount} work record${workRecordCount === 1 ? '' : 's'} will also be permanently deleted.`
+    : ''
 
   return (
     <AlertDialog>
@@ -50,8 +55,9 @@ export function MemberDeleteDialog({ userId, userName }: MemberDeleteDialogProps
         <AlertDialogHeader>
           <AlertDialogTitle>Delete user</AlertDialogTitle>
           <AlertDialogDescription>
-            Permanently delete <strong>{userName}</strong>? Their account and all data will be
-            removed. This cannot be undone.
+            Permanently delete <strong>{userName}</strong>? Their account will be removed and they will
+            no longer be able to sign in.{recordsNote} Tasks and edits they created will remain, attributed
+            to &ldquo;Former member&rdquo;. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
