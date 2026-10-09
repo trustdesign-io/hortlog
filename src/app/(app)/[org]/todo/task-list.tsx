@@ -99,13 +99,14 @@ function AssigneeAvatars({ assignees }: { assignees: Assignee[] }) {
 // ─── Multi-select assignee picker (chips + combobox) ─────────────────────────
 
 interface MultiPickerProps {
+  id?: string
   members: OrgMember[]
   values: string[]
   onChange: (ids: string[]) => void
   disabled?: boolean
 }
 
-function MultiAssigneePicker({ members, values, onChange, disabled }: MultiPickerProps) {
+function MultiAssigneePicker({ id, members, values, onChange, disabled }: MultiPickerProps) {
   const [pickerValue, setPickerValue] = useState('')
 
   function handleAdd(id: string) {
@@ -157,6 +158,7 @@ function MultiAssigneePicker({ members, values, onChange, disabled }: MultiPicke
       ))}
       {unselectedMembers.length > 0 && (
         <MemberPicker
+          id={id}
           members={unselectedMembers}
           value={pickerValue}
           onValueChange={handleAdd}
@@ -234,8 +236,9 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label>Assignees</Label>
+        <Label htmlFor="task-assignees">Assignees</Label>
         <MultiAssigneePicker
+          id="task-assignees"
           members={orgMembers}
           values={assigneeIds}
           onChange={setAssigneeIds}

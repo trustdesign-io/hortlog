@@ -202,6 +202,7 @@ describe('updateTask', () => {
     expect($transaction).toHaveBeenCalledOnce()
     const [ops] = $transaction.mock.calls[0]
     expect(ops).toHaveLength(2)
+    expect(taskAssignee.deleteMany).toHaveBeenCalledWith({ where: { taskId: 'task-1' } })
     expect(revalidatePath).toHaveBeenCalledWith('/test-org/todo')
   })
 

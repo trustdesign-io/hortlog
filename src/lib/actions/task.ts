@@ -39,7 +39,7 @@ export async function createTask(
   const dueDate = dueDateRaw ? new Date(dueDateRaw) : null
   if (dueDate && isNaN(dueDate.getTime())) return { success: false, error: 'Invalid due date.' }
 
-  const assigneeIds = (formData.getAll('assigneeId') as string[]).filter(Boolean)
+  const assigneeIds = [...new Set((formData.getAll('assigneeId') as string[]).filter(Boolean))]
 
   const org = await getOrg(orgSlug)
   if (!org) return { success: false, error: 'Organisation not found.' }
@@ -90,7 +90,7 @@ export async function updateTask(
   const dueDate = dueDateRaw ? new Date(dueDateRaw) : null
   if (dueDate && isNaN(dueDate.getTime())) return { success: false, error: 'Invalid due date.' }
 
-  const assigneeIds = (formData.getAll('assigneeId') as string[]).filter(Boolean)
+  const assigneeIds = [...new Set((formData.getAll('assigneeId') as string[]).filter(Boolean))]
 
   const org = await getOrg(orgSlug)
   if (!org) return { success: false, error: 'Organisation not found.' }
