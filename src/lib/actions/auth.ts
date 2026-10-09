@@ -4,19 +4,20 @@ import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { SignInSchema, SignUpSchema } from '@trustdesign/shared/schemas'
 import type { ActionResult } from '@trustdesign/shared/types'
+import { getLandingPath } from '@/lib/auth/landing'
 
 export async function signInWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
   const result = SignInSchema.safeParse({ email: formData.get('email'), password: formData.get('password') })
   if (!result.success) return { success: false, error: result.error.issues[0].message }
   const supabase = await createClient()
-  const { error } = await supabase.auth.signInWithPassword(result.data)
+  const { data: { user }, error } = await supabase.auth.signInWithPassword(result.data)
   if (error) {
     if (error.message.toLowerCase().includes('email not confirmed')) {
       redirect(`/check-email?email=${encodeURIComponent(result.data.email)}`)
     }
     return { success: false, error: 'Invalid email or password.' }
   }
-  redirect('/records')
+  redirect(await getLandingPath(user!.id))
 }
 
 export async function signUpWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
