@@ -59,5 +59,5 @@ export async function acceptInvite(
     }
   }
 
-  redirect('/dashboard')
+  redirect('/records')
 }

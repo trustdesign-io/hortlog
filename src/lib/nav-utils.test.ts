@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getActiveHref } from './nav-utils'
+import { getActiveHref, getOrgSlugFromPath } from './nav-utils'
 
 const orgNav = [
   { href: '/demo' },
@@ -12,7 +12,6 @@ const orgNav = [
 ]
 
 const appNav = [
-  { href: '/dashboard' },
   { href: '/records' },
   { href: '/settings' },
 ]
@@ -68,10 +67,6 @@ describe('getActiveHref', () => {
 
   // ─── App nav ──────────────────────────────────────────────────────────────────
 
-  it('matches Dashboard on /dashboard', () => {
-    expect(getActiveHref(appNav, '/dashboard')).toBe('/dashboard')
-  })
-
   it('matches Account on /settings', () => {
     expect(getActiveHref(appNav, '/settings')).toBe('/settings')
   })
@@ -113,5 +108,55 @@ describe('getActiveHref', () => {
 
   it('unknown nested path falls back to the longest matching prefix', () => {
     expect(getActiveHref(orgNav, '/demo/nonexistent/deep')).toBe('/demo')
+  })
+})
+
+// ─── getOrgSlugFromPath ───────────────────────────────────────────────────────
+
+describe('getOrgSlugFromPath', () => {
+  const knownSlugs = ['demo', 'acme']
+
+  it('returns null for null pathname', () => {
+    expect(getOrgSlugFromPath(null, knownSlugs)).toBeNull()
+  })
+
+  it('returns null for an empty knownSlugs list', () => {
+    expect(getOrgSlugFromPath('/demo', [])).toBeNull()
+  })
+
+  it('returns null when first segment is not a known org slug — /records', () => {
+    expect(getOrgSlugFromPath('/records', knownSlugs)).toBeNull()
+  })
+
+  it('returns null when first segment is not a known org slug — /records/001', () => {
+    expect(getOrgSlugFromPath('/records/001', knownSlugs)).toBeNull()
+  })
+
+  it('returns null when first segment is not a known org slug — /settings', () => {
+    expect(getOrgSlugFromPath('/settings', knownSlugs)).toBeNull()
+  })
+
+  it('returns null when first segment is not a known org slug — /admin/members', () => {
+    expect(getOrgSlugFromPath('/admin/members', knownSlugs)).toBeNull()
+  })
+
+  it('returns null when first segment is not a known org slug — /no-access', () => {
+    expect(getOrgSlugFromPath('/no-access', knownSlugs)).toBeNull()
+  })
+
+  it('returns the slug on /{org}', () => {
+    expect(getOrgSlugFromPath('/demo', knownSlugs)).toBe('demo')
+  })
+
+  it('returns the slug on /{org}/todo', () => {
+    expect(getOrgSlugFromPath('/demo/todo', knownSlugs)).toBe('demo')
+  })
+
+  it('returns the slug on a deep path', () => {
+    expect(getOrgSlugFromPath('/acme/specimens/new', knownSlugs)).toBe('acme')
+  })
+
+  it('returns null for a slug that is not in knownSlugs', () => {
+    expect(getOrgSlugFromPath('/unknown', knownSlugs)).toBeNull()
   })
 })

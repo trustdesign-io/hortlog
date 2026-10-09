@@ -16,7 +16,7 @@ export async function signInWithEmail(_prevState: ActionResult, formData: FormDa
     }
     return { success: false, error: 'Invalid email or password.' }
   }
-  redirect('/dashboard')
+  redirect('/records')
 }
 
 export async function signUpWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {

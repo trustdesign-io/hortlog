@@ -1,4 +1,20 @@
 /**
+ * Returns the first URL segment if it appears in knownSlugs, otherwise null.
+ *
+ * Used by the sidebar to determine whether the current path is inside an
+ * organisation, validated against the slugs the user actually has access to.
+ */
+export function getOrgSlugFromPath(
+  pathname: string | null,
+  knownSlugs: string[],
+): string | null {
+  if (!pathname) return null
+  const first = pathname.split('/').filter(Boolean)[0]
+  if (!first) return null
+  return knownSlugs.includes(first) ? first : null
+}
+
+/**
  * Returns the href of the most-specific nav item that matches `pathname`.
  *
  * An item matches if pathname equals its href exactly, or starts with

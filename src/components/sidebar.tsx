@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -18,7 +18,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getActiveHref } from '@/lib/nav-utils'
+import { getActiveHref, getOrgSlugFromPath } from '@/lib/nav-utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { UserMenu } from '@/components/user-menu'
@@ -39,14 +39,6 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
 }
 
-function getOrgSlug(pathname: string | null): string | null {
-  if (!pathname) return null
-  const parts = pathname.split('/').filter(Boolean)
-  const reserved = new Set(['dashboard', 'settings', 'orgs', 'admin', 'auth'])
-  if (parts.length > 0 && !reserved.has(parts[0])) return parts[0]
-  return null
-}
-
 function buildOrgNav(orgSlug: string): NavItem[] {
   return [
     { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
@@ -59,9 +51,11 @@ function buildOrgNav(orgSlug: string): NavItem[] {
   ]
 }
 
-const appNav: NavItem[] = [
-  { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+const myRecordNav: NavItem[] = [
   { href: '/records', label: 'My record', icon: ClipboardList },
+]
+
+const accountNav: NavItem[] = [
   { href: '/settings', label: 'Account', icon: Settings },
 ]
 
@@ -71,11 +65,7 @@ const adminNav: NavItem[] = [
   { href: '/admin/species', label: 'Species', icon: FlaskConical },
 ]
 
-const mobileNav: NavItem[] = [
-  { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
-  { href: '/records', label: 'My record', icon: ClipboardList },
-  { href: '/settings', label: 'Account', icon: Settings },
-]
+const mobileNav: NavItem[] = [...myRecordNav, ...accountNav]
 
 interface NavLinksProps {
   items: NavItem[]
@@ -120,7 +110,7 @@ const ROLE_DISPLAY: Record<string, string> = {
 
 interface OrgSwitcherProps {
   user: UserWithMemberships
-  currentSlug: string | null
+  currentSlug: string
   allOrgs?: OrgOption[]
 }
 
@@ -144,35 +134,6 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
     if (open) document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [open])
-
-  if (!isAdmin && user.memberships.length === 0) {
-    return (
-      <div className="px-3 py-2">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          You&apos;re not part of an organisation yet. If you&apos;re expecting an invitation,
-          check your email, or contact{' '}
-          <a href="mailto:danny@trustdesign.io" className="underline underline-offset-2">
-            danny@trustdesign.io
-          </a>
-          .
-        </p>
-      </div>
-    )
-  }
-
-  if (isAdmin && orgsToShow.length === 0) {
-    return (
-      <div className="px-3 py-2">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          No organisations yet.{' '}
-          <Link href="/admin/organisations" className="underline underline-offset-2">
-            Create one
-          </Link>
-          .
-        </p>
-      </div>
-    )
-  }
 
   return (
     <div className="relative px-3 py-2" ref={ref}>
@@ -231,26 +192,38 @@ interface SidebarContentProps {
   allOrgs?: OrgOption[]
 }
 
+function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefined): string[] {
+  return user.isAdmin && allOrgs
+    ? allOrgs.map(o => o.slug)
+    : user.memberships.map(m => m.organisation.slug)
+}
+
 function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
   const pathname = usePathname()
-  const orgSlug = getOrgSlug(pathname)
+  const knownSlugs = getKnownSlugs(user, allOrgs)
+  const orgSlug = getOrgSlugFromPath(pathname, knownSlugs)
   const orgNav = orgSlug ? buildOrgNav(orgSlug) : []
 
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b px-4">
-        <Logo href="/dashboard" />
+        <Logo href="/records" />
         <ThemeToggle />
       </div>
 
-      {/* Org switcher */}
-      <div className="border-b py-2">
-        <OrgSwitcher user={user} currentSlug={orgSlug} allOrgs={allOrgs} />
-      </div>
+      {/* Org context — only when inside an org */}
+      {orgSlug !== null && (
+        <div className="border-b py-2">
+          <OrgSwitcher user={user} currentSlug={orgSlug} allOrgs={allOrgs} />
+        </div>
+      )}
 
       {/* Nav */}
       <div className="flex-1 overflow-y-auto py-3 flex flex-col gap-4">
+        {/* My record — always first */}
+        <NavLinks items={myRecordNav} onNavigate={onNavigate} label="Personal navigation" />
+
         {orgNav.length > 0 && (
           <div>
             <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
@@ -259,12 +232,14 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
             <NavLinks items={orgNav} onNavigate={onNavigate} label="Organisation navigation" />
           </div>
         )}
+
         <div>
           <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
             Settings
           </p>
-          <NavLinks items={appNav} onNavigate={onNavigate} label="Account navigation" />
+          <NavLinks items={accountNav} onNavigate={onNavigate} label="Account navigation" />
         </div>
+
         {user.isAdmin && (
           <div>
             <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
@@ -283,9 +258,15 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
   )
 }
 
-function MobileBottomNav() {
+interface MobileBottomNavProps {
+  user: UserWithMemberships
+  allOrgs?: OrgOption[]
+}
+
+function MobileBottomNav({ user, allOrgs }: MobileBottomNavProps) {
   const pathname = usePathname()
-  const orgSlug = getOrgSlug(pathname)
+  const knownSlugs = getKnownSlugs(user, allOrgs)
+  const orgSlug = getOrgSlugFromPath(pathname, knownSlugs)
 
   const items: NavItem[] = orgSlug
     ? [
@@ -337,7 +318,7 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
 
       {/* Mobile top bar */}
       <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
-        <Logo href="/dashboard" />
+        <Logo href="/records" />
         <div className="flex items-center gap-1">
           <ThemeToggle />
           <Sheet open={open} onOpenChange={setOpen}>
@@ -361,7 +342,7 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
       </div>
 
       {/* Mobile bottom nav */}
-      <MobileBottomNav />
+      <MobileBottomNav user={user} allOrgs={allOrgs} />
     </>
   )
 }
