@@ -55,6 +55,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
             organisation: { select: { name: true, slug: true } },
           },
         },
+        _count: { select: { workRecords: true } },
       },
     }),
     prisma.user.count({ where }),
@@ -162,6 +163,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                         <MemberDeleteDialog
                           userId={u.id}
                           userName={u.name ?? u.email}
+                          workRecordCount={u._count.workRecords}
                         />
                       )}
                     </div>

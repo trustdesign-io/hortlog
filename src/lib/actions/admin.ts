@@ -158,11 +158,29 @@ export async function adminDeleteUser(userId: string): Promise<ActionResult> {
     return { success: false, error: 'Cannot delete the last platform admin.' }
   }
 
+  // Delete DB row first so FK constraints are satisfied before removing the auth identity.
+  // The five audit FK fields are now nullable (SetNull), so related records are preserved.
+  // WorkRecords cascade-delete with the User row (owned data).
+  try {
+    await prisma.user.delete({ where: { id: userId } })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
+      return { success: false, error: 'User not found.' }
+    }
+    throw err
+  }
+
+  // Auth deletion is a best-effort follow-up. If it fails the admin can retry since the
+  // DB row is already gone and a fresh invite to the same email will work.
   const supabase = createAdminClient()
   const { error: authError } = await supabase.auth.admin.deleteUser(userId)
-  if (authError) return { success: false, error: 'Failed to delete user from authentication.' }
-
-  await prisma.user.delete({ where: { id: userId } })
+  if (authError) {
+    revalidatePath('/admin/members')
+    return {
+      success: false,
+      error: `User data deleted but authentication removal failed: ${authError.message}. The user cannot sign in. You may retry this action to complete the cleanup.`,
+    }
+  }
 
   revalidatePath('/admin/members')
   redirect('/admin/members')
