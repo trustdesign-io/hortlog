@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
+import { getLandingPath } from '@/lib/auth/landing'
 import { Logo } from '@/components/layout/logo'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ScientificName } from '@/components/ui/scientific-name'
@@ -23,7 +24,7 @@ export default async function HomePage() {
   } = await supabase.auth.getUser()
 
   if (user) {
-    redirect('/records')
+    redirect(await getLandingPath(user.id))
   }
 
   return (
