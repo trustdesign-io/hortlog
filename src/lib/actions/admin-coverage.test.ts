@@ -42,8 +42,10 @@ describe('Admin action security', () => {
 
   it('no exported admin action writes isAdmin via Prisma data', () => {
     // platform-admin flag must only be changed via the database directly,
-    // never through a server action. Catches both inline and multiline data blocks.
-    expect(adminSrc).not.toMatch(/data:\s*\{[\s\S]*?isAdmin\s*:/m)
+    // never through a server action.
+    // [^}]* stops at the first closing brace so it only matches within a single
+    // data: { ... } block (safe against cross-function false positives).
+    expect(adminSrc).not.toMatch(/data:\s*\{[^}]*isAdmin\s*:/)
   })
 })
 
