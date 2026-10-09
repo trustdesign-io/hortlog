@@ -1,7 +1,6 @@
-import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { WORK_ACTION_LABELS } from '@/lib/actions/work-record'
+import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { PrintButton } from '@/components/print-button'
 

@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
-import { recordWork, WORK_ACTION_LABELS } from '@/lib/actions/work-record'
+import { recordWork } from '@/lib/actions/work-record'
+import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 import type { ActionResult } from '@trustdesign/shared/types'
 
 interface RecordWorkFormProps {

@@ -7,24 +7,31 @@ const {
   revalidatePath,
   org,
   task,
+  taskAssignee,
   membership,
-} = vi.hoisted(() => ({
-  requireOrgAccess: vi.fn(),
-  revalidatePath: vi.fn(),
-  org: { findUnique: vi.fn() },
-  task: {
-    create: vi.fn(),
-    findUnique: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-  },
-  membership: { findFirst: vi.fn() },
-}))
+  $transaction,
+} = vi.hoisted(() => {
+  const $transaction = vi.fn((ops: unknown[]) => Promise.all(ops))
+  return {
+    requireOrgAccess: vi.fn(),
+    revalidatePath: vi.fn(),
+    org: { findUnique: vi.fn() },
+    task: {
+      create: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
+    },
+    taskAssignee: { deleteMany: vi.fn() },
+    membership: { findMany: vi.fn() },
+    $transaction,
+  }
+})
 
 vi.mock('next/cache', () => ({ revalidatePath }))
 vi.mock('@/lib/auth/permissions', () => ({ requireOrgAccess }))
 vi.mock('@/lib/prisma', () => ({
-  prisma: { organisation: org, task, membership },
+  prisma: { organisation: org, task, taskAssignee, membership, $transaction },
 }))
 
 import { createTask, updateTask, setTaskStatus, deleteTask } from './task'
@@ -35,9 +42,15 @@ const MANAGER = { id: 'u-mgr', email: 'mgr@example.com', isAdmin: false, members
 const ORG = { id: 'org-1', slug: 'test-org' }
 const TASK = { id: 'task-1', organisationId: 'org-1', title: 'Fix the fence' }
 
-function fd(fields: Record<string, string>): FormData {
+function fd(fields: Record<string, string | string[]>): FormData {
   const f = new FormData()
-  Object.entries(fields).forEach(([k, v]) => f.set(k, v))
+  for (const [k, v] of Object.entries(fields)) {
+    if (Array.isArray(v)) {
+      for (const val of v) f.append(k, val)
+    } else {
+      f.set(k, v)
+    }
+  }
   return f
 }
 
@@ -45,6 +58,15 @@ beforeEach(() => {
   vi.clearAllMocks()
   requireOrgAccess.mockResolvedValue({ user: MANAGER, orgSlug: 'test-org' })
   org.findUnique.mockResolvedValue(ORG)
+  // Default: membership check returns all requested members (valid)
+  membership.findMany.mockImplementation(({ where }: { where: { userId: { in: string[] } } }) =>
+    Promise.resolve(where.userId.in.map((id: string) => ({ userId: id }))),
+  )
+  task.findUnique.mockResolvedValue(TASK)
+  task.create.mockResolvedValue({ id: 'task-1' })
+  task.update.mockResolvedValue(TASK)
+  task.delete.mockResolvedValue(TASK)
+  taskAssignee.deleteMany.mockResolvedValue({ count: 0 })
 })
 
 // ─── createTask ───────────────────────────────────────────────────────────────
@@ -67,9 +89,12 @@ describe('createTask', () => {
   })
 
   it('returns error when assignee is not an org member', async () => {
-    membership.findFirst.mockResolvedValue(null)
+    membership.findMany.mockResolvedValue([]) // 1 requested, 0 found
     const result = await createTask('test-org', null, fd({ title: 'Task', assigneeId: 'u-other' }))
-    expect(result).toEqual({ success: false, error: 'Assignee is not a member of this organisation.' })
+    expect(result).toEqual({
+      success: false,
+      error: 'One or more assignees are not members of this organisation.',
+    })
   })
 
   it('returns error for invalid due date', async () => {
@@ -77,45 +102,62 @@ describe('createTask', () => {
     expect(result).toEqual({ success: false, error: 'Invalid due date.' })
   })
 
-  it('creates task with minimal fields', async () => {
-    task.create.mockResolvedValue({ id: 'task-1' })
+  it('creates task with no assignees', async () => {
     const result = await createTask('test-org', null, fd({ title: 'My task' }))
     expect(result).toEqual({ success: true })
     expect(task.create).toHaveBeenCalledWith({
-      data: {
+      data: expect.objectContaining({
         title: 'My task',
         description: null,
         dueDate: null,
-        assigneeId: null,
         organisationId: ORG.id,
         createdById: MANAGER.id,
-      },
+      }),
     })
+    const createArg = task.create.mock.calls[0][0]
+    expect(createArg.data.assignees).toBeUndefined()
     expect(revalidatePath).toHaveBeenCalledWith('/test-org/todo')
   })
 
-  it('creates task with all optional fields', async () => {
-    membership.findFirst.mockResolvedValue({ id: 'm1' })
-    task.create.mockResolvedValue({ id: 'task-2' })
-
-    await createTask('test-org', null, fd({
-      title: 'Full task',
-      description: 'A description',
-      dueDate: '2026-12-01',
-      assigneeId: 'u-member',
-    }))
+  it('creates task with a single assignee', async () => {
+    await createTask('test-org', null, fd({ title: 'Task', assigneeId: 'u-member' }))
 
     expect(task.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        title: 'Full task',
-        description: 'A description',
-        assigneeId: 'u-member',
+        assignees: {
+          create: [{ userId: 'u-member', assignedById: MANAGER.id }],
+        },
       }),
     })
   })
 
-  it('creates task cross-org isolation: uses org from slug not from user', async () => {
-    task.create.mockResolvedValue({ id: 'task-3' })
+  it('creates task with multiple assignees', async () => {
+    await createTask('test-org', null, fd({ title: 'Task', assigneeId: ['u-a', 'u-b'] }))
+
+    expect(task.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        assignees: {
+          create: [
+            { userId: 'u-a', assignedById: MANAGER.id },
+            { userId: 'u-b', assignedById: MANAGER.id },
+          ],
+        },
+      }),
+    })
+  })
+
+  it('rejects when only some assignees are org members', async () => {
+    // 2 requested, only 1 found
+    membership.findMany.mockResolvedValue([{ userId: 'u-a' }])
+    const result = await createTask('test-org', null, fd({ title: 'Task', assigneeId: ['u-a', 'u-outsider'] }))
+    expect(result).toEqual({
+      success: false,
+      error: 'One or more assignees are not members of this organisation.',
+    })
+    expect(task.create).not.toHaveBeenCalled()
+  })
+
+  it('uses org from slug, not from user (cross-org isolation)', async () => {
     await createTask('test-org', null, fd({ title: 'Task' }))
     expect(task.create).toHaveBeenCalledWith({
       data: expect.objectContaining({ organisationId: 'org-1' }),
@@ -137,23 +179,41 @@ describe('updateTask', () => {
     expect(result).toEqual({ success: false, error: 'Task not found.' })
   })
 
-  it('rejects cross-org access: task in a different org', async () => {
+  it('rejects cross-org access', async () => {
     task.findUnique.mockResolvedValue(null)
     const result = await updateTask('test-org', 'task-other', null, fd({ title: 'Hacked' }))
     expect(result).toEqual({ success: false, error: 'Task not found.' })
-    expect(task.update).not.toHaveBeenCalled()
+    expect($transaction).not.toHaveBeenCalled()
   })
 
-  it('updates task successfully', async () => {
-    task.findUnique.mockResolvedValue(TASK)
-    task.update.mockResolvedValue({ id: 'task-1' })
+  it('returns error when an assignee is not an org member', async () => {
+    membership.findMany.mockResolvedValue([]) // invalid
+    const result = await updateTask('test-org', 'task-1', null, fd({ title: 'Task', assigneeId: 'u-bad' }))
+    expect(result).toEqual({
+      success: false,
+      error: 'One or more assignees are not members of this organisation.',
+    })
+    expect($transaction).not.toHaveBeenCalled()
+  })
 
+  it('updates task with no assignees: deletes old, sets no new', async () => {
     const result = await updateTask('test-org', 'task-1', null, fd({ title: 'Updated title' }))
     expect(result).toEqual({ success: true })
-    expect(task.update).toHaveBeenCalledWith({
-      where: { id: 'task-1', organisationId: ORG.id },
-      data: expect.objectContaining({ title: 'Updated title' }),
-    })
+    expect($transaction).toHaveBeenCalledOnce()
+    const [ops] = $transaction.mock.calls[0]
+    expect(ops).toHaveLength(2)
+    expect(revalidatePath).toHaveBeenCalledWith('/test-org/todo')
+  })
+
+  it('updates task with multiple assignees atomically', async () => {
+    const result = await updateTask(
+      'test-org',
+      'task-1',
+      null,
+      fd({ title: 'Updated', assigneeId: ['u-a', 'u-b'] }),
+    )
+    expect(result).toEqual({ success: true })
+    expect($transaction).toHaveBeenCalledOnce()
   })
 })
 
@@ -172,7 +232,6 @@ describe('setTaskStatus', () => {
   })
 
   it('marks task as done', async () => {
-    task.findUnique.mockResolvedValue(TASK)
     task.update.mockResolvedValue({ ...TASK, status: 'DONE' })
 
     const result = await setTaskStatus('test-org', 'task-1', 'DONE')
@@ -218,7 +277,7 @@ describe('deleteTask', () => {
     expect(task.delete).not.toHaveBeenCalled()
   })
 
-  it('rejects cross-org deletion: task belongs to a different org', async () => {
+  it('rejects cross-org deletion', async () => {
     task.findUnique.mockResolvedValue(null)
     const result = await deleteTask('test-org', 'task-other-org')
     expect(result).toEqual({ success: false, error: 'Task not found.' })
@@ -226,9 +285,6 @@ describe('deleteTask', () => {
   })
 
   it('deletes task and revalidates', async () => {
-    task.findUnique.mockResolvedValue(TASK)
-    task.delete.mockResolvedValue(TASK)
-
     const result = await deleteTask('test-org', 'task-1')
     expect(result).toEqual({ success: true })
     expect(task.delete).toHaveBeenCalledWith({

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { WorkAction, WORK_ACTION_LABELS } from './work-record'
+import { WorkAction, WORK_ACTION_LABELS } from '../work-record-constants'
 
 // Server actions require Prisma + Supabase — integration tested via E2E.
 // This file covers the exported constants and enum shape.

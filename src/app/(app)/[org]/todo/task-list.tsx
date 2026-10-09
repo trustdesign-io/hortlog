@@ -19,8 +19,15 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { MemberPicker, getMemberInitials } from '@/components/member-picker'
-import { Plus, Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react'
+import { X, Plus, Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react'
 import type { ActionResult } from '@trustdesign/shared/types'
+
+interface Assignee {
+  id: string
+  name: string | null
+  email: string
+  avatarUrl: string | null
+}
 
 interface Task {
   id: string
@@ -29,7 +36,7 @@ interface Task {
   dueDate: string | null
   status: 'OPEN' | 'DONE'
   createdAt: string
-  assignee: { id: string; name: string | null; email: string; avatarUrl: string | null } | null
+  assignees: Assignee[]
 }
 
 interface OrgMember {
@@ -56,6 +63,111 @@ function dueDateIso(iso: string | null): string {
   return iso.split('T')[0]
 }
 
+// ─── Stacked avatars for task row ─────────────────────────────────────────────
+
+function AssigneeAvatars({ assignees }: { assignees: Assignee[] }) {
+  if (assignees.length === 0) return null
+  const visible = assignees.slice(0, 3)
+  const overflow = assignees.length - 3
+
+  const allNames = assignees.map((a) => a.name ?? a.email).join(', ')
+
+  return (
+    <div className="flex items-center gap-1" title={allNames} aria-label={`Assigned to ${allNames}`}>
+      <div className="flex -space-x-1.5">
+        {visible.map((a) => (
+          <Avatar key={a.id} size="sm" className="ring-2 ring-background">
+            <AvatarImage src={a.avatarUrl ?? undefined} alt="" />
+            <AvatarFallback>{getMemberInitials(a)}</AvatarFallback>
+          </Avatar>
+        ))}
+        {overflow > 0 && (
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-muted ring-2 ring-background text-[10px] font-medium text-muted-foreground">
+            +{overflow}
+          </div>
+        )}
+      </div>
+      {assignees.length === 1 && (
+        <span className="max-w-[12rem] truncate text-xs text-muted-foreground">
+          {assignees[0].name ?? assignees[0].email}
+        </span>
+      )}
+    </div>
+  )
+}
+
+// ─── Multi-select assignee picker (chips + combobox) ─────────────────────────
+
+interface MultiPickerProps {
+  members: OrgMember[]
+  values: string[]
+  onChange: (ids: string[]) => void
+  disabled?: boolean
+}
+
+function MultiAssigneePicker({ members, values, onChange, disabled }: MultiPickerProps) {
+  const [pickerValue, setPickerValue] = useState('')
+
+  function handleAdd(id: string) {
+    if (!id || values.includes(id)) { setPickerValue(''); return }
+    onChange([...values, id])
+    setPickerValue('')
+  }
+
+  function handleRemove(id: string) {
+    onChange(values.filter((v) => v !== id))
+  }
+
+  const selected = values
+    .map((id) => members.find((m) => m.id === id))
+    .filter(Boolean) as OrgMember[]
+
+  const unselectedMembers = members.filter((m) => !values.includes(m.id))
+
+  return (
+    <div className="flex flex-col gap-2">
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((m) => (
+            <span
+              key={m.id}
+              className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
+            >
+              <Avatar size="sm">
+                <AvatarImage src={m.avatarUrl ?? undefined} alt="" />
+                <AvatarFallback>{getMemberInitials(m)}</AvatarFallback>
+              </Avatar>
+              {m.name ?? m.email}
+              <button
+                type="button"
+                onClick={() => handleRemove(m.id)}
+                disabled={disabled}
+                aria-label={`Remove ${m.name ?? m.email}`}
+                className="ml-0.5 rounded-full hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <X className="h-3 w-3" aria-hidden="true" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+      {/* Hidden inputs for form submission */}
+      {values.map((id) => (
+        <input key={id} type="hidden" name="assigneeId" value={id} readOnly />
+      ))}
+      {unselectedMembers.length > 0 && (
+        <MemberPicker
+          members={unselectedMembers}
+          value={pickerValue}
+          onValueChange={handleAdd}
+          placeholder="Add assignee…"
+          disabled={disabled}
+        />
+      )}
+    </div>
+  )
+}
+
 // ─── Task form (shared by create and edit dialogs) ────────────────────────────
 
 interface TaskFormProps {
@@ -75,7 +187,9 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
   const action = isEdit ? boundUpdate! : boundCreate
   const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(action, null)
 
-  const [assigneeId, setAssigneeId] = useState<string>(task?.assignee?.id ?? '')
+  const [assigneeIds, setAssigneeIds] = useState<string[]>(
+    task?.assignees.map((a) => a.id) ?? [],
+  )
 
   useEffect(() => {
     if (state?.success) {
@@ -120,14 +234,11 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="task-assignee">Assignee</Label>
-        <MemberPicker
-          id="task-assignee"
-          name="assigneeId"
+        <Label>Assignees</Label>
+        <MultiAssigneePicker
           members={orgMembers}
-          value={assigneeId}
-          onValueChange={setAssigneeId}
-          placeholder="Unassigned"
+          values={assigneeIds}
+          onChange={setAssigneeIds}
           disabled={isPending}
         />
       </div>
@@ -352,17 +463,7 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProp
                       </p>
                     )}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                      {task.assignee && (
-                        <div className="flex items-center gap-1.5">
-                          <Avatar size="sm">
-                            <AvatarImage src={task.assignee.avatarUrl ?? undefined} alt="" />
-                            <AvatarFallback>{getMemberInitials(task.assignee)}</AvatarFallback>
-                          </Avatar>
-                          <span className="max-w-[12rem] truncate text-xs text-muted-foreground">
-                            {task.assignee.name ?? task.assignee.email}
-                          </span>
-                        </div>
-                      )}
+                      <AssigneeAvatars assignees={task.assignees} />
                       {dueDateFormatted && (
                         <Badge variant="outline" className="text-xs font-normal">
                           {dueDateFormatted}

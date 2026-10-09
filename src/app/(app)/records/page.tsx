@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
-import { WORK_ACTION_LABELS } from '@/lib/actions/work-record'
+import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 

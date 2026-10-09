@@ -6,28 +6,6 @@ import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import type { ActionResult } from '@trustdesign/shared/types'
 
-export { WorkAction }
-
-const WORK_ACTION_LABELS: Record<WorkAction, string> = {
-  PLANTED: 'Planted',
-  POTTED_ON: 'Potted on',
-  REPOTTED: 'Repotted',
-  PRUNED: 'Pruned',
-  WATERED: 'Watered',
-  FED: 'Fed',
-  PROPAGATED: 'Propagated',
-  DIVIDED: 'Divided',
-  STAKED: 'Staked',
-  WEEDED: 'Weeded',
-  MULCHED: 'Mulched',
-  PEST_DISEASE_TREATMENT: 'Pest/disease treatment',
-  LABELLED: 'Labelled',
-  SURVEYED: 'Surveyed',
-  OTHER: 'Other',
-}
-
-export { WORK_ACTION_LABELS }
-
 // ─── Record work (create record or append log entry) ─────────────────────────
 
 export async function recordWork(
