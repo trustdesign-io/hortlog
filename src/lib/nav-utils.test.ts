@@ -103,4 +103,15 @@ describe('getActiveHref', () => {
   it('handles trailing slash on pathname gracefully', () => {
     expect(getActiveHref(orgNav, '/demo/')).toBe('/demo')
   })
+
+  it('org settings and global settings do not cross-contaminate (different nav lists)', () => {
+    // When only orgNav is evaluated, /demo/settings wins (not /demo)
+    expect(getActiveHref(orgNav, '/demo/settings')).toBe('/demo/settings')
+    // When only appNav is evaluated, /settings wins (not /demo)
+    expect(getActiveHref(appNav, '/settings')).toBe('/settings')
+  })
+
+  it('unknown nested path falls back to the longest matching prefix', () => {
+    expect(getActiveHref(orgNav, '/demo/nonexistent/deep')).toBe('/demo')
+  })
 })
