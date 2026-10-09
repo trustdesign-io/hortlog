@@ -17,7 +17,11 @@ export async function signInWithEmail(_prevState: ActionResult, formData: FormDa
     }
     return { success: false, error: 'Invalid email or password.' }
   }
-  redirect(await getLandingPath(user!.id))
+  if (!user) {
+    // Supabase returns user: null when an MFA challenge is required
+    return { success: false, error: 'Sign-in requires a second factor.' }
+  }
+  redirect(await getLandingPath(user.id))
 }
 
 export async function signUpWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {
