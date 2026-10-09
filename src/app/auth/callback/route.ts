@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   // PKCE flow (OAuth, magic link via code)
   if (code) {
-    const redirectTo = NextResponse.redirect(`${origin}/dashboard`)
+    const redirectTo = NextResponse.redirect(`${origin}/records`)
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -32,11 +32,12 @@ export async function GET(request: NextRequest) {
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) return redirectTo
+    return NextResponse.redirect(`${origin}/auth/error?reason=link_expired`)
   }
 
   // OTP / invite flow (token_hash + type)
   if (tokenHash && type) {
-    const destination = type === 'invite' ? `${origin}/accept-invite` : `${origin}/dashboard`
+    const destination = type === 'invite' ? `${origin}/accept-invite` : `${origin}/records`
     const redirectTo = NextResponse.redirect(destination)
 
     const supabase = createServerClient(
@@ -60,8 +61,9 @@ export async function GET(request: NextRequest) {
     })
 
     if (!error) return redirectTo
-    return NextResponse.redirect(`${origin}/sign-in?error=link_expired`)
+    return NextResponse.redirect(`${origin}/auth/error?reason=link_expired`)
   }
 
-  return NextResponse.redirect(`${origin}/sign-in?error=oauth`)
+  // No code, token_hash, or error — link is invalid or user navigated directly
+  return NextResponse.redirect(`${origin}/auth/error?reason=invalid_link`)
 }

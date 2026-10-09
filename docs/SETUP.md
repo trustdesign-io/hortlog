@@ -166,7 +166,58 @@ OAuth redirects will fail with a `bad_oauth_state` error.
 
 ---
 
-## 5. Running Locally
+## 5. Supabase Email Templates
+
+Supabase's default email templates use a `{{ .ConfirmationURL }}` link that triggers
+the implicit (hash fragment) auth flow. hortlog uses the PKCE / token_hash flow
+instead, so the templates must be updated to route through `/auth/callback`.
+
+Go to **Supabase dashboard → Authentication → Email Templates** and update each template:
+
+### Invite user
+
+```html
+<h2>You have been invited</h2>
+<p>You have been invited to create a user on {{ .SiteURL }}. Follow this link to accept the invite:</p>
+<p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=invite">Accept the invite</a></p>
+```
+
+### Confirm signup
+
+```html
+<h2>Confirm your signup</h2>
+<p>Follow this link to confirm your user:</p>
+<p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=email">Confirm your email</a></p>
+```
+
+### Magic link
+
+```html
+<h2>Your magic link</h2>
+<p>Follow this link to sign in:</p>
+<p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=magiclink">Sign in</a></p>
+```
+
+### Reset password
+
+```html
+<h2>Reset password</h2>
+<p>Follow this link to reset the password for your user:</p>
+<p><a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=recovery">Reset password</a></p>
+```
+
+> **Why:** The `{{ .ConfirmationURL }}` variable generates an implicit-flow link that
+> puts the session token in the URL hash (`#access_token=...`). The hash is never sent
+> to the server, so the callback route cannot read it. Using `token_hash` routes
+> through `/auth/callback` server-side, where the OTP is verified and the session
+> cookie is set correctly.
+
+> **SiteURL:** Set this in Supabase → Authentication → URL Configuration → Site URL.
+> For production it should be `https://hortlog.com`; for local dev use `http://localhost:3000`.
+
+---
+
+## 6. Running Locally
 
 ```bash
 npm install
