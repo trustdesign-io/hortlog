@@ -3,7 +3,6 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import { getNameFromMetadata } from '@/lib/auth/name-utils'
 import type { ActionResult } from '@trustdesign/shared/types'
 
 export async function acceptInvite(
@@ -27,25 +26,18 @@ export async function acceptInvite(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
 
-  // Determine final name: prefer explicitly entered name, fall back to invite metadata
-  const nameFromMeta = getNameFromMetadata(user.user_metadata)
-  const resolvedName = nameInput || nameFromMeta
-
-  // If a name was provided, persist it to Supabase metadata so it survives page refreshes
-  if (nameInput) {
-    await supabase.auth.updateUser({ data: { full_name: nameInput } })
-  }
-
-  const { error: updateError } = await supabase.auth.updateUser({ password })
+  const { error: updateError } = await supabase.auth.updateUser({
+    password,
+    data: { full_name: nameInput },
+  })
   if (updateError) {
     return { success: false, error: 'Failed to set password. Please try again.' }
   }
 
-  // Ensure the User row exists in the database
   await prisma.user.upsert({
     where: { id: user.id },
-    create: { id: user.id, email: user.email!, name: resolvedName },
-    update: resolvedName ? { name: resolvedName } : {},
+    create: { id: user.id, email: user.email!, name: nameInput },
+    update: { name: nameInput },
   })
 
   // Create membership from invite metadata
