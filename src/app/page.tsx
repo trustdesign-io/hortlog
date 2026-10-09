@@ -6,6 +6,7 @@ import { Logo } from '@/components/layout/logo'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { HeroSection } from '@/components/landing/hero-section'
+import { CookieSettingsButton } from '@/components/cookie-banner'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
@@ -137,6 +138,8 @@ export default async function HomePage() {
           <nav aria-label="Footer" className="flex gap-4">
             <Link href="/sign-in" className="hover:text-foreground transition-colors">Sign in</Link>
             <Link href="/sign-up" className="hover:text-foreground transition-colors">Sign up</Link>
+            <Link href="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
+            <CookieSettingsButton />
           </nav>
         </div>
       </footer>

@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { Fraunces, Figtree } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
+import { GAScript } from '@/components/ga-script'
+import { CookieBanner } from '@/components/cookie-banner'
 import './globals.css'
 
 const fraunces = Fraunces({
@@ -33,7 +35,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
+          <CookieBanner />
         </ThemeProvider>
+        <GAScript />
       </body>
     </html>
   )

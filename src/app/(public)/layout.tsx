@@ -1,11 +1,22 @@
 import type { ReactNode } from 'react'
-import { GoogleAnalytics } from '@next/third-parties/google'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
 
-export default function PublicLayout({ children }: { children: ReactNode }) {
-  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
+const NAV_COLUMNS = [
+  {
+    heading: 'Product',
+    links: [
+      { label: 'Sign up', href: '/sign-up' },
+      { label: 'Sign in', href: '/sign-in' },
+    ],
+  },
+  {
+    heading: 'Legal',
+    links: [{ label: 'Privacy', href: '/privacy' }],
+  },
+]
 
+export default function PublicLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Skip link: appears on focus for keyboard/screen-reader users */}
@@ -17,8 +28,7 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       </a>
       <Header />
       <main id="main-content" className="flex-1">{children}</main>
-      <Footer />
-      {gaId && <GoogleAnalytics gaId={gaId} />}
+      <Footer navColumns={NAV_COLUMNS} tagline="A living record for botanical collections." />
     </div>
   )
 }
