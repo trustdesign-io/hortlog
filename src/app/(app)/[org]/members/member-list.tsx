@@ -179,6 +179,20 @@ export function MemberList({ orgSlug, managerLabel, memberLabel, members }: Memb
               </p>
             </div>
             <div className="flex flex-col gap-2">
+              <Label htmlFor="invite-name">
+                Name
+                <span className="ml-1 font-normal text-xs text-muted-foreground">(optional — single invite only)</span>
+              </Label>
+              <Input
+                id="invite-name"
+                name="name"
+                type="text"
+                placeholder="Alice Smith"
+                autoComplete="off"
+                maxLength={120}
+              />
+            </div>
+            <div className="flex flex-col gap-2">
               <Label htmlFor="invite-role">Role</Label>
               <Select name="role" defaultValue="MEMBER">
                 <SelectTrigger id="invite-role" className="w-48">

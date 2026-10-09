@@ -23,7 +23,7 @@ export async function signUpWithEmail(_prevState: ActionResult, formData: FormDa
   const result = SignUpSchema.safeParse({ name: formData.get('name'), email: formData.get('email'), password: formData.get('password') })
   if (!result.success) return { success: false, error: result.error.issues[0].message }
   const supabase = await createClient()
-  const { error } = await supabase.auth.signUp({ email: result.data.email, password: result.data.password, options: { data: { name: result.data.name } } })
+  const { error } = await supabase.auth.signUp({ email: result.data.email, password: result.data.password, options: { data: { full_name: result.data.name } } })
   if (error) return { success: false, error: error.message }
   // Redirect to confirmation screen regardless — don't reveal whether email already existed
   redirect(`/check-email?email=${encodeURIComponent(result.data.email)}`)

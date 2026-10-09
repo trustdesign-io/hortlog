@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { AuthProvider } from '@/components/auth-provider'
 import { Sidebar } from '@/components/sidebar'
+import { getNameFromMetadata } from '@/lib/auth/name-utils'
 import type { User } from '@prisma/client'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 
@@ -30,11 +31,12 @@ export default async function AppLayout({
   }
 
   const meta = authUser.user_metadata
+  const nameFromMeta = getNameFromMetadata(meta)
   const now = new Date()
   const fallbackUser: User = {
     id: authUser.id,
     email: authUser.email!,
-    name: meta?.full_name ?? null,
+    name: nameFromMeta,
     avatarUrl: meta?.avatar_url ?? null,
     isAdmin: false,
     onboardingCompletedAt: null,
@@ -49,12 +51,13 @@ export default async function AppLayout({
       create: {
         id: authUser.id,
         email: authUser.email!,
-        name: meta?.full_name ?? null,
+        name: nameFromMeta,
         avatarUrl: meta?.avatar_url ?? null,
       },
       update: {
         email: authUser.email!,
-        name: meta?.full_name ?? null,
+        // Never overwrite an existing name with null — only fill when DB name is missing
+        ...(nameFromMeta ? { name: nameFromMeta } : {}),
         avatarUrl: meta?.avatar_url ?? null,
       },
       include: {

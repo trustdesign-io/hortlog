@@ -17,6 +17,7 @@ export async function inviteMember(
 
   const roleRaw = formData.get('role')
   const role: 'MANAGER' | 'MEMBER' = roleRaw === 'MANAGER' ? 'MANAGER' : 'MEMBER'
+  const inviteName = (formData.get('name') as string | null)?.trim() || null
 
   const raw = (formData.get('email') as string | null) ?? ''
   const emails = [...new Set(raw.split(',').map(e => e.trim().toLowerCase()).filter(Boolean))]
@@ -51,9 +52,11 @@ export async function inviteMember(
       continue
     }
 
+    const inviteMeta: Record<string, string> = { pending_org_slug: orgSlug, pending_role: role }
+    if (inviteName) inviteMeta.full_name = inviteName
     const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
       redirectTo: `${APP_URL}/auth/callback`,
-      data: { pending_org_slug: orgSlug, pending_role: role },
+      data: inviteMeta,
     })
     if (error) {
       console.error('[inviteMember] Supabase invite error:', error)

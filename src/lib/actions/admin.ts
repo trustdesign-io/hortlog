@@ -43,6 +43,7 @@ export async function adminCreateOrg(
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''
   const managerEmail = (formData.get('managerEmail') as string | null)?.trim().toLowerCase() ?? ''
+  const managerName = (formData.get('managerName') as string | null)?.trim() || null
 
   if (!name) return { success: false, error: 'Organisation name is required.' }
   if (name.length > 120) return { success: false, error: 'Organisation name must be 120 characters or fewer.' }
@@ -85,9 +86,11 @@ export async function adminCreateOrg(
     })
   } else {
     const supabase = createAdminClient()
+    const inviteMeta: Record<string, string> = { pending_org_slug: slug, pending_role: 'MANAGER' }
+    if (managerName) inviteMeta.full_name = managerName
     const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(managerEmail, {
       redirectTo: `${APP_URL}/auth/callback`,
-      data: { pending_org_slug: slug, pending_role: 'MANAGER' },
+      data: inviteMeta,
     })
     if (inviteError) {
       await prisma.organisation.delete({ where: { id: org.id } })
@@ -182,6 +185,9 @@ export async function adminUpdateUserName(
 
   await prisma.user.update({ where: { id: userId }, data: { name } })
 
+  const supabase = createAdminClient()
+  await supabase.auth.admin.updateUserById(userId, { user_metadata: { full_name: name } })
+
   revalidatePath('/admin/members')
   return { success: true }
 }
@@ -251,6 +257,7 @@ export async function adminInviteUser(
   const email = (formData.get('email') as string | null)?.trim().toLowerCase() ?? ''
   const orgSlug = (formData.get('orgSlug') as string | null)?.trim() ?? ''
   const role = formData.get('role') === 'MANAGER' ? 'MANAGER' as const : 'MEMBER' as const
+  const inviteName = (formData.get('name') as string | null)?.trim() || null
 
   if (!email) return { success: false, error: 'Email address is required.' }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return { success: false, error: 'Please enter a valid email address.' }
@@ -282,6 +289,7 @@ export async function adminInviteUser(
   const supabase = createAdminClient()
   const data: Record<string, string> = {}
   if (orgSlug) { data.pending_org_slug = orgSlug; data.pending_role = role }
+  if (inviteName) data.full_name = inviteName
 
   const { error } = await supabase.auth.admin.inviteUserByEmail(email, {
     redirectTo: `${APP_URL}/auth/callback`,
