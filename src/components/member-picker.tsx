@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Combobox,
@@ -19,15 +19,17 @@ export interface PickerMember {
 }
 
 export function getMemberInitials(m: { name: string | null; email: string }): string {
-  if (m.name) {
-    return m.name
-      .split(' ')
+  const trimmedName = m.name?.trim()
+  if (trimmedName) {
+    return trimmedName
+      .split(/\s+/)
+      .filter(Boolean)
       .map((n) => n[0])
       .join('')
       .toUpperCase()
       .slice(0, 2)
   }
-  return m.email.slice(0, 2).toUpperCase()
+  return m.email.replace(/[^a-zA-Z]/g, '').slice(0, 2).toUpperCase() || '?'
 }
 
 interface MemberPickerProps {
@@ -62,6 +64,14 @@ export function MemberPicker({
   // We store our own label here so the subsequent onInputValueChange call uses it
   // instead of the item's full text content (which includes avatar fallback initials).
   const pendingLabel = useRef<string | null>(null)
+
+  // Sync inputValue if value is reset externally (e.g. form unmount/remount).
+  // pendingLabel is null between selection events, so this won't conflict.
+  useEffect(() => {
+    if (pendingLabel.current === null) {
+      setInputValue(getMemberLabel(value))
+    }
+  }, [value]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleValueChange(v: string | null) {
     const newVal = v ?? ''

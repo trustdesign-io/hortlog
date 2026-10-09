@@ -27,6 +27,19 @@ describe('getMemberInitials', () => {
     expect(getMemberInitials({ name: 'alice smith', email: 'alice@example.com' })).toBe('AS')
   })
 
+  it('ignores extra whitespace in names', () => {
+    expect(getMemberInitials({ name: '  Alice   Smith  ', email: 'a@b.com' })).toBe('AS')
+  })
+
+  it('strips @ from email-derived initials so avatar shows letters only', () => {
+    const result = getMemberInitials({ name: null, email: 'a@b.com' })
+    expect(result).not.toContain('@')
+  })
+
+  it('returns ? for an email with no letters at all', () => {
+    expect(getMemberInitials({ name: null, email: '123@456.789' })).toBe('?')
+  })
+
   it('never returns a UUID-like string', () => {
     const result = getMemberInitials({ name: null, email: 'user@example.com' })
     expect(result).not.toMatch(/[0-9a-f]{8}-/)
