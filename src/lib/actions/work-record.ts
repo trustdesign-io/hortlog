@@ -43,7 +43,11 @@ export async function recordWork(
   const location = (formData.get('location') as string | null)?.trim() || null
   const text = (formData.get('text') as string | null)?.trim() || null
   const dateRaw = formData.get('date') as string | null
-  const date = dateRaw ? new Date(dateRaw) : new Date()
+  const parsedDate = dateRaw ? new Date(dateRaw) : null
+  if (parsedDate !== null && isNaN(parsedDate.getTime())) {
+    return { success: false, error: 'Invalid date.' }
+  }
+  const date = parsedDate ?? new Date()
 
   if (typeof actionRaw !== 'string' || !(actionRaw in WorkAction)) {
     return { success: false, error: 'Please select an action.' }
@@ -54,6 +58,7 @@ export async function recordWork(
     where: { id: specimenId, organisation: { slug: orgSlug } },
     select: {
       id: true,
+      slug: true,
       organisationId: true,
       species: { select: { scientificName: true, family: true } },
     },
@@ -105,7 +110,7 @@ export async function recordWork(
     return { success: false, error: 'Failed to record work. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/specimens/${specimenId}`)
+  revalidatePath(`/${orgSlug}/specimens/${specimen.slug}`)
   revalidatePath(`/${orgSlug}`)
 
   return { success: true }
@@ -188,6 +193,11 @@ export async function updateLogEntryField(
   const oldValue = String(entry[field as keyof typeof entry] ?? '')
   const trimmed = newValue.trim()
 
+  if (field === 'date') {
+    const parsed = new Date(trimmed)
+    if (isNaN(parsed.getTime())) return { success: false, error: 'Invalid date.' }
+  }
+
   const updateData: Record<string, string | Date | null> =
     field === 'date' ? { date: new Date(trimmed) } : { [field]: trimmed || null }
 
@@ -211,7 +221,7 @@ export async function updateLogEntryField(
   return { success: true }
 }
 
-// ─── Delete a log entry (manager only; history kept) ─────────────────────────
+// ─── Delete a log entry (owner or manager; history kept) ─────────────────────
 
 export async function deleteLogEntry(
   orgSlug: string,

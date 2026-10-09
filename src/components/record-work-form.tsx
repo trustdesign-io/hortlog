@@ -1,6 +1,6 @@
 'use client'
 
-import { useActionState, useEffect, useRef } from 'react'
+import { useActionState, useEffect, useMemo, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
@@ -16,7 +16,10 @@ interface RecordWorkFormProps {
 
 export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
-  const boundAction = recordWork.bind(null, orgSlug, specimenId)
+  const boundAction = useMemo(
+    () => recordWork.bind(null, orgSlug, specimenId),
+    [orgSlug, specimenId],
+  )
   const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(
     boundAction,
     null,
@@ -52,6 +55,7 @@ export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFor
           id="work-date"
           name="date"
           defaultValue={new Date().toISOString().slice(0, 10)}
+          required
           disabled={isPending}
           className="flex h-9 w-full rounded-md border border-input bg-background px-3 py-1 text-sm shadow-xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
         />
