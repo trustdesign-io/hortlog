@@ -33,7 +33,11 @@ export default async function TodoPage({ params }: TodoPageProps) {
         dueDate: true,
         status: true,
         createdAt: true,
-        assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
+        assignees: {
+          select: {
+            user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          },
+        },
       },
     }),
     canManage
@@ -53,6 +57,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
         ...t,
         dueDate: t.dueDate?.toISOString() ?? null,
         createdAt: t.createdAt.toISOString(),
+        assignees: t.assignees.map((a) => a.user),
       }))}
       orgMembers={orgMembers.map((m) => m.user)}
     />

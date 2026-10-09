@@ -9,6 +9,21 @@ async function getOrg(orgSlug: string) {
   return prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
 }
 
+async function validateAssignees(
+  assigneeIds: string[],
+  organisationId: string,
+): Promise<string | null> {
+  if (assigneeIds.length === 0) return null
+  const memberships = await prisma.membership.findMany({
+    where: { userId: { in: assigneeIds }, organisationId },
+    select: { userId: true },
+  })
+  if (memberships.length !== assigneeIds.length) {
+    return 'One or more assignees are not members of this organisation.'
+  }
+  return null
+}
+
 export async function createTask(
   orgSlug: string,
   _prevState: ActionResult | null,
@@ -24,18 +39,13 @@ export async function createTask(
   const dueDate = dueDateRaw ? new Date(dueDateRaw) : null
   if (dueDate && isNaN(dueDate.getTime())) return { success: false, error: 'Invalid due date.' }
 
-  const assigneeId = (formData.get('assigneeId') as string | null)?.trim() || null
+  const assigneeIds = [...new Set((formData.getAll('assigneeId') as string[]).filter(Boolean))]
 
   const org = await getOrg(orgSlug)
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  if (assigneeId) {
-    const member = await prisma.membership.findFirst({
-      where: { userId: assigneeId, organisationId: org.id },
-      select: { id: true },
-    })
-    if (!member) return { success: false, error: 'Assignee is not a member of this organisation.' }
-  }
+  const assigneeError = await validateAssignees(assigneeIds, org.id)
+  if (assigneeError) return { success: false, error: assigneeError }
 
   try {
     await prisma.task.create({
@@ -43,9 +53,16 @@ export async function createTask(
         title,
         description,
         dueDate,
-        assigneeId,
         organisationId: org.id,
         createdById: user.id,
+        assignees: assigneeIds.length
+          ? {
+              create: assigneeIds.map((userId) => ({
+                userId,
+                assignedById: user.id,
+              })),
+            }
+          : undefined,
       },
     })
   } catch (err) {
@@ -63,7 +80,7 @@ export async function updateTask(
   _prevState: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireOrgAccess(orgSlug, 'can_manage_members')
+  const { user } = await requireOrgAccess(orgSlug, 'can_manage_members')
 
   const title = (formData.get('title') as string | null)?.trim() ?? ''
   if (!title) return { success: false, error: 'Title is required.' }
@@ -73,7 +90,7 @@ export async function updateTask(
   const dueDate = dueDateRaw ? new Date(dueDateRaw) : null
   if (dueDate && isNaN(dueDate.getTime())) return { success: false, error: 'Invalid due date.' }
 
-  const assigneeId = (formData.get('assigneeId') as string | null)?.trim() || null
+  const assigneeIds = [...new Set((formData.getAll('assigneeId') as string[]).filter(Boolean))]
 
   const org = await getOrg(orgSlug)
   if (!org) return { success: false, error: 'Organisation not found.' }
@@ -84,19 +101,30 @@ export async function updateTask(
   })
   if (!task) return { success: false, error: 'Task not found.' }
 
-  if (assigneeId) {
-    const member = await prisma.membership.findFirst({
-      where: { userId: assigneeId, organisationId: org.id },
-      select: { id: true },
-    })
-    if (!member) return { success: false, error: 'Assignee is not a member of this organisation.' }
-  }
+  const assigneeError = await validateAssignees(assigneeIds, org.id)
+  if (assigneeError) return { success: false, error: assigneeError }
 
   try {
-    await prisma.task.update({
-      where: { id: taskId, organisationId: org.id },
-      data: { title, description, dueDate, assigneeId },
-    })
+    await prisma.$transaction([
+      // Replace all assignees atomically
+      prisma.taskAssignee.deleteMany({ where: { taskId } }),
+      prisma.task.update({
+        where: { id: taskId, organisationId: org.id },
+        data: {
+          title,
+          description,
+          dueDate,
+          assignees: assigneeIds.length
+            ? {
+                create: assigneeIds.map((userId) => ({
+                  userId,
+                  assignedById: user.id,
+                })),
+              }
+            : undefined,
+        },
+      }),
+    ])
   } catch (err) {
     console.error('[updateTask] Prisma error:', err)
     return { success: false, error: 'Failed to update task. Please try again.' }

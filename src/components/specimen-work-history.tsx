@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { WORK_ACTION_LABELS } from '@/lib/actions/work-record'
+import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 import { RecordWorkForm } from '@/components/record-work-form'
 
 interface SpecimenWorkHistoryProps {
