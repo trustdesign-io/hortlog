@@ -18,6 +18,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { getActiveHref } from '@/lib/nav-utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { UserMenu } from '@/components/user-menu'
@@ -84,11 +85,12 @@ interface NavLinksProps {
 
 function NavLinks({ items, onNavigate, label }: NavLinksProps) {
   const pathname = usePathname()
+  const activeHref = getActiveHref(items, pathname ?? '')
 
   return (
     <nav className="flex flex-col gap-0.5 px-3" aria-label={label ?? 'Navigation'}>
       {items.map((item) => {
-        const isActive = !!pathname && (pathname === item.href || pathname.startsWith(item.href + '/'))
+        const isActive = item.href === activeHref
         return (
           <Link
             key={item.href}
@@ -295,13 +297,15 @@ function MobileBottomNav() {
       ]
     : mobileNav
 
+  const activeHref = getActiveHref(items, pathname ?? '')
+
   return (
     <nav
       aria-label="Mobile navigation"
       className="fixed bottom-0 left-0 right-0 z-40 flex border-t bg-background md:hidden"
     >
       {items.map((item) => {
-        const isActive = !!pathname && (pathname === item.href || pathname.startsWith(item.href + '/'))
+        const isActive = item.href === activeHref
         return (
           <Link
             key={item.href}
