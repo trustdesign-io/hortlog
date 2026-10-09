@@ -155,10 +155,8 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                         userId={u.id}
                         userName={u.name}
                         userEmail={u.email}
-                        isAdmin={u.isAdmin}
                         memberships={u.memberships}
                         allOrgs={orgs}
-                        currentUserId={user.id}
                       />
                       {u.id !== user.id && (
                         <MemberDeleteDialog

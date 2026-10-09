@@ -5,8 +5,6 @@ import { X, UserCog } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-
-import { Badge } from '@/components/ui/badge'
 import {
   Dialog,
   DialogContent,
@@ -16,7 +14,6 @@ import {
 } from '@/components/ui/dialog'
 import {
   adminUpdateUserName,
-  adminSetUserAdmin,
   adminAddMembership,
   adminRemoveMembership,
 } from '@/lib/actions/admin'
@@ -71,32 +68,31 @@ function MembershipRow({ userId, membership, onRefresh }: MembershipRowProps) {
 
   return (
     <li className="space-y-1">
-      <div className="flex items-center gap-2">
-        <span className="flex-1 truncate text-sm">{membership.organisation.name}</span>
-        <Badge variant="outline" className="text-xs shrink-0">
-          {membership.role === 'MANAGER' ? 'Manager' : 'Member'}
-        </Badge>
-        <Button
-          type="button"
-          variant="ghost"
-          size="sm"
-          onClick={handleRoleChange}
-          disabled={isPending}
-          className="text-xs text-muted-foreground h-7 px-2 shrink-0"
-        >
-          {changingRole ? '…' : `Make ${newRole === 'MANAGER' ? 'Manager' : 'Member'}`}
-        </Button>
-        <Button
-          type="button"
-          variant="ghost"
-          size="icon-sm"
-          aria-label={`Remove from ${membership.organisation.name}`}
-          onClick={handleRemove}
-          disabled={isPending}
-          className="text-muted-foreground hover:text-destructive shrink-0"
-        >
-          <X className="h-3.5 w-3.5" aria-hidden="true" />
-        </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="min-w-0 flex-1 truncate text-sm">{membership.organisation.name}</span>
+        <div className="flex shrink-0 items-center gap-1">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleRoleChange}
+            disabled={isPending}
+            className="h-7 px-2 text-xs"
+          >
+            {changingRole ? '…' : membership.role === 'MANAGER' ? 'Manager' : 'Member'}
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            aria-label={`Remove from ${membership.organisation.name}`}
+            onClick={handleRemove}
+            disabled={isPending}
+            className="text-muted-foreground hover:text-destructive"
+          >
+            <X className="h-3.5 w-3.5" aria-hidden="true" />
+          </Button>
+        </div>
       </div>
       {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
     </li>
@@ -107,27 +103,20 @@ interface MemberEditDialogProps {
   userId: string
   userName: string | null
   userEmail: string
-  isAdmin: boolean
   memberships: Membership[]
   allOrgs: { slug: string; name: string }[]
-  currentUserId: string
 }
 
 export function MemberEditDialog({
   userId,
   userName,
   userEmail,
-  isAdmin: isUserAdmin,
   memberships,
   allOrgs,
-  currentUserId,
 }: MemberEditDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
-  const [currentIsAdmin, setCurrentIsAdmin] = useState(isUserAdmin)
-  const [adminTogglePending, startAdminToggle] = useTransition()
   const [addPending, startAdd] = useTransition()
-  const [adminError, setAdminError] = useState<string | null>(null)
   const [addError, setAddError] = useState<string | null>(null)
   const addFormRef = useRef<HTMLFormElement>(null)
 
@@ -138,19 +127,6 @@ export function MemberEditDialog({
   useEffect(() => {
     if (nameState?.success) nameFormRef.current?.reset()
   }, [nameState])
-
-  function handleAdminToggle() {
-    setAdminError(null)
-    startAdminToggle(async () => {
-      const result = await adminSetUserAdmin(userId, !currentIsAdmin)
-      if (!result.success) {
-        setAdminError(result.error ?? 'Failed to update admin status.')
-      } else {
-        setCurrentIsAdmin((prev) => !prev)
-        router.refresh()
-      }
-    })
-  }
 
   function handleAddMembership(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -170,7 +146,6 @@ export function MemberEditDialog({
     })
   }
 
-  const isSelf = userId === currentUserId
   const availableOrgs = allOrgs.filter(
     (o) => !memberships.some((m) => m.organisation.slug === o.slug)
   )
@@ -188,137 +163,105 @@ export function MemberEditDialog({
       >
         <UserCog className="h-4 w-4" aria-hidden="true" />
       </DialogTrigger>
-      <DialogContent className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
+      <DialogContent className="flex max-h-[90vh] w-full flex-col sm:max-w-lg">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Edit user</DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
-          {/* ── Name ── */}
-          <section>
-            <h3 className="mb-3 text-sm font-medium">Name</h3>
-            <form ref={nameFormRef} action={nameAction} className="space-y-3">
-              {nameState && !nameState.success && (
-                <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                  {nameState.error}
-                </p>
-              )}
-              {nameState?.success && (
-                <p className="rounded-lg bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400" role="status">
-                  Name updated.
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Input
-                  name="name"
-                  required
-                  defaultValue={userName ?? ''}
-                  placeholder="Add a name…"
-                  maxLength={120}
-                  className="flex-1"
-                  aria-label="User name"
-                />
-                <Button type="submit" size="sm" disabled={namePending} aria-busy={namePending}>
-                  {namePending ? 'Saving…' : 'Save'}
-                </Button>
-              </div>
-            </form>
-          </section>
-
-          {/* ── Platform admin ── */}
-          {!isSelf && (
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <div className="space-y-6 py-2">
+            {/* ── Name ── */}
             <section>
-              <h3 className="mb-3 text-sm font-medium">Platform admin</h3>
-              {adminError && (
-                <p className="mb-2 rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                  {adminError}
-                </p>
-              )}
-              <div className="flex items-center justify-between rounded-lg border px-3 py-2">
-                <div>
-                  <p className="text-sm font-medium">
-                    {currentIsAdmin ? 'Platform admin' : 'Standard user'}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {currentIsAdmin
-                      ? 'Can manage all organisations and users.'
-                      : 'Access limited to their organisations.'}
-                  </p>
-                </div>
-                <Button
-                  type="button"
-                  variant={currentIsAdmin ? 'destructive' : 'outline'}
-                  size="sm"
-                  onClick={handleAdminToggle}
-                  disabled={adminTogglePending}
-                  aria-busy={adminTogglePending}
-                >
-                  {adminTogglePending ? '…' : currentIsAdmin ? 'Revoke admin' : 'Grant admin'}
-                </Button>
-              </div>
-            </section>
-          )}
-
-          {/* ── Organisations ── */}
-          <section>
-            <h3 className="mb-3 text-sm font-medium">Organisations</h3>
-            {memberships.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Not a member of any organisation.</p>
-            ) : (
-              <ul className="space-y-2" aria-label="Memberships">
-                {memberships.map((m) => (
-                  <MembershipRow
-                    key={m.id}
-                    userId={userId}
-                    membership={m}
-                    onRefresh={() => router.refresh()}
-                  />
-                ))}
-              </ul>
-            )}
-
-            {availableOrgs.length > 0 && (
-              <form
-                ref={addFormRef}
-                onSubmit={handleAddMembership}
-                className="mt-4 space-y-3 rounded-lg border p-3"
-              >
-                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  Add to organisation
-                </p>
-                {addError && (
+              <h3 className="mb-3 text-sm font-medium">Name</h3>
+              <form ref={nameFormRef} action={nameAction} className="space-y-3">
+                {nameState && !nameState.success && (
                   <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
-                    {addError}
+                    {nameState.error}
                   </p>
                 )}
-                <div className="flex flex-wrap gap-2">
-                  <select
-                    name="addOrgSlug"
+                {nameState?.success && (
+                  <p className="rounded-lg bg-green-500/10 px-3 py-2 text-sm text-green-700 dark:text-green-400" role="status">
+                    Name updated.
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Input
+                    name="name"
                     required
-                    className="flex h-9 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    aria-label="Organisation"
-                    defaultValue=""
-                  >
-                    <option value="" disabled>Select organisation…</option>
-                    {availableOrgs.map((o) => (
-                      <option key={o.slug} value={o.slug}>{o.name}</option>
-                    ))}
-                  </select>
-                  <select
-                    name="addRole"
-                    className="flex h-9 w-28 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                    aria-label="Role"
-                  >
-                    <option value="MEMBER">Member</option>
-                    <option value="MANAGER">Manager</option>
-                  </select>
-                  <Button type="submit" size="sm" disabled={addPending} aria-busy={addPending}>
-                    {addPending ? '…' : 'Add'}
+                    defaultValue={userName ?? ''}
+                    placeholder="Add a name…"
+                    maxLength={120}
+                    className="min-w-0 flex-1"
+                    aria-label="User name"
+                  />
+                  <Button type="submit" size="sm" disabled={namePending} aria-busy={namePending}>
+                    {namePending ? 'Saving…' : 'Save'}
                   </Button>
                 </div>
               </form>
-            )}
-          </section>
+            </section>
+
+            {/* ── Organisations ── */}
+            <section>
+              <h3 className="mb-3 text-sm font-medium">Organisations</h3>
+              {memberships.length === 0 ? (
+                <p className="text-sm text-muted-foreground">Not a member of any organisation.</p>
+              ) : (
+                <ul className="space-y-2" aria-label="Memberships">
+                  {memberships.map((m) => (
+                    <MembershipRow
+                      key={m.id}
+                      userId={userId}
+                      membership={m}
+                      onRefresh={() => router.refresh()}
+                    />
+                  ))}
+                </ul>
+              )}
+
+              {availableOrgs.length > 0 && (
+                <form
+                  ref={addFormRef}
+                  onSubmit={handleAddMembership}
+                  className="mt-4 space-y-3 rounded-lg border p-3"
+                >
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Add to organisation
+                  </p>
+                  {addError && (
+                    <p className="rounded-lg bg-destructive/10 px-3 py-2 text-sm text-destructive" role="alert">
+                      {addError}
+                    </p>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <select
+                      name="addOrgSlug"
+                      required
+                      className="flex h-9 min-w-0 flex-1 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      aria-label="Organisation"
+                      defaultValue=""
+                    >
+                      <option value="" disabled>Select organisation…</option>
+                      {availableOrgs.map((o) => (
+                        <option key={o.slug} value={o.slug}>{o.name}</option>
+                      ))}
+                    </select>
+                    <select
+                      name="addRole"
+                      className="flex h-9 w-28 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                      aria-label="Role"
+                    >
+                      <option value="MEMBER">Member</option>
+                      <option value="MANAGER">Manager</option>
+                    </select>
+                    <Button type="submit" size="sm" disabled={addPending} aria-busy={addPending}>
+                      {addPending ? '…' : 'Add'}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </section>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
