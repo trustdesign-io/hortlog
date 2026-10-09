@@ -33,13 +33,13 @@ export default async function TodoPage({ params }: TodoPageProps) {
         dueDate: true,
         status: true,
         createdAt: true,
-        assignee: { select: { id: true, name: true, email: true } },
+        assignee: { select: { id: true, name: true, email: true, avatarUrl: true } },
       },
     }),
     canManage
       ? prisma.membership.findMany({
           where: { organisationId: org.id },
-          select: { user: { select: { id: true, name: true, email: true } } },
+          select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
           orderBy: { user: { name: 'asc' } },
         })
       : Promise.resolve([]),
