@@ -291,6 +291,18 @@ describe('adminDeleteUser', () => {
     const result = await adminDeleteUser('u-nobody')
     expect(result).toEqual({ success: false, error: 'User not found.' })
   })
+
+  it('returns error when DB delete throws P2025 (record vanished between checks)', async () => {
+    requireAuth.mockResolvedValue(ADMIN_USER)
+    user.count.mockResolvedValue(2)
+    user.findUnique.mockResolvedValue({ isAdmin: false })
+    user.delete.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Record not found', { code: 'P2025', clientVersion: '5.0.0' })
+    )
+    const result = await adminDeleteUser('u-other')
+    expect(result).toEqual({ success: false, error: 'User not found.' })
+    expect(adminDelete).not.toHaveBeenCalled()
+  })
 })
 
 
