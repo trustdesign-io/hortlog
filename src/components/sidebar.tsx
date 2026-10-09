@@ -15,6 +15,7 @@ import {
   Menu,
   ChevronDown,
   CheckSquare,
+  ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
@@ -59,6 +60,7 @@ function buildOrgNav(orgSlug: string): NavItem[] {
 
 const appNav: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/records', label: 'My record', icon: ClipboardList },
   { href: '/settings', label: 'Account', icon: Settings },
 ]
 
@@ -70,6 +72,7 @@ const adminNav: NavItem[] = [
 
 const mobileNav: NavItem[] = [
   { href: '/dashboard', label: 'Home', icon: LayoutDashboard },
+  { href: '/records', label: 'My record', icon: ClipboardList },
   { href: '/settings', label: 'Account', icon: Settings },
 ]
 
