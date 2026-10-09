@@ -146,7 +146,7 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
       >
         <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="flex-1 truncate text-left">
-          {currentOrg?.name ?? currentSlug}
+          {currentOrg?.name ?? 'Select organisation'}
         </span>
         <ChevronDown className={cn('h-3.5 w-3.5 text-muted-foreground transition-transform', open && 'rotate-180')} aria-hidden="true" />
       </button>
