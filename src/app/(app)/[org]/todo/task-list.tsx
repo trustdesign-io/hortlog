@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   Dialog,
   DialogContent,
@@ -17,13 +18,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
+import { MemberPicker, getMemberInitials } from '@/components/member-picker'
 import { Plus, Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react'
 import type { ActionResult } from '@trustdesign/shared/types'
 
@@ -34,13 +29,14 @@ interface Task {
   dueDate: string | null
   status: 'OPEN' | 'DONE'
   createdAt: string
-  assignee: { id: string; name: string | null; email: string } | null
+  assignee: { id: string; name: string | null; email: string; avatarUrl: string | null } | null
 }
 
 interface OrgMember {
   id: string
   name: string | null
   email: string
+  avatarUrl: string | null
 }
 
 interface TaskListProps {
@@ -125,23 +121,15 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="task-assignee">Assignee</Label>
-        <Select
+        <MemberPicker
+          id="task-assignee"
           name="assigneeId"
+          members={orgMembers}
           value={assigneeId}
-          onValueChange={(v) => setAssigneeId(v ?? '')}
-        >
-          <SelectTrigger id="task-assignee">
-            <SelectValue placeholder="Unassigned" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="">Unassigned</SelectItem>
-            {orgMembers.map((m) => (
-              <SelectItem key={m.id} value={m.id}>
-                {m.name ?? m.email}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          onValueChange={setAssigneeId}
+          placeholder="Unassigned"
+          disabled={isPending}
+        />
       </div>
 
       {state && !state.success && state.error && (
@@ -334,9 +322,6 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProp
         <div className="rounded-xl border bg-card overflow-hidden">
           <ul role="list" aria-label="Tasks">
             {tasks.map((task) => {
-              const assigneeDisplay = task.assignee
-                ? (task.assignee.name ?? task.assignee.email)
-                : null
               const dueDateFormatted = formatDate(task.dueDate)
               const isDone = task.status === 'DONE'
 
@@ -367,10 +352,16 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProp
                       </p>
                     )}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
-                      {assigneeDisplay && (
-                        <span className="text-xs text-muted-foreground">
-                          {assigneeDisplay}
-                        </span>
+                      {task.assignee && (
+                        <div className="flex items-center gap-1.5">
+                          <Avatar size="sm">
+                            <AvatarImage src={task.assignee.avatarUrl ?? undefined} alt="" />
+                            <AvatarFallback>{getMemberInitials(task.assignee)}</AvatarFallback>
+                          </Avatar>
+                          <span className="max-w-[12rem] truncate text-xs text-muted-foreground">
+                            {task.assignee.name ?? task.assignee.email}
+                          </span>
+                        </div>
                       )}
                       {dueDateFormatted && (
                         <Badge variant="outline" className="text-xs font-normal">
