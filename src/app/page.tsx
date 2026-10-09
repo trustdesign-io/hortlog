@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { Logo } from '@/components/layout/logo'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ScientificName } from '@/components/ui/scientific-name'
+import { HeroSection } from '@/components/landing/hero-section'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
@@ -41,24 +42,30 @@ export default async function HomePage() {
 
       {/* Hero */}
       <main>
-        <section className="px-6 pt-16 pb-24 max-w-3xl mx-auto text-center">
-          <h1 className="font-heading text-4xl sm:text-5xl font-medium leading-tight mb-6">
-            A living record for botanical collections
-          </h1>
-          <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
-            hortlog gives every specimen its own page — identification, provenance,
-            conservation status — readable from a QR code at the vantage point,
-            however far back the plant is planted.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }), 'w-full sm:w-auto')}>
-              Sign up
-            </Link>
-            <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline', size: 'xl' }), 'w-full sm:w-auto')}>
-              Sign in
-            </Link>
-          </div>
-        </section>
+        <HeroSection
+          heading={
+            <h1 className="font-heading text-4xl sm:text-5xl font-medium leading-tight mb-6">
+              A living record for botanical collections
+            </h1>
+          }
+          body={
+            <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
+              hortlog gives every specimen its own page — identification, provenance,
+              conservation status — readable from a QR code at the vantage point,
+              however far back the plant is planted.
+            </p>
+          }
+          actions={
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }), 'w-full sm:w-auto')}>
+                Sign up
+              </Link>
+              <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline', size: 'xl' }), 'w-full sm:w-auto')}>
+                Sign in
+              </Link>
+            </div>
+          }
+        />
 
         {/* Problem / Vantage explanation */}
         <section className="bg-card border-t border-border px-6 py-20">
