@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { getNameFromMetadata } from './name-utils'
 import type { User, Membership, Organisation } from '@prisma/client'
 
 export type MembershipWithOrg = Membership & {
@@ -40,8 +41,7 @@ export async function getCurrentUser(): Promise<UserWithMemberships | null> {
   if (!dbUser) return null
 
   if (!dbUser.name) {
-    const meta = authUser.user_metadata ?? {}
-    const name = (meta.name ?? meta.full_name ?? null) as string | null
+    const name = getNameFromMetadata(authUser.user_metadata)
     if (name) {
       return prisma.user.update({
         where: { id: authUser.id },

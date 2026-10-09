@@ -89,6 +89,16 @@ export function OrgCreateDialog() {
               placeholder="manager@example.com"
             />
           </Field>
+          <Field>
+            <FieldLabel htmlFor="create-manager-name">First manager name (optional)</FieldLabel>
+            <Input
+              id="create-manager-name"
+              name="managerName"
+              type="text"
+              placeholder="Alice Smith"
+              maxLength={120}
+            />
+          </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel

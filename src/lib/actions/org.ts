@@ -29,6 +29,7 @@ export async function createOrg(
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''
   const managerEmail = (formData.get('managerEmail') as string | null)?.trim().toLowerCase() ?? ''
+  const managerName = (formData.get('managerName') as string | null)?.trim() || null
 
   if (!name) return { success: false, error: 'Organisation name is required.' }
   if (name.length > 120) return { success: false, error: 'Organisation name must be 120 characters or fewer.' }
@@ -88,9 +89,11 @@ export async function createOrg(
     })
   } else {
     const supabase = createAdminClient()
+    const inviteMeta: Record<string, string> = { pending_org_slug: slug, pending_role: 'MANAGER' }
+    if (managerName) inviteMeta.full_name = managerName
     const { error: inviteError } = await supabase.auth.admin.inviteUserByEmail(managerEmail, {
       redirectTo: `${APP_URL}/auth/callback`,
-      data: { pending_org_slug: slug, pending_role: 'MANAGER' },
+      data: inviteMeta,
     })
     if (inviteError) {
       await prisma.organisation.delete({ where: { id: org.id } })

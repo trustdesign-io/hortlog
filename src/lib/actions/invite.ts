@@ -11,7 +11,10 @@ export async function acceptInvite(
 ): Promise<ActionResult> {
   const password = (formData.get('password') as string | null) ?? ''
   const confirm = (formData.get('confirmPassword') as string | null) ?? ''
+  const nameInput = (formData.get('name') as string | null)?.trim() || null
 
+  if (!nameInput) return { success: false, error: 'Please enter your name.' }
+  if (nameInput.length > 120) return { success: false, error: 'Name must be 120 characters or fewer.' }
   if (password.length < 8) {
     return { success: false, error: 'Password must be at least 8 characters.' }
   }
@@ -23,23 +26,23 @@ export async function acceptInvite(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/sign-in')
 
-  const { error: updateError } = await supabase.auth.updateUser({ password })
+  const { error: updateError } = await supabase.auth.updateUser({
+    password,
+    data: { full_name: nameInput },
+  })
   if (updateError) {
     return { success: false, error: 'Failed to set password. Please try again.' }
   }
 
-  // Ensure the User row exists in the database
-  const meta = user.user_metadata ?? {}
-  const name = (meta.name ?? meta.full_name ?? null) as string | null
   await prisma.user.upsert({
     where: { id: user.id },
-    create: { id: user.id, email: user.email!, name },
-    update: {},
+    create: { id: user.id, email: user.email!, name: nameInput },
+    update: { name: nameInput },
   })
 
   // Create membership from invite metadata
-  const orgSlug = (meta.pending_org_slug ?? null) as string | null
-  const role = meta.pending_role === 'MANAGER' ? 'MANAGER' as const : 'MEMBER' as const
+  const orgSlug = (user.user_metadata?.pending_org_slug ?? null) as string | null
+  const role = user.user_metadata?.pending_role === 'MANAGER' ? 'MANAGER' as const : 'MEMBER' as const
 
   if (orgSlug) {
     const org = await prisma.organisation.findUnique({

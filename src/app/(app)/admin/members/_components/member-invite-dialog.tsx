@@ -62,6 +62,16 @@ export function MemberInviteDialog({ orgs }: MemberInviteDialogProps) {
               placeholder="user@example.com"
             />
           </Field>
+          <Field>
+            <FieldLabel htmlFor="invite-name">Name (optional)</FieldLabel>
+            <Input
+              id="invite-name"
+              name="name"
+              type="text"
+              placeholder="Alice Smith"
+              maxLength={120}
+            />
+          </Field>
           {orgs.length > 0 && (
             <>
               <Field>
