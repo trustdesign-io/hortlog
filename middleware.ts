@@ -1,26 +1,58 @@
+import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+const PROTECTED_PREFIXES = ['/records', '/settings', '/admin', '/orgs']
+const SIGN_IN_ONLY = ['/sign-in', '/sign-up']
+
+export async function middleware(request: NextRequest) {
+  let supabaseResponse = NextResponse.next({ request })
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            request.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
+      },
+    }
+  )
+
+  // IMPORTANT: auth.getUser() must be called immediately after createServerClient
+  // to ensure the session cookie is refreshed on every request.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
   const { pathname } = request.nextUrl
 
-  const protectedPaths = ['/dashboard', '/settings']
-  const isAppRoute = protectedPaths.some((p) => pathname.startsWith(p))
-  const isAuthRoute = pathname === '/sign-in' || pathname === '/sign-up'
+  const isProtected = PROTECTED_PREFIXES.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
+  )
+  const isSignInRoute = SIGN_IN_ONLY.includes(pathname)
 
-  // Check for Supabase session cookie (handles chunked .0/.1 format)
-  const hasSession = request.cookies.getAll()
-    .some(c => c.name.startsWith('sb-') && c.name.includes('auth-token'))
-
-  if (isAppRoute && !hasSession) {
+  if (isProtected && !user) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
   }
-  if (isAuthRoute && hasSession) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+  if (isSignInRoute && user) {
+    return NextResponse.redirect(new URL('/records', request.url))
   }
 
-  return NextResponse.next()
+  return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|auth/callback|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|auth/callback|v/|api/|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }
