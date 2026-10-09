@@ -69,7 +69,7 @@ export function CookieBanner({ forceOpen = false, onClose }: CookieBannerProps) 
           </Link>
         </p>
         <div className="flex shrink-0 gap-2">
-          <Button variant="outline" size="sm" onClick={handleReject}>
+          <Button variant="outline" size="sm" onClick={handleReject} autoFocus>
             Reject
           </Button>
           <Button size="sm" onClick={handleAccept}>
@@ -90,7 +90,7 @@ export function CookieSettingsButton() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="hover:text-foreground transition-colors"
+        className="text-muted-foreground hover:text-foreground transition-colors"
       >
         Cookie settings
       </button>

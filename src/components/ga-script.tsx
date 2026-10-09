@@ -35,6 +35,7 @@ export function GAScript() {
   return (
     <>
       {/* Consent Mode v2 defaults — must run before the GA snippet */}
+      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
       <Script id="ga-consent-defaults" strategy="beforeInteractive">
         {`
           window.dataLayer = window.dataLayer || [];

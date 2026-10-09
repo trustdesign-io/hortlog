@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import { GoogleAnalytics } from '@next/third-parties/google'
 import { prisma } from '@/lib/prisma'
 import { QrRedirect } from './qr-redirect'
 
@@ -29,12 +28,5 @@ export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
     ? `/${orgSlug}/${collectionSlug}/${viewSlug}`
     : `/${orgSlug}/views/${viewSlug}`
 
-  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID
-
-  return (
-    <>
-      {gaId && <GoogleAnalytics gaId={gaId} />}
-      <QrRedirect destination={destination} shortCode={code} />
-    </>
-  )
+  return <QrRedirect destination={destination} shortCode={code} />
 }
