@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { WORK_ACTION_LABELS } from '@/lib/actions/work-record'
 import { ScientificName } from '@/components/ui/scientific-name'
+import { PrintButton } from '@/components/print-button'
 
 interface SharePageProps {
   params: Promise<{ token: string }>
@@ -43,8 +44,6 @@ export default async function SharedRecordPage({ params }: SharePageProps) {
       note: true,
       sources: true,
       openQuestions: true,
-      // Omit user fields — show only the user's display name, not email
-      user: { select: { name: true } },
       organisation: { select: { name: true } },
       specimen: {
         select: {
@@ -68,13 +67,12 @@ export default async function SharedRecordPage({ params }: SharePageProps) {
   if (!record) return notFound()
 
   const recordNum = String(record.recordNumber).padStart(3, '0')
-  const holderName = record.user.name ?? 'Hortlog member'
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 print:max-w-full">
       <header className="mb-6">
         <p className="text-xs text-muted-foreground">
-          Work record shared by {holderName} · {record.organisation.name}
+          Work record · {record.organisation.name}
         </p>
         <p className="mt-1 font-mono text-xs text-muted-foreground">Record #{recordNum}</p>
         <ScientificName className="mt-2 text-2xl font-medium leading-tight">
@@ -167,13 +165,7 @@ export default async function SharedRecordPage({ params }: SharePageProps) {
 
       {/* Print */}
       <div className="print:hidden">
-        <button
-          onClick={() => window.print()}
-          className="text-sm underline underline-offset-2 hover:text-foreground text-muted-foreground"
-          type="button"
-        >
-          Print / save as PDF
-        </button>
+        <PrintButton />
       </div>
     </div>
   )

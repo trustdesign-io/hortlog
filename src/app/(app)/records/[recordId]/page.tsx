@@ -8,6 +8,7 @@ import { ScientificName } from '@/components/ui/scientific-name'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { ShareControls } from './share-controls'
+import { PrintButton } from '@/components/print-button'
 
 interface RecordPageProps {
   params: Promise<{ recordId: string }>
@@ -180,13 +181,7 @@ export default async function RecordPage({ params }: RecordPageProps) {
 
       {/* Print button */}
       <div className="mb-6 print:hidden">
-        <button
-          onClick={() => window.print()}
-          className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
-          type="button"
-        >
-          Print / save as PDF
-        </button>
+        <PrintButton className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'no-underline')} />
       </div>
 
       {/* Sharing */}

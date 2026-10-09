@@ -41,5 +41,6 @@ export async function revokeShareLink(recordId: string): Promise<ActionResult> {
   })
 
   revalidatePath('/records')
+  revalidatePath(`/records/${recordId}`)
   return { success: true }
 }
