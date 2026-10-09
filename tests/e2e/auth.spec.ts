@@ -76,7 +76,7 @@ test.describe('Auth smoke tests', () => {
     await expect(page.getByRole('heading', { name: /link expired|invalid/i })).toBeVisible()
   })
 
-  test('/auth/callback?reason=link_expired shows the error page', async ({ page }) => {
+  test('/auth/error?reason=link_expired shows the correct message', async ({ page }) => {
     await page.goto('/auth/error?reason=link_expired')
     await expect(page.getByRole('heading', { name: /link expired|invalid/i })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Back to sign in' })).toBeVisible()

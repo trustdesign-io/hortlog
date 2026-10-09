@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   const errorParam = searchParams.get('error')
 
   if (errorParam) {
-    return NextResponse.redirect(`${origin}/sign-in?error=${errorParam}`)
+    return NextResponse.redirect(`${origin}/auth/error?reason=link_expired`)
   }
 
   // PKCE flow (OAuth, magic link via code)

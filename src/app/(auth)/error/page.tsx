@@ -13,13 +13,16 @@ const MESSAGES: Record<string, string> = {
   invalid_link: 'This link is invalid or has already been used. Please request a new one.',
 }
 
+const VALID_REASONS = new Set(Object.keys(MESSAGES))
+
 interface AuthErrorPageProps {
   searchParams: Promise<{ reason?: string }>
 }
 
 export default async function AuthErrorPage({ searchParams }: AuthErrorPageProps) {
   const { reason } = await searchParams
-  const message = (reason && MESSAGES[reason]) ?? MESSAGES['invalid_link']
+  const safeReason = reason && VALID_REASONS.has(reason) ? reason : 'invalid_link'
+  const message = MESSAGES[safeReason]
 
   return (
     <Card className="w-full max-w-md">
