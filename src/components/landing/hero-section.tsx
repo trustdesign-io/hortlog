@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
@@ -12,14 +13,15 @@ export interface HeroVideoMedia {
   type: 'video'
   src: string
   poster: string
+  posterSizes?: string
 }
 
 export type HeroMedia = HeroImageMedia | HeroVideoMedia
 
 interface HeroSectionProps {
-  heading: React.ReactNode
-  body: React.ReactNode
-  actions: React.ReactNode
+  heading: ReactNode
+  body: ReactNode
+  actions: ReactNode
   backgroundMedia?: HeroMedia
   className?: string
 }
@@ -66,7 +68,7 @@ export function HeroSection({
                 alt=""
                 fill
                 className="object-cover motion-safe:hidden"
-                sizes="100vw"
+                sizes={backgroundMedia.posterSizes ?? '100vw'}
                 priority
               />
               <video
@@ -80,8 +82,9 @@ export function HeroSection({
               />
             </>
           )}
-          {/* Overlay to keep text readable at WCAG AA contrast over any media */}
-          <div className="absolute inset-0 bg-black/45" />
+          {/* Overlay to keep text readable at WCAG AA contrast over any media.
+              bg-black/60 ensures normal-weight body text (#fff on ~#404040 composite) clears 4.5:1. */}
+          <div className="absolute inset-0 bg-black/60" />
         </div>
       )}
 
