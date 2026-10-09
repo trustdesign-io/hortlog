@@ -1,3 +1,4 @@
+import type React from 'react'
 import Link from 'next/link'
 import { ChevronRight, ChevronLeft } from 'lucide-react'
 import { ScientificName } from '@/components/ui/scientific-name'
@@ -27,6 +28,7 @@ interface SpecimenDetailProps {
   }
   breadcrumbs?: BreadcrumbItem[]
   backHref?: string
+  children?: React.ReactNode
 }
 
 const IUCN_DANGER: Record<string, string> = {
@@ -50,7 +52,7 @@ function conservationBadgeVariant(
   return 'outline'
 }
 
-export function SpecimenDetail({ species, specimen, breadcrumbs, backHref }: SpecimenDetailProps) {
+export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, children }: SpecimenDetailProps) {
   const conservationLabel = species.conservationStatus
     ? IUCN_DANGER[species.conservationStatus.toUpperCase()] ?? species.conservationStatus
     : null
@@ -158,6 +160,8 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref }: Spe
           </div>
         )}
       </dl>
+
+      {children}
     </div>
   )
 }
