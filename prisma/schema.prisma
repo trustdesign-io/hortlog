@@ -255,6 +255,9 @@ model WorkRecord {
   sources         String?
   openQuestions   String?
 
+  // Sharing: opt-in public link via a random token
+  shareToken      String?  @unique
+
   userId          String
   user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 
