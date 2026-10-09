@@ -51,6 +51,10 @@ export const SizeLG: Story = {
   args: { size: 'lg', children: 'Get started' },
 }
 
+export const SizeXL: Story = {
+  args: { size: 'xl', children: 'Sign up' },
+}
+
 // Icon sizes
 export const IconDefault: Story = {
   args: { size: 'icon', children: <PlusIcon />, 'aria-label': 'Add item' },
@@ -66,6 +70,10 @@ export const IconSM: Story = {
 
 export const IconLG: Story = {
   args: { size: 'icon-lg', children: <PlusIcon />, 'aria-label': 'Add item' },
+}
+
+export const IconXL: Story = {
+  args: { size: 'icon-xl', children: <PlusIcon />, 'aria-label': 'Add item' },
 }
 
 // With icons

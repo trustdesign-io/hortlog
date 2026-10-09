@@ -51,10 +51,10 @@ export default async function HomePage() {
             however far back the plant is planted.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Link href="/sign-up" className={cn(buttonVariants({ size: 'lg' }))}>
+            <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }), 'w-full sm:w-auto')}>
               Sign up
             </Link>
-            <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline', size: 'lg' }))}>
+            <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline', size: 'xl' }), 'w-full sm:w-auto')}>
               Sign in
             </Link>
           </div>
@@ -116,7 +116,7 @@ export default async function HomePage() {
             <ScientificName>Quercus robur</ScientificName>{' '}
             to a glasshouse bed of ten thousand specimens — hortlog scales to your collection.
           </p>
-          <Link href="/sign-up" className={cn(buttonVariants({ size: 'lg' }))}>
+          <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }))}>
             Sign up
           </Link>
         </section>
