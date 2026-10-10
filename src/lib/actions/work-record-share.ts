@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { randomBytes } from 'crypto'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth/permissions'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 export async function createShareLink(recordId: string): Promise<ActionResult<{ token: string }>> {
   const user = await requireAuth()

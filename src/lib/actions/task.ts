@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 async function getOrg(orgSlug: string) {
   return prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })

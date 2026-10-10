@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { uploadSpecimenImage } from '@/lib/storage'
 import { toSlug } from '@/lib/utils/slug'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 export async function createSpecimen(
   orgSlug: string,

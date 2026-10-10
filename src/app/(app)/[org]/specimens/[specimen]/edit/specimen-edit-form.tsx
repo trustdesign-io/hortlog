@@ -25,7 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Trash2, MapPin, X } from 'lucide-react'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 interface SpecimenData {
   id: string

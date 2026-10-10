@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dialog'
 import { MemberPicker, getMemberInitials } from '@/components/member-picker'
 import { X, Plus, Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 interface Assignee {
   id: string

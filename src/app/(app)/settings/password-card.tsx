@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { PasswordInput } from '@/components/ui/password-input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 export function PasswordCard() {
   const [state, action, isPending] = useActionState<ActionResult | null, FormData>(

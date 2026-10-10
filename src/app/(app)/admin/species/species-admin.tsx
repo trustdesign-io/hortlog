@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 import type { Species } from '@prisma/client'
 
 const CONSERVATION_OPTIONS = [

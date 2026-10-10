@@ -8,7 +8,7 @@ import { requireAuth, requireOrgAccess, isAdmin } from '@/lib/auth/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { uploadOrgLogo } from '@/lib/storage'
 import { RESERVED_ORG_SLUGS } from '@/lib/reserved-slugs'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
 const APP_URL =

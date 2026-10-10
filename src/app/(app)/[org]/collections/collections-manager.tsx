@@ -17,7 +17,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Pencil, Plus, Trash2 } from 'lucide-react'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 interface Collection {
   id: string

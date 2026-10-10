@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
 

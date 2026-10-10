@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { createAdminClient } from '@/lib/supabase/admin'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
 const RESERVED_SLUGS = new Set([

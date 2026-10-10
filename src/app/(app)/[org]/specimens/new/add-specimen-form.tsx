@@ -21,7 +21,7 @@ import {
   ComboboxEmpty,
 } from '@/components/ui/combobox'
 import { ScientificName } from '@/components/ui/scientific-name'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 interface SpeciesOption {
   id: string

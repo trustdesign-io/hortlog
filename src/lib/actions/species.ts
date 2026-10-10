@@ -6,7 +6,7 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
 import { notFound } from 'next/navigation'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 const CONSERVATION_STATUSES = ['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD']
 const SCIENTIFIC_NAME_PATTERN = /^[A-Z][a-z]+(\s[a-z×'\-]+)+$/
