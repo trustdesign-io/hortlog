@@ -2,8 +2,8 @@
 
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
-import { SignInSchema, SignUpSchema } from '@trustdesign/shared/schemas'
-import type { ActionResult } from '@trustdesign/shared/types'
+import { SignInSchema, SignUpSchema } from '@/lib/shared/schemas'
+import type { ActionResult } from '@/lib/shared/types'
 import { getLandingPath } from '@/lib/auth/landing'
 
 export async function signInWithEmail(_prevState: ActionResult, formData: FormData): Promise<ActionResult> {

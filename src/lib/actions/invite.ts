@@ -3,7 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 export async function acceptInvite(
   _prevState: ActionResult | null,

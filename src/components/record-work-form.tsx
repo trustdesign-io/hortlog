@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { recordWork } from '@/lib/actions/work-record'
 import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 interface RecordWorkFormProps {
   orgSlug: string

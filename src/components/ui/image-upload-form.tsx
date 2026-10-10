@@ -3,7 +3,7 @@
 import { useActionState, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Upload } from 'lucide-react'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 interface ImageUploadFormProps {
   action: (prev: ActionResult | null, formData: FormData) => Promise<ActionResult>

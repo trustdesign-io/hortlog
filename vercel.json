@@ -1,4 +1,4 @@
 {
-  "installCommand": "git config --global url.\"https://${GITHUB_TOKEN}@github.com/\".insteadOf \"git@github.com:\" && git config --global url.\"https://${GITHUB_TOKEN}@github.com/\".insteadOf \"ssh://git@github.com/\" && npm install",
+  "installCommand": "npm ci",
   "buildCommand": "npx prisma generate && next build"
 }

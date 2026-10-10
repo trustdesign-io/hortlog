@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Trash2 } from 'lucide-react'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 import type { MembershipRole } from '@prisma/client'
 
 interface Member {

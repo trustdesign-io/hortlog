@@ -5,7 +5,7 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth/permissions'
 import { uploadAvatar } from '@/lib/storage'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 export async function updateProfile(
   _prevState: ActionResult | null,

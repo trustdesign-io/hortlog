@@ -1,5 +1,10 @@
 import type { Preview } from '@storybook/nextjs-vite'
+import { sb } from 'storybook/test'
 import '../src/app/globals.css'
+
+// Server actions that reach the database can't run in the browser; use the
+// mocks in their __mocks__ folders instead.
+sb.mock(import('../src/lib/actions/auth.ts'))
 
 // Inject next/font CSS variables so font utilities resolve correctly in Storybook.
 // next/font sets these on <html> at runtime via Next.js — Storybook bypasses that.

@@ -15,7 +15,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import type { ActionResult } from '@trustdesign/shared/types'
+import type { ActionResult } from '@/lib/shared/types'
 
 const initialState: ActionResult = { success: true }
 
