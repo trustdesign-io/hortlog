@@ -7,6 +7,7 @@ import { Logo } from '@/components/layout/logo'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { HeroSection } from '@/components/landing/hero-section'
+import { PersonalRecordSection } from '@/components/landing/personal-record-section'
 import { CookieSettingsButton } from '@/components/cookie-banner'
 import { cn } from '@/lib/utils'
 
@@ -114,6 +115,9 @@ export default async function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Personal record */}
+        <PersonalRecordSection />
 
         {/* CTA footer */}
         <section className="px-6 py-20 text-center">
