@@ -4,6 +4,7 @@ import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { MemberList } from './member-list'
 import { TeamTabs } from '../team-tabs'
+import { sortDirectorsThenByName } from '@/lib/team'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -47,7 +48,7 @@ export default async function MembersPage({ params }: MembersPageProps) {
       <MemberList
         orgSlug={orgSlug}
         labels={{ directorLabel: org.directorLabel, managerLabel: org.managerLabel, memberLabel: org.memberLabel }}
-        members={org.memberships.map((m) => ({
+        members={sortDirectorsThenByName(org.memberships).map((m) => ({
           id: m.id,
           role: m.role,
           createdAt: m.createdAt.toISOString(),

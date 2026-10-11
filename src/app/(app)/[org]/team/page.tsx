@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { TeamTabs } from './team-tabs'
+import { EmptyState } from '@/components/empty-state'
 import { prisma } from '@/lib/prisma'
 import { Fragment } from 'react'
 import { sortTeam } from '@/lib/team'
@@ -61,9 +62,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
       {canManageOrg(viewer, orgSlug) && <TeamTabs orgSlug={orgSlug} active="team" />}
 
       {team.length === 0 ? (
-        <div className="rounded-xl border bg-card py-16 text-center">
-          <p className="text-sm text-muted-foreground">No one has joined yet.</p>
-        </div>
+        <EmptyState message="No one has joined yet." />
       ) : (
         // An org chart: directors on top, everyone else on one level below
         <div className="flex flex-col items-center">

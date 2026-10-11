@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { sortTeam, type TeamMember } from './team'
+import { sortDirectorsThenByName, sortTeam, type TeamMember } from './team'
 
 const m = (id: string, role: TeamMember['role'], name: string | null, email = `${id}@example.com`): TeamMember => ({
   id,
@@ -28,5 +28,17 @@ describe('sortTeam', () => {
     const list = [m('1', 'MEMBER', 'B'), m('2', 'MANAGER', 'A')]
     sortTeam(list)
     expect(list.map((x) => x.id)).toEqual(['1', '2'])
+  })
+})
+
+describe('sortDirectorsThenByName', () => {
+  it('keeps directors on top and sorts managers and members together by name', () => {
+    const sorted = sortDirectorsThenByName([
+      m('1', 'MEMBER', 'twgmember1'),
+      m('2', 'MANAGER', 'twgmanager'),
+      m('3', 'DIRECTOR', 'Tom Hart Dyke'),
+      m('4', 'MEMBER', 'Danny Clayden Chambers'),
+    ])
+    expect(sorted.map((x) => x.id)).toEqual(['3', '4', '2', '1'])
   })
 })

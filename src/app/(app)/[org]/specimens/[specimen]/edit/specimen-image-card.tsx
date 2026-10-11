@@ -37,7 +37,7 @@ export function SpecimenImageCard({
           action={boundAction}
           fieldName="image"
           label="Choose photo"
-          hint="PNG, JPEG, or WebP. Max 2 MB."
+          hint="Any image: large ones are resized before upload."
         />
       </CardContent>
     </Card>

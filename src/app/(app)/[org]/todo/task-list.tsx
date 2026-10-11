@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useTransition, useState, useEffect } from 'react'
+import { EmptyState } from '@/components/empty-state'
 import { useRouter } from 'next/navigation'
 import { createTask, updateTask, setTaskStatus, deleteTask } from '@/lib/actions/task'
 import { Button } from '@/components/ui/button'
@@ -426,12 +427,7 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProp
       </div>
 
       {tasks.length === 0 ? (
-        <div className="rounded-xl border bg-card py-16 text-center">
-          <p className="text-sm text-muted-foreground">No tasks yet.</p>
-          {canManage && (
-            <p className="mt-1 text-sm text-muted-foreground">Add the first one above.</p>
-          )}
-        </div>
+        <EmptyState message="No tasks yet." hint={canManage ? 'Use Add task to add the first one.' : null} />
       ) : (
         <div className="rounded-xl border bg-card overflow-hidden">
           <ul role="list" aria-label="Tasks">

@@ -1,8 +1,10 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import { Plus } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button-variants'
+import { EmptyState } from '@/components/empty-state'
 import { Badge } from '@/components/ui/badge'
 
 interface ViewsPageProps {
@@ -48,23 +50,14 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
         </div>
         {canManage && (
           <Link href={`/${orgSlug}/scenes/new`} className={buttonVariants({ size: 'sm' })}>
+            <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
             New scene
           </Link>
         )}
       </div>
 
       {scenes.length === 0 ? (
-        <div className="rounded-xl border bg-card py-16 text-center">
-          <p className="text-sm text-muted-foreground">No scenes yet.</p>
-          {canManage && (
-            <Link
-              href={`/${orgSlug}/scenes/new`}
-              className="mt-3 inline-block text-sm text-primary underline-offset-2 hover:underline"
-            >
-              Create your first scene
-            </Link>
-          )}
-        </div>
+        <EmptyState message="No scenes yet." hint={canManage ? 'Use New scene to add the first one.' : null} />
       ) : (
         <div className="rounded-xl border bg-card overflow-hidden">
           <ul role="list">
