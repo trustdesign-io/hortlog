@@ -7,7 +7,7 @@ import { BackToRecord } from '@/components/records/back-to-record'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { PrintButton } from '@/components/print-button'
 import { cn } from '@/lib/utils'
-import { ShareControls } from './share-controls'
+import Link from 'next/link'
 
 interface RecordPageProps {
   params: Promise<{ recordId: string }>
@@ -32,9 +32,29 @@ export default async function RecordPage({ params }: RecordPageProps) {
         <PrintButton className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'no-underline')} />
       </div>
 
-      <div className="print:hidden">
-        <ShareControls recordId={record.id} shareToken={record.shareToken} />
-      </div>
+      {/* Whether this record is on the member's public record, and why not */}
+      <p className="text-sm text-muted-foreground print:hidden">
+        {!user.recordPublic || !user.username ? (
+          <>
+            Private.{' '}
+            <Link href="/settings" className="underline underline-offset-2 hover:text-foreground">
+              Make your record public
+            </Link>
+          </>
+        ) : record.organisation.recordsPublic ? (
+          <>
+            Public at{' '}
+            <Link
+              href={`/u/${user.username}/${record.recordNumber}`}
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              hortlog.com/u/{user.username}/{record.recordNumber}
+            </Link>
+          </>
+        ) : (
+          <>Not on your public record: {record.organisation.name} keeps its plants private.</>
+        )}
+      </p>
     </div>
   )
 }

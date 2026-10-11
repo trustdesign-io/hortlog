@@ -195,3 +195,27 @@ export async function uploadOrgLogoAction(
   revalidatePath(`/${orgSlug}/settings`)
   return { success: true }
 }
+
+export async function updateOrgRecordPrivacy(
+  orgSlug: string,
+  _prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_org_settings')
+  const recordsPublic = formData.get('recordsPublic') === 'on'
+  const privateRecordsShowName = formData.get('privateRecordsShowName') === 'on'
+
+  try {
+    await prisma.organisation.update({
+      where: { slug: orgSlug },
+      data: { recordsPublic, privateRecordsShowName },
+    })
+  } catch (err) {
+    console.error('[updateOrgRecordPrivacy] error:', err)
+    return { success: false, error: 'Failed to save. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/settings`)
+  // Public records read this setting on every request, so nothing else needs refreshing
+  return { success: true }
+}

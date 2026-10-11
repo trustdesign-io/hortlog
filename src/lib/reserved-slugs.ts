@@ -15,5 +15,6 @@ export const RESERVED_ORG_SLUGS = new Set([
   'share',
   'sign-in',
   'sign-up',
+  'u',
   'v',
 ])

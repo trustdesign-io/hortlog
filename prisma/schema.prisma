@@ -15,8 +15,15 @@ model User {
   avatarUrl             String?
   isAdmin               Boolean   @default(false)
   onboardingCompletedAt DateTime?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+
+  // Public record: off until the member turns it on; served at /u/{username}
+  username        String? @unique
+  recordPublic    Boolean @default(false)
+  // Note and Open questions are left out of the public record unless the member includes them
+  recordShowNotes Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   memberships           Membership[]
   sceneAssignments      SceneAssignment[]
@@ -32,15 +39,21 @@ model User {
 // ─── Organisations ────────────────────────────────────────────────────────────
 
 model Organisation {
-  id            String   @id @default(cuid())
-  slug          String   @unique
+  id            String  @id @default(cuid())
+  slug          String  @unique
   name          String
   logoUrl       String?
-  directorLabel String   @default("Director")
-  managerLabel  String   @default("Manager")
-  memberLabel   String   @default("Member")
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  directorLabel String  @default("Director")
+  managerLabel  String  @default("Manager")
+  memberLabel   String  @default("Member")
+
+  // Whether members' public records may show plants worked with here
+  recordsPublic          Boolean @default(true)
+  // When they may not: whether the summary line names the organisation
+  privateRecordsShowName Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   memberships Membership[]
   specimens   Specimen[]

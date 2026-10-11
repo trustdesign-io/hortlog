@@ -40,6 +40,9 @@ export default async function AppLayout({
     avatarUrl: meta?.avatar_url ?? null,
     isAdmin: false,
     onboardingCompletedAt: null,
+    username: null,
+    recordPublic: false,
+    recordShowNotes: false,
     createdAt: now,
     updatedAt: now,
   }
