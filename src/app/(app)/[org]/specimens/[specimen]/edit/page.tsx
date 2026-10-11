@@ -28,6 +28,7 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
       select: {
         id: true,
         slug: true,
+        cultivar: true,
         accessionNumber: true,
         notes: true,
         imageUrl: true,
@@ -76,6 +77,7 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
         specimen={{
           id: specimen.id,
           slug: specimen.slug,
+          cultivar: specimen.cultivar,
           accessionNumber: specimen.accessionNumber,
           notes: specimen.notes,
           latitude: specimen.latitude,

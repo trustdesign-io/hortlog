@@ -21,17 +21,11 @@ export default async function NewSpecimenPage({ params }: NewSpecimenPageProps) 
   })
   if (!org) return notFound()
 
-  const [allSpecies, collections] = await Promise.all([
-    prisma.species.findMany({
-      select: { id: true, commonName: true, scientificName: true },
-      orderBy: { commonName: 'asc' },
-    }),
-    prisma.collection.findMany({
-      where: { organisationId: org.id },
-      select: { id: true, name: true },
-      orderBy: { name: 'asc' },
-    }),
-  ])
+  const collections = await prisma.collection.findMany({
+    where: { organisationId: org.id },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
 
   return (
     <div className="max-w-xl space-y-6">
@@ -50,7 +44,6 @@ export default async function NewSpecimenPage({ params }: NewSpecimenPageProps) 
       </div>
       <AddSpecimenForm
         orgSlug={orgSlug}
-        species={allSpecies}
         collections={collections}
       />
     </div>

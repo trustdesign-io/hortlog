@@ -37,6 +37,7 @@ export async function recordWork(
     select: {
       id: true,
       slug: true,
+      cultivar: true,
       organisationId: true,
       organisation: { select: { name: true } },
       species: {
@@ -74,6 +75,14 @@ export async function recordWork(
             recordNumber: nextNumber,
             firstWorkedDate: date,
             scientificName: specimen.species.scientificName,
+            // Botanical name in italics, authority upright, then the cultivar
+            nameHtml: [
+              `<i>${specimen.species.scientificName}</i>`,
+              specimen.species.authority,
+              specimen.cultivar ? `‘${specimen.cultivar}’` : null,
+            ]
+              .filter(Boolean)
+              .join(' '),
             family: specimen.species.family,
             authority: specimen.species.authority,
             commonNames: specimen.species.commonName,

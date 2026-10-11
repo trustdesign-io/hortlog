@@ -30,6 +30,7 @@ import type { ActionResult } from '@/lib/shared/types'
 interface SpecimenData {
   id: string
   slug: string
+  cultivar: string | null
   accessionNumber: string | null
   notes: string | null
   latitude: number | null
@@ -220,6 +221,19 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
             <CardTitle className="text-base">Details</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="cultivar">Cultivar</Label>
+              <Input
+                id="cultivar"
+                name="cultivar"
+                type="text"
+                autoComplete="off"
+                defaultValue={specimen.cultivar ?? ''}
+                placeholder="e.g. Flamingo"
+                maxLength={80}
+                disabled={isPending}
+              />
+            </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="accessionNumber">Accession number</Label>
               <Input

@@ -47,6 +47,7 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
         accessionNumber: true,
         sceneId: true,
         imageUrl: true,
+        cultivar: true,
         species: { select: { commonName: true, scientificName: true, photoUrl: true } },
         scene: { select: { name: true } },
         collections: { include: { collection: { select: { id: true, name: true } } } },

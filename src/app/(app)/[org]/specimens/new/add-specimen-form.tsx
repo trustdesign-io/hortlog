@@ -12,22 +12,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import {
-  Combobox,
-  ComboboxInput,
-  ComboboxContent,
-  ComboboxList,
-  ComboboxItem,
-  ComboboxEmpty,
-} from '@/components/ui/combobox'
-import { ScientificName } from '@/components/ui/scientific-name'
+import { SpeciesPicker, type PickedSpecies } from '@/components/species/species-picker'
 import type { ActionResult } from '@/lib/shared/types'
-
-interface SpeciesOption {
-  id: string
-  commonName: string
-  scientificName: string
-}
 
 interface CollectionOption {
   id: string
@@ -36,17 +22,17 @@ interface CollectionOption {
 
 interface AddSpecimenFormProps {
   orgSlug: string
-  species: SpeciesOption[]
   collections: CollectionOption[]
 }
 
-export function AddSpecimenForm({ orgSlug, species, collections }: AddSpecimenFormProps) {
+export function AddSpecimenForm({ orgSlug, collections }: AddSpecimenFormProps) {
   const boundAction = createSpecimen.bind(null, orgSlug)
   const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(
     boundAction,
     null,
   )
-  const [speciesId, setSpeciesId] = useState('')
+  const [species, setSpecies] = useState<PickedSpecies | null>(null)
+  const speciesId = species?.id ?? ''
 
   return (
     <form action={formAction} className="space-y-4" aria-busy={isPending}>
@@ -69,34 +55,14 @@ export function AddSpecimenForm({ orgSlug, species, collections }: AddSpecimenFo
             Species
             <span className="ml-1 text-destructive" aria-hidden="true">*</span>
           </Label>
-          <Combobox
-            value={speciesId}
-            onValueChange={(v) => setSpeciesId(v ?? '')}
-          >
-            <ComboboxInput
-              id="species-input"
-              placeholder="Search by common or scientific name…"
-              showTrigger={false}
-              showClear={!!speciesId}
-              aria-required="true"
-              disabled={isPending}
-            />
-            <ComboboxContent>
-              <ComboboxList>
-                <ComboboxEmpty>No species found.</ComboboxEmpty>
-                {species.map((s) => (
-                  <ComboboxItem key={s.id} value={s.id}>
-                    {s.commonName}{' '}
-                    <ScientificName className="text-xs text-muted-foreground">
-                      {s.scientificName}
-                    </ScientificName>
-                  </ComboboxItem>
-                ))}
-              </ComboboxList>
-            </ComboboxContent>
-          </Combobox>
+          <SpeciesPicker id="species-input" value={species} onChange={setSpecies} disabled={isPending} />
+          <p className="text-xs text-muted-foreground">
+            Search by botanical name (species already in hortlog also match common names). Names come from the
+            Catalogue of Life; a synonym is saved under its
+            accepted name.
+          </p>
           {!speciesId && state !== null && !state.success && (
-            <p className="text-xs text-muted-foreground">Select a species from the list.</p>
+            <p className="text-xs text-muted-foreground">Choose a species first.</p>
           )}
         </CardContent>
       </Card>
@@ -107,6 +73,21 @@ export function AddSpecimenForm({ orgSlug, species, collections }: AddSpecimenFo
           <CardTitle className="text-base">Details</CardTitle>
         </CardHeader>
         <CardContent className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="cultivar">Cultivar</Label>
+            <Input
+              id="cultivar"
+              name="cultivar"
+              type="text"
+              autoComplete="off"
+              placeholder="e.g. Flamingo"
+              maxLength={80}
+              disabled={isPending}
+            />
+            <p className="text-xs text-muted-foreground">
+              Without quotes. Leave blank for the species itself.
+            </p>
+          </div>
           <div className="flex flex-col gap-2">
             <Label htmlFor="accessionNumber">Accession number</Label>
             <Input

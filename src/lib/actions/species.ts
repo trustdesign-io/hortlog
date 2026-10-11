@@ -4,13 +4,13 @@ import { Prisma } from '@prisma/client'
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
-import { toSlug } from '@/lib/utils/slug'
 import { findReferencePhoto } from '@/lib/inaturalist'
+import { addFromCatalogue, searchCatalogue, type CatalogueSuggestion, type ExistingSpecies } from '@/lib/species-catalogue'
+import { canManageOrg } from '@/lib/auth/permissions'
 import { notFound } from 'next/navigation'
 import type { ActionResult } from '@/lib/shared/types'
 
 const CONSERVATION_STATUSES = ['EX', 'EW', 'CR', 'EN', 'VU', 'NT', 'LC', 'DD']
-const SCIENTIFIC_NAME_PATTERN = /^[A-Z][a-z]+(\s[a-z×'\-]+)+$/
 
 async function requireAdmin() {
   const user = await requireAuth()
@@ -38,48 +38,11 @@ function parseSpeciesForm(formData: FormData): {
   if (commonName.length > 120) return { error: 'Common name must be 120 characters or fewer.' }
   if (!scientificName) return { error: 'Scientific name is required.' }
   if (scientificName.length > 200) return { error: 'Scientific name must be 200 characters or fewer.' }
-  if (!SCIENTIFIC_NAME_PATTERN.test(scientificName)) {
-    return { error: 'Scientific name must follow binomial nomenclature (e.g. "Rosa canina").' }
-  }
   if (conservationStatus && !CONSERVATION_STATUSES.includes(conservationStatus)) {
     return { error: `Conservation status must be one of: ${CONSERVATION_STATUSES.join(', ')}.` }
   }
 
   return { commonName, scientificName, family, origin, description, conservationStatus }
-}
-
-export async function createSpecies(
-  _prevState: ActionResult | null,
-  formData: FormData,
-): Promise<ActionResult> {
-  await requireAdmin()
-
-  const parsed = parseSpeciesForm(formData)
-  if ('error' in parsed) return { success: false, error: parsed.error }
-
-  const { commonName, scientificName, family, origin, description, conservationStatus } = parsed
-  const slug = toSlug(scientificName)
-
-  const existing = await prisma.species.findUnique({ where: { slug } })
-  if (existing) return { success: false, error: `A species with this scientific name already exists.` }
-
-  // Reference photo from iNaturalist, so nobody has to upload one
-  const photo = await findReferencePhoto(scientificName)
-
-  try {
-    await prisma.species.create({
-      data: { slug, commonName, scientificName, family, origin, description, conservationStatus, ...photo },
-    })
-  } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-      return { success: false, error: 'A species with this scientific name already exists.' }
-    }
-    console.error('[createSpecies] error:', err)
-    return { success: false, error: 'Failed to create species. Please try again.' }
-  }
-
-  revalidatePath('/admin/species')
-  return { success: true }
 }
 
 export async function updateSpecies(
@@ -89,35 +52,24 @@ export async function updateSpecies(
 ): Promise<ActionResult> {
   await requireAdmin()
 
+  // The botanical name is fixed: it came from the Catalogue of Life
+  const stored = await prisma.species.findUnique({ where: { id: speciesId }, select: { scientificName: true } })
+  if (!stored) return { success: false, error: 'Species not found.' }
+  formData.set('scientificName', stored.scientificName)
+
   const parsed = parseSpeciesForm(formData)
   if ('error' in parsed) return { success: false, error: parsed.error }
 
   const { commonName, scientificName, family, origin, description, conservationStatus } = parsed
-  const slug = toSlug(scientificName)
 
-  const conflict = await prisma.species.findFirst({
-    where: { slug, NOT: { id: speciesId } },
-  })
-  if (conflict) return { success: false, error: 'Another species with this scientific name already exists.' }
-
-  // Look the photo up again when the name changes, or when there isn't one yet
-  const current = await prisma.species.findUnique({
-    where: { id: speciesId },
-    select: { scientificName: true, photoUrl: true },
-  })
-  const nameChanged = current !== null && current.scientificName !== scientificName
-  const found = current && (nameChanged || !current.photoUrl) ? await findReferencePhoto(scientificName) : null
-  // A renamed species must not keep the old species' photo
-  const photo =
-    found ??
-    (nameChanged
-      ? { inatTaxonId: null, photoUrl: null, photoAttribution: null, photoLicence: null, photoSourceUrl: null }
-      : null)
+  // Try again for a reference photo if the species doesn't have one yet
+  const current = await prisma.species.findUnique({ where: { id: speciesId }, select: { photoUrl: true } })
+  const photo = current && !current.photoUrl ? await findReferencePhoto(scientificName) : null
 
   try {
     await prisma.species.update({
       where: { id: speciesId },
-      data: { slug, commonName, scientificName, family, origin, description, conservationStatus, ...photo },
+      data: { commonName, family, origin, description, conservationStatus, ...photo },
     })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
@@ -158,4 +110,33 @@ export async function deleteSpecies(speciesId: string): Promise<ActionResult> {
 
   revalidatePath('/admin/species')
   return { success: true }
+}
+
+/**
+ * Who may add species to the shared catalogue: platform admins, and directors or
+ * managers of any organisation (they add species from the Add specimen form).
+ */
+async function requireSpeciesEditor() {
+  const user = await requireAuth()
+  const allowed = isAdmin(user) || user.memberships.some((m) => canManageOrg(user, m.organisation.slug))
+  return allowed ? user : null
+}
+
+export async function searchSpeciesCatalogue(
+  query: string,
+): Promise<{ existing: ExistingSpecies[]; catalogue: CatalogueSuggestion[] }> {
+  if (!(await requireSpeciesEditor())) return { existing: [], catalogue: [] }
+  return searchCatalogue(query.slice(0, 100))
+}
+
+export async function addSpeciesFromCatalogue(
+  usageId: string,
+  commonName: string,
+): Promise<ActionResult<{ species: ExistingSpecies; existed: boolean }>> {
+  if (!(await requireSpeciesEditor())) return { success: false, error: 'You do not have permission to add species.' }
+  if (!/^[A-Za-z0-9]{1,20}$/.test(usageId)) return { success: false, error: 'Unknown name.' }
+  const result = await addFromCatalogue(usageId, commonName)
+  if (!result.ok) return { success: false, error: result.error }
+  revalidatePath('/admin/species')
+  return { success: true, data: { species: result.species, existed: result.existed } }
 }

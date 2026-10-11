@@ -31,6 +31,7 @@ interface SpecimenDetailProps {
     accessionNumber: string | null
     notes: string | null
     imageUrl?: string | null
+    cultivar?: string | null
   }
   breadcrumbs?: BreadcrumbItem[]
   backHref?: string
@@ -150,6 +151,9 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
         <ScientificName className="text-3xl font-medium leading-tight">
           {species.scientificName}
         </ScientificName>
+        {specimen.cultivar && (
+          <span className="font-heading text-3xl font-medium leading-tight"> ‘{specimen.cultivar}’</span>
+        )}
         <h1 className="mt-1 text-xl font-medium text-foreground">{species.commonName}</h1>
         {specimen.accessionNumber && (
           <p className="mt-1 font-mono text-xs text-muted-foreground">
