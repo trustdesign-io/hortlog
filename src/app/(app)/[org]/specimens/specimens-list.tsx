@@ -25,6 +25,8 @@ interface CollectionOption {
 
 interface SpecimensListProps {
   orgSlug: string
+  /** Managers open the edit page; members open the specimen's page. */
+  canManage: boolean
   specimens: SpecimenItem[]
   collections: CollectionOption[]
   initialQuery: string
@@ -34,6 +36,7 @@ interface SpecimensListProps {
 
 export function SpecimensList({
   orgSlug,
+  canManage,
   specimens,
   collections,
   initialQuery,
@@ -134,7 +137,7 @@ export function SpecimensList({
             {specimens.map((s) => (
               <li key={s.id} className="border-b last:border-0">
                 <Link
-                  href={`/${orgSlug}/specimens/${s.id}/edit`}
+                  href={canManage ? `/${orgSlug}/specimens/${s.id}/edit` : `/${orgSlug}/specimens/${s.slug}`}
                   className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 >
                   <div className="min-w-0 flex-1">

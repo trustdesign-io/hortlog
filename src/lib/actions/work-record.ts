@@ -14,7 +14,7 @@ export async function recordWork(
   _prevState: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const { user } = await requireOrgAccess(orgSlug, 'can_record_work')
 
   const actionRaw = formData.get('action')
   const actionNote = (formData.get('actionNote') as string | null)?.trim() || null
@@ -117,7 +117,7 @@ export async function updateWorkRecordField(
   field: string,
   newValue: string,
 ): Promise<ActionResult> {
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const { user } = await requireOrgAccess(orgSlug, 'can_record_work')
 
   const EDITABLE_FIELDS = [
     'firstWorkedDate', 'determination', 'labelText', 'provenance',
@@ -165,7 +165,7 @@ export async function updateLogEntryField(
   field: string,
   newValue: string,
 ): Promise<ActionResult> {
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const { user } = await requireOrgAccess(orgSlug, 'can_record_work')
 
   const EDITABLE_FIELDS = ['date', 'action', 'actionNote', 'location', 'text'] as const
 
@@ -220,7 +220,7 @@ export async function deleteLogEntry(
   orgSlug: string,
   entryId: string,
 ): Promise<ActionResult> {
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const { user } = await requireOrgAccess(orgSlug, 'can_record_work')
 
   const isManager = user.isAdmin || user.memberships.some(
     (m) => m.organisation.slug === orgSlug && m.role === 'MANAGER',

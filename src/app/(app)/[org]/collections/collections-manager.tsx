@@ -30,6 +30,8 @@ interface Collection {
 interface CollectionsManagerProps {
   orgSlug: string
   collections: Collection[]
+  /** Managers can create and edit; members only see the list. */
+  canEdit: boolean
   canDelete: boolean
 }
 
@@ -291,7 +293,7 @@ function DeleteCollectionDialog({
   )
 }
 
-export function CollectionsManager({ orgSlug, collections, canDelete }: CollectionsManagerProps) {
+export function CollectionsManager({ orgSlug, collections, canEdit, canDelete }: CollectionsManagerProps) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -300,7 +302,7 @@ export function CollectionsManager({ orgSlug, collections, canDelete }: Collecti
             ? 'No collections yet.'
             : `${collections.length} collection${collections.length === 1 ? '' : 's'}`}
         </p>
-        <CreateCollectionDialog orgSlug={orgSlug} />
+        {canEdit && <CreateCollectionDialog orgSlug={orgSlug} />}
       </div>
 
       {collections.length > 0 && (
@@ -324,7 +326,7 @@ export function CollectionsManager({ orgSlug, collections, canDelete }: Collecti
                   <span className="mr-2 text-xs text-muted-foreground">
                     {c._count.specimens} specimen{c._count.specimens === 1 ? '' : 's'}
                   </span>
-                  <EditCollectionDialog orgSlug={orgSlug} collection={c} />
+                  {canEdit && <EditCollectionDialog orgSlug={orgSlug} collection={c} />}
                   {canDelete && (
                     <DeleteCollectionDialog orgSlug={orgSlug} collection={c} />
                   )}

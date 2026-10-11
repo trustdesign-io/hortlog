@@ -3,6 +3,11 @@ import { hasCapability, CAPABILITIES } from './capabilities'
 
 describe('hasCapability', () => {
   describe('MANAGER role', () => {
+    it('can view the organisation and record work', () => {
+      expect(hasCapability('MANAGER', 'can_view_org')).toBe(true)
+      expect(hasCapability('MANAGER', 'can_record_work')).toBe(true)
+    })
+
     it('can edit specimens', () => {
       expect(hasCapability('MANAGER', 'can_edit_specimen')).toBe(true)
     })
@@ -25,12 +30,17 @@ describe('hasCapability', () => {
   })
 
   describe('MEMBER role', () => {
-    it('can edit specimens', () => {
-      expect(hasCapability('MEMBER', 'can_edit_specimen')).toBe(true)
+    it('can view the organisation and record work', () => {
+      expect(hasCapability('MEMBER', 'can_view_org')).toBe(true)
+      expect(hasCapability('MEMBER', 'can_record_work')).toBe(true)
     })
 
-    it('can edit views', () => {
-      expect(hasCapability('MEMBER', 'can_edit_view')).toBe(true)
+    it('cannot create, edit or delete specimens', () => {
+      expect(hasCapability('MEMBER', 'can_edit_specimen')).toBe(false)
+    })
+
+    it('cannot create, edit or delete views or collections', () => {
+      expect(hasCapability('MEMBER', 'can_edit_view')).toBe(false)
     })
 
     it('cannot manage members', () => {

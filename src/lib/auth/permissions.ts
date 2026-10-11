@@ -64,6 +64,13 @@ export async function requireOrgAccess(
   return { user, orgSlug }
 }
 
+/** True if the user can create, edit and delete things in this organisation (managers and platform admins). */
+export function canManageOrg(user: UserWithMemberships, orgSlug: string): boolean {
+  if (user.isAdmin) return true
+  const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
+  return membership ? hasCapability(membership.role, 'can_edit_specimen') : false
+}
+
 /**
  * Checks org access without throwing — for use in route handlers / server actions
  * where you need to construct a 403 Response yourself.

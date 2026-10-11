@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { requireOrgAccess } from '@/lib/auth/permissions'
+import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { SpecimensList } from './specimens-list'
@@ -13,7 +13,8 @@ interface SpecimensPageProps {
 export default async function SpecimensPage({ params, searchParams }: SpecimensPageProps) {
   const { org: orgSlug } = await params
   const { q, collectionId, placed } = await searchParams
-  await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const { user } = await requireOrgAccess(orgSlug, 'can_view_org')
+  const canManage = canManageOrg(user, orgSlug)
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
@@ -68,12 +69,15 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
             All plant and specimen records for this organisation.
           </p>
         </div>
-        <Link href={`/${orgSlug}/specimens/new`} className={buttonVariants({ size: 'sm' })}>
-          Add specimen
-        </Link>
+        {canManage && (
+          <Link href={`/${orgSlug}/specimens/new`} className={buttonVariants({ size: 'sm' })}>
+            Add specimen
+          </Link>
+        )}
       </div>
       <SpecimensList
         orgSlug={orgSlug}
+        canManage={canManage}
         specimens={specimens}
         collections={collections}
         initialQuery={query}
