@@ -15,6 +15,19 @@ export function getOrgSlugFromPath(
 }
 
 /**
+ * The organisation the sidebar shows: the one in the URL, else the member's first
+ * organisation, so pages outside an org (My record, Account) keep the org menu.
+ * Null when the user belongs to no organisation.
+ */
+export function resolveOrgSlug(
+  pathname: string | null,
+  knownSlugs: string[],
+  memberSlugs: string[],
+): string | null {
+  return getOrgSlugFromPath(pathname, knownSlugs) ?? memberSlugs[0] ?? null
+}
+
+/**
  * Returns the href of the most-specific nav item that matches `pathname`.
  *
  * An item matches if pathname equals its href exactly, or starts with

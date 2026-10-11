@@ -19,7 +19,7 @@ import {
   ClipboardList,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { getActiveHref, getOrgSlugFromPath } from '@/lib/nav-utils'
+import { getActiveHref, resolveOrgSlug } from '@/lib/nav-utils'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { UserMenu } from '@/components/user-menu'
@@ -214,7 +214,7 @@ function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefin
 function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
   const pathname = usePathname()
   const knownSlugs = getKnownSlugs(user, allOrgs)
-  const orgSlug = getOrgSlugFromPath(pathname, knownSlugs)
+  const orgSlug = resolveOrgSlug(pathname, knownSlugs, user.memberships.map((m) => m.organisation.slug))
   const orgNav = orgSlug ? buildOrgNav(orgSlug, canManageOrg(user, orgSlug)) : []
 
   return (
@@ -279,15 +279,16 @@ interface MobileBottomNavProps {
 function MobileBottomNav({ user, allOrgs }: MobileBottomNavProps) {
   const pathname = usePathname()
   const knownSlugs = getKnownSlugs(user, allOrgs)
-  const orgSlug = getOrgSlugFromPath(pathname, knownSlugs)
+  const orgSlug = resolveOrgSlug(pathname, knownSlugs, user.memberships.map((m) => m.organisation.slug))
 
+  // My record stays in reach everywhere; Account and the rest are in the menu.
   const items: NavItem[] = orgSlug
     ? [
+        ...myRecordNav,
         { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
         { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
         { href: `/${orgSlug}/views`, label: 'Views', icon: Grid3x3 },
         { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
-        { href: '/settings', label: 'Account', icon: Settings },
       ]
     : mobileNav
 

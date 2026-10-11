@@ -40,6 +40,8 @@ export default async function RecordsPage() {
     where: { workRecord: { userId: user.id } },
   })
 
+  const firstOrg = user.memberships[0]?.organisation ?? null
+
   const sites = new Set(records.map((r) => r.site ?? r.organisation.name))
 
   return (
@@ -73,13 +75,22 @@ export default async function RecordsPage() {
       {records.length === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
           <p className="text-sm">You haven&apos;t recorded any work yet.</p>
-          <p className="mt-1 text-sm">
-            Visit a specimen page in one of your{' '}
-            <Link href="/" className="underline underline-offset-2 hover:text-foreground">
-              organisations
-            </Link>{' '}
-            and hit &ldquo;Record work&rdquo; to get started.
-          </p>
+          {firstOrg ? (
+            <p className="mt-1 text-sm">
+              Open a specimen in{' '}
+              <Link
+                href={`/${firstOrg.slug}/specimens`}
+                className="underline underline-offset-2 hover:text-foreground"
+              >
+                {firstOrg.name}
+              </Link>{' '}
+              and tap &ldquo;Record work&rdquo; to get started.
+            </p>
+          ) : (
+            <p className="mt-1 text-sm">
+              Once you&apos;ve joined an organisation, open a specimen and tap &ldquo;Record work&rdquo;.
+            </p>
+          )}
         </div>
       ) : (
         <ol className="space-y-2" aria-label="Work records">
