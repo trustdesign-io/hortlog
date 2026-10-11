@@ -113,6 +113,8 @@ export async function updateOrgSettings(
 
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''
+  // Forms from before the Director role have no director label: keep the default
+  const directorLabel = (formData.get('directorLabel') as string | null)?.trim() || 'Director'
   const managerLabel = (formData.get('managerLabel') as string | null)?.trim() ?? ''
   const memberLabel = (formData.get('memberLabel') as string | null)?.trim() ?? ''
 
@@ -128,6 +130,7 @@ export async function updateOrgSettings(
   if (RESERVED_ORG_SLUGS.has(slug)) {
     return { success: false, error: `The slug "${slug}" is reserved and cannot be used for an organisation.` }
   }
+  if (directorLabel.length > 60) return { success: false, error: 'Director label must be 60 characters or fewer.' }
   if (!managerLabel) return { success: false, error: 'Manager label is required.' }
   if (managerLabel.length > 60) return { success: false, error: 'Manager label must be 60 characters or fewer.' }
   if (!memberLabel) return { success: false, error: 'Member label is required.' }
@@ -145,7 +148,7 @@ export async function updateOrgSettings(
   try {
     await prisma.organisation.update({
       where: { slug: orgSlug },
-      data: { name, slug, managerLabel, memberLabel },
+      data: { name, slug, directorLabel, managerLabel, memberLabel },
     })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {

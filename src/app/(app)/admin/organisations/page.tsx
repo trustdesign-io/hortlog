@@ -46,6 +46,7 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
         id: true,
         name: true,
         slug: true,
+        directorLabel: true,
         managerLabel: true,
         memberLabel: true,
         createdAt: true,
@@ -138,6 +139,7 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
                       <OrgEditDialog
                         orgSlug={org.slug}
                         orgName={org.name}
+                        directorLabel={org.directorLabel}
                         managerLabel={org.managerLabel}
                         memberLabel={org.memberLabel}
                       />

@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getActiveHref, resolveOrgSlug } from '@/lib/nav-utils'
+import { isLeader } from '@/lib/roles'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { UserMenu } from '@/components/user-menu'
@@ -61,7 +62,7 @@ function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
 /** Platform admins and the organisation's managers can manage it. */
 function canManageOrg(user: UserWithMemberships, orgSlug: string): boolean {
   if (user.isAdmin) return true
-  return user.memberships.some((m) => m.organisation.slug === orgSlug && m.role === 'MANAGER')
+  return user.memberships.some((m) => m.organisation.slug === orgSlug && isLeader(m.role))
 }
 
 const myRecordNav: NavItem[] = [
@@ -117,6 +118,7 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
 }
 
 const ROLE_DISPLAY: Record<string, string> = {
+  DIRECTOR: 'Director',
   MANAGER: 'Manager',
   MEMBER: 'Member',
 }

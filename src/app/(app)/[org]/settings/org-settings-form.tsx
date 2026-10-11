@@ -19,6 +19,7 @@ import type { ActionResult } from '@/lib/shared/types'
 interface OrgData {
   name: string
   slug: string
+  directorLabel: string
   managerLabel: string
   memberLabel: string
 }
@@ -120,6 +121,22 @@ export function OrgSettingsForm({ org, orgSlug }: OrgSettingsFormProps) {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="directorLabel">Director label</Label>
+              <Input
+                id="directorLabel"
+                name="directorLabel"
+                type="text"
+                required
+                autoComplete="off"
+                defaultValue={org.directorLabel}
+                placeholder="Director"
+                maxLength={60}
+              />
+              <p className="text-xs text-muted-foreground">
+                Displayed wherever a Director role is shown, e.g. &quot;Head gardener&quot;.
+              </p>
+            </div>
             <div className="flex flex-col gap-2">
               <Label htmlFor="managerLabel">Manager label</Label>
               <Input

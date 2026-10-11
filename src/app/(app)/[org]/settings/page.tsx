@@ -19,7 +19,7 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
-    select: { name: true, slug: true, logoUrl: true, managerLabel: true, memberLabel: true },
+    select: { name: true, slug: true, logoUrl: true, directorLabel: true, managerLabel: true, memberLabel: true },
   })
 
   if (!org) return notFound()

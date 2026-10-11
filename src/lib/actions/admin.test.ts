@@ -367,7 +367,7 @@ describe('adminRemoveMembership', () => {
     membership.count.mockResolvedValue(1)
     const result = await adminRemoveMembership('u1', 'm1')
     expect(result).toMatchObject({ success: false })
-    expect(result.success === false && result.error).toContain('last manager')
+    expect(result.success === false && result.error).toContain('last director or manager')
   })
 
   it('removes membership and returns success when multiple managers exist', async () => {

@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache'
 import { WorkAction } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
-import { requireOrgAccess } from '@/lib/auth/permissions'
+import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import type { ActionResult } from '@/lib/shared/types'
 
 // ─── Record work (create record or append log entry) ─────────────────────────
@@ -222,9 +222,7 @@ export async function deleteLogEntry(
 ): Promise<ActionResult> {
   const { user } = await requireOrgAccess(orgSlug, 'can_record_work')
 
-  const isManager = user.isAdmin || user.memberships.some(
-    (m) => m.organisation.slug === orgSlug && m.role === 'MANAGER',
-  )
+  const isManager = canManageOrg(user, orgSlug)
 
   const entry = await prisma.workLogEntry.findFirst({
     where: {

@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
+import { Fragment } from 'react'
 import { sortTeam } from '@/lib/team'
+import { isLeader, ROLES, roleLabel, type Role } from '@/lib/roles'
 import { UserAvatar } from '@/components/user-avatar'
 import { cn } from '@/lib/utils'
 
@@ -23,6 +25,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
     where: { slug: orgSlug },
     select: {
       name: true,
+      directorLabel: true,
       managerLabel: true,
       memberLabel: true,
       memberships: {
@@ -37,8 +40,12 @@ export default async function TeamPage({ params }: TeamPageProps) {
   if (!org) return notFound()
 
   const team = sortTeam(org.memberships)
-  const managers = team.filter((m) => m.role === 'MANAGER')
-  const members = team.filter((m) => m.role === 'MEMBER')
+  // One tier per role, most senior at the top; empty tiers are left out
+  const tiers = ROLES.map((role) => ({
+    role,
+    label: plural(roleLabel(role, org), team.filter((m) => m.role === role).length),
+    people: team.filter((m) => m.role === role),
+  })).filter((t) => t.people.length > 0)
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -54,17 +61,14 @@ export default async function TeamPage({ params }: TeamPageProps) {
           <p className="text-sm text-muted-foreground">No one has joined yet.</p>
         </div>
       ) : (
-        // An org chart: managers on top, a connector, then everyone they manage
+        // An org chart: directors, then managers, then members, joined by connectors
         <div className="flex flex-col items-center">
-          {managers.length > 0 && (
-            <TeamTier label={plural(org.managerLabel, managers.length)} people={managers} viewerId={viewer.id} lead />
-          )}
-          {managers.length > 0 && members.length > 0 && (
-            <div aria-hidden="true" className="h-8 w-px bg-border" />
-          )}
-          {members.length > 0 && (
-            <TeamTier label={plural(org.memberLabel, members.length)} people={members} viewerId={viewer.id} />
-          )}
+          {tiers.map((tier, i) => (
+            <Fragment key={tier.role}>
+              {i > 0 && <div aria-hidden="true" className="h-8 w-px bg-border" />}
+              <TeamTier label={tier.label} people={tier.people} viewerId={viewer.id} role={tier.role} />
+            </Fragment>
+          ))}
         </div>
       )}
     </div>
@@ -84,13 +88,15 @@ function TeamTier({
   label,
   people,
   viewerId,
-  lead = false,
+  role,
 }: {
   label: string
   people: TierPerson[]
   viewerId: string
-  lead?: boolean
+  /** Senior roles get larger avatars. */
+  role: Role
 }) {
+  const lead = isLeader(role)
   return (
     <section aria-label={label} className="w-full">
       <h2 className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
@@ -110,7 +116,7 @@ function TeamTier({
           >
             <UserAvatar
               user={p.user}
-              className={lead ? 'h-16 w-16' : 'h-12 w-12'}
+              className={role === 'DIRECTOR' ? 'h-20 w-20' : lead ? 'h-16 w-16' : 'h-12 w-12'}
               fallbackClassName={lead ? 'text-base' : 'text-sm'}
             />
             <p className="w-full truncate text-sm font-medium">

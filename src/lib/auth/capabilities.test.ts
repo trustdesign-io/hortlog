@@ -29,6 +29,14 @@ describe('hasCapability', () => {
     })
   })
 
+  describe('DIRECTOR role', () => {
+    it('has exactly the same capabilities as a manager', () => {
+      for (const cap of CAPABILITIES) {
+        expect(hasCapability('DIRECTOR', cap)).toBe(hasCapability('MANAGER', cap))
+      }
+    })
+  })
+
   describe('MEMBER role', () => {
     it('can view the organisation and record work', () => {
       expect(hasCapability('MEMBER', 'can_view_org')).toBe(true)

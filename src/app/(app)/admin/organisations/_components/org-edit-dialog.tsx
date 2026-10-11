@@ -19,11 +19,12 @@ import { adminUpdateOrg } from '@/lib/actions/admin'
 interface OrgEditDialogProps {
   orgSlug: string
   orgName: string
+  directorLabel: string
   managerLabel: string
   memberLabel: string
 }
 
-export function OrgEditDialog({ orgSlug, orgName, managerLabel, memberLabel }: OrgEditDialogProps) {
+export function OrgEditDialog({ orgSlug, orgName, directorLabel, managerLabel, memberLabel }: OrgEditDialogProps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const boundAction = adminUpdateOrg.bind(null, orgSlug)
@@ -91,7 +92,16 @@ export function OrgEditDialog({ orgSlug, orgName, managerLabel, memberLabel }: O
               Changing the slug will break existing links to this organisation.
             </p>
           </Field>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <Field>
+              <FieldLabel htmlFor="edit-director-label">Director label</FieldLabel>
+              <Input
+                id="edit-director-label"
+                name="directorLabel"
+                defaultValue={directorLabel}
+                placeholder="Director"
+              />
+            </Field>
             <Field>
               <FieldLabel htmlFor="edit-manager-label">Manager label</FieldLabel>
               <Input

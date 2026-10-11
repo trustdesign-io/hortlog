@@ -11,17 +11,21 @@ export const CAPABILITIES = [
 export type Capability = (typeof CAPABILITIES)[number]
 
 /** Kept as string literals so this module has no Prisma dependency and stays unit-testable. */
-type MemberRole = 'MANAGER' | 'MEMBER'
+type MemberRole = 'DIRECTOR' | 'MANAGER' | 'MEMBER'
+
+const MANAGER_CAPABILITIES: readonly Capability[] = [
+  'can_view_org',
+  'can_record_work',
+  'can_edit_specimen',
+  'can_edit_scene',
+  'can_manage_members',
+  'can_edit_org_settings',
+]
 
 const ROLE_CAPABILITIES: Record<MemberRole, readonly Capability[]> = {
-  MANAGER: [
-    'can_view_org',
-    'can_record_work',
-    'can_edit_specimen',
-    'can_edit_scene',
-    'can_manage_members',
-    'can_edit_org_settings',
-  ],
+  // A Director has exactly a Manager's permissions; only the title differs.
+  DIRECTOR: MANAGER_CAPABILITIES,
+  MANAGER: MANAGER_CAPABILITIES,
   // Members can look and record their own work; creating, editing and deleting is for managers.
   MEMBER: [
     'can_view_org',

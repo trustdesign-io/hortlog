@@ -96,6 +96,7 @@ export function MemberInviteDialog({ orgs }: MemberInviteDialogProps) {
                 >
                   <option value="MEMBER">Member</option>
                   <option value="MANAGER">Manager</option>
+                  <option value="DIRECTOR">Director</option>
                 </select>
               </Field>
             </>

@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
+import { parseRole } from '@/lib/roles'
 import type { ActionResult } from '@/lib/shared/types'
 
 export async function acceptInvite(
@@ -42,7 +43,7 @@ export async function acceptInvite(
 
   // Create membership from invite metadata
   const orgSlug = (user.user_metadata?.pending_org_slug ?? null) as string | null
-  const role = user.user_metadata?.pending_role === 'MANAGER' ? 'MANAGER' as const : 'MEMBER' as const
+  const role = parseRole(user.user_metadata?.pending_role)
 
   if (orgSlug) {
     const org = await prisma.organisation.findUnique({

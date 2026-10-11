@@ -3,6 +3,7 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { Leaf, Grid3x3, BookOpen, Plus } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
+import { roleLabel as titleFor } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -45,9 +46,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
   const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
   const roleLabel = !membership
     ? 'Platform admin'
-    : membership.role === 'MANAGER'
-      ? org.managerLabel
-      : org.memberLabel
+    : titleFor(membership.role, org)
 
   return (
     <div className="space-y-6">

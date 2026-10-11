@@ -170,7 +170,25 @@ describe('changeMemberRole', () => {
     membership.count.mockResolvedValue(1)
     membership.findUnique.mockResolvedValue({ role: 'MANAGER' })
     const result = await changeMemberRole('test-org', 'm1', 'MEMBER')
-    expect(result).toEqual({ success: false, error: 'Cannot downgrade the last manager.' })
+    expect(result).toEqual({ success: false, error: 'Cannot downgrade the last director or manager.' })
+  })
+
+  it('prevents downgrading the last director', async () => {
+    org.findUnique.mockResolvedValue(ORG)
+    membership.count.mockResolvedValue(1)
+    membership.findUnique.mockResolvedValue({ role: 'DIRECTOR' })
+    const result = await changeMemberRole('test-org', 'm1', 'MEMBER')
+    expect(result).toEqual({ success: false, error: 'Cannot downgrade the last director or manager.' })
+  })
+
+  it('counts directors and managers together as leaders', async () => {
+    org.findUnique.mockResolvedValue(ORG)
+    membership.count.mockResolvedValue(1)
+    membership.findUnique.mockResolvedValue({ role: 'MANAGER' })
+    await changeMemberRole('test-org', 'm1', 'MEMBER')
+    expect(membership.count).toHaveBeenCalledWith({
+      where: { organisationId: ORG.id, role: { in: ['DIRECTOR', 'MANAGER'] } },
+    })
   })
 
   it('updates role successfully', async () => {
@@ -207,7 +225,7 @@ describe('removeMember', () => {
     membership.findUnique.mockResolvedValue({ role: 'MANAGER' })
     membership.count.mockResolvedValue(1)
     const result = await removeMember('test-org', 'm1')
-    expect(result).toEqual({ success: false, error: 'Cannot remove the last manager.' })
+    expect(result).toEqual({ success: false, error: 'Cannot remove the last director or manager.' })
   })
 
   it('removes member successfully', async () => {
