@@ -52,7 +52,6 @@ function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
     // Manager-only pages: members would only hit the no-access page
     ...(canManage
       ? [
-          { href: `/${orgSlug}/members`, label: 'Members', icon: Users },
           { href: `/${orgSlug}/settings`, label: 'Org Settings', icon: Settings },
         ]
       : []),
