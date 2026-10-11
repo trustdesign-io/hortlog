@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
+import { findReferencePhoto } from '@/lib/inaturalist'
 import { notFound } from 'next/navigation'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -62,9 +63,12 @@ export async function createSpecies(
   const existing = await prisma.species.findUnique({ where: { slug } })
   if (existing) return { success: false, error: `A species with this scientific name already exists.` }
 
+  // Reference photo from iNaturalist, so nobody has to upload one
+  const photo = await findReferencePhoto(scientificName)
+
   try {
     await prisma.species.create({
-      data: { slug, commonName, scientificName, family, origin, description, conservationStatus },
+      data: { slug, commonName, scientificName, family, origin, description, conservationStatus, ...photo },
     })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -96,10 +100,24 @@ export async function updateSpecies(
   })
   if (conflict) return { success: false, error: 'Another species with this scientific name already exists.' }
 
+  // Look the photo up again when the name changes, or when there isn't one yet
+  const current = await prisma.species.findUnique({
+    where: { id: speciesId },
+    select: { scientificName: true, photoUrl: true },
+  })
+  const nameChanged = current !== null && current.scientificName !== scientificName
+  const found = current && (nameChanged || !current.photoUrl) ? await findReferencePhoto(scientificName) : null
+  // A renamed species must not keep the old species' photo
+  const photo =
+    found ??
+    (nameChanged
+      ? { inatTaxonId: null, photoUrl: null, photoAttribution: null, photoLicence: null, photoSourceUrl: null }
+      : null)
+
   try {
     await prisma.species.update({
       where: { id: speciesId },
-      data: { slug, commonName, scientificName, family, origin, description, conservationStatus },
+      data: { slug, commonName, scientificName, family, origin, description, conservationStatus, ...photo },
     })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
