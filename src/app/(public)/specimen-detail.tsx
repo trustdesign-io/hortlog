@@ -2,6 +2,7 @@ import type React from 'react'
 import Link from 'next/link'
 import { ChevronRight, ChevronLeft } from 'lucide-react'
 import { ScientificName } from '@/components/ui/scientific-name'
+import { licenceUrl } from '@/lib/personal-record'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -20,6 +21,11 @@ interface SpecimenDetailProps {
     origin: string | null
     description: string | null
     conservationStatus: string | null
+    /** iNaturalist reference photo, shown when the specimen has no photo of its own */
+    photoUrl?: string | null
+    photoAttribution?: string | null
+    photoLicence?: string | null
+    photoSourceUrl?: string | null
   }
   specimen: {
     accessionNumber: string | null
@@ -93,15 +99,53 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
       {/* Hero */}
       <header className="mb-6">
         {specimen.imageUrl !== undefined && (
-          <div className="relative mb-4 h-48 w-full overflow-hidden rounded-xl border bg-muted sm:h-64">
-            <SpecimenImage
-              imageUrl={specimen.imageUrl}
-              alt={species.commonName}
-              fill
-              priority
-              sizes="(max-width: 640px) calc(100vw - 2rem), 640px"
-            />
-          </div>
+          <figure className="mb-4">
+            <div className="relative h-48 w-full overflow-hidden rounded-xl border bg-muted sm:h-64">
+              <SpecimenImage
+                imageUrl={specimen.imageUrl ?? species.photoUrl}
+                alt={species.commonName}
+                fill
+                priority
+                sizes="(max-width: 640px) calc(100vw - 2rem), 640px"
+              />
+            </div>
+            {/* Credit the reference photo; it shows the species, not this plant */}
+            {!specimen.imageUrl && species.photoUrl && (
+              <figcaption className="mt-1.5 text-xs leading-snug text-muted-foreground">
+                Reference photo of the species · {species.photoAttribution}
+                {species.photoLicence && (
+                  <>
+                    {' · '}
+                    {licenceUrl(species.photoLicence) ? (
+                      <a
+                        href={licenceUrl(species.photoLicence) ?? undefined}
+                        target="_blank"
+                        rel="noopener noreferrer license"
+                        className="underline underline-offset-2 hover:text-foreground"
+                      >
+                        {species.photoLicence}
+                      </a>
+                    ) : (
+                      species.photoLicence
+                    )}
+                  </>
+                )}
+                {species.photoSourceUrl && (
+                  <>
+                    {' · via '}
+                    <a
+                      href={species.photoSourceUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline underline-offset-2 hover:text-foreground"
+                    >
+                      iNaturalist
+                    </a>
+                  </>
+                )}
+              </figcaption>
+            )}
+          </figure>
         )}
         <ScientificName className="text-3xl font-medium leading-tight">
           {species.scientificName}
