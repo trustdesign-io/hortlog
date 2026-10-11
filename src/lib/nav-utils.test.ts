@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { getActiveHref, getOrgSlugFromPath } from './nav-utils'
+import { getActiveHref, getOrgSlugFromPath, resolveOrgSlug } from './nav-utils'
 
 const orgNav = [
   { href: '/demo' },
@@ -158,5 +158,19 @@ describe('getOrgSlugFromPath', () => {
 
   it('returns null for a slug that is not in knownSlugs', () => {
     expect(getOrgSlugFromPath('/unknown', knownSlugs)).toBeNull()
+  })
+})
+
+describe('resolveOrgSlug', () => {
+  it('uses the organisation in the URL', () => {
+    expect(resolveOrgSlug('/beta/specimens', ['alpha', 'beta'], ['alpha'])).toBe('beta')
+  })
+
+  it("falls back to the member's first organisation outside an org", () => {
+    expect(resolveOrgSlug('/records', ['alpha', 'beta'], ['alpha', 'beta'])).toBe('alpha')
+  })
+
+  it('is null for someone with no organisation outside an org', () => {
+    expect(resolveOrgSlug('/records', ['alpha'], [])).toBeNull()
   })
 })

@@ -29,6 +29,7 @@ export async function getCurrentUser(): Promise<UserWithMemberships | null> {
     where: { id: authUser.id },
     include: {
       memberships: {
+        orderBy: { createdAt: 'asc' },
         include: {
           organisation: {
             select: { id: true, slug: true, name: true },
@@ -48,6 +49,7 @@ export async function getCurrentUser(): Promise<UserWithMemberships | null> {
         data: { name },
         include: {
           memberships: {
+            orderBy: { createdAt: 'asc' },
             include: {
               organisation: {
                 select: { id: true, slug: true, name: true },
