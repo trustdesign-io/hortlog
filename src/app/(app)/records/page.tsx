@@ -1,71 +1,158 @@
 import Link from 'next/link'
 import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
-import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
-import { ScientificName } from '@/components/ui/scientific-name'
-import { SpecimenImage } from '@/components/ui/specimen-image'
+import {
+  CAPACITY_LABELS,
+  EVENT_KIND_LABELS,
+  formatRecordDate,
+  formatRecordNo,
+  isRecordType,
+  plantNameHtml,
+  RECORD_TYPE_LABELS,
+  RECORD_TYPES,
+  type RecordType,
+} from '@/lib/personal-record'
+import { TaxonName } from '@/components/records/taxon-name'
+import { cn } from '@/lib/utils'
 
 export const metadata = {
   title: 'My record',
 }
 
-export default async function RecordsPage() {
+interface RecordsPageProps {
+  searchParams: Promise<{ type?: string }>
+}
+
+interface ListEntry {
+  key: string
+  type: RecordType
+  recordNo: string
+  date: Date
+  href: string
+  titleHtml: string
+  detail: string | null
+}
+
+const KICKERS: Record<RecordType, string> = {
+  worked: 'Worked with',
+  studied: 'Studied',
+  event: 'Event',
+  day: 'Work day',
+}
+
+export default async function RecordsPage({ searchParams }: RecordsPageProps) {
   const user = await requireAuth()
+  const { type: typeParam } = await searchParams
+  const filter: RecordType | null = isRecordType(typeParam) ? typeParam : null
 
-  const records = await prisma.workRecord.findMany({
-    where: { userId: user.id },
-    orderBy: [{ updatedAt: 'desc' }],
-    select: {
-      id: true,
-      recordNumber: true,
-      scientificName: true,
-      family: true,
-      organisation: { select: { slug: true, name: true } },
-      specimen: {
-        select: {
-          slug: true,
-          imageUrl: true,
-          species: { select: { commonName: true } },
-        },
+  const [worked, studied, events, days] = await Promise.all([
+    prisma.workRecord.findMany({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        recordNumber: true,
+        firstWorkedDate: true,
+        scientificName: true,
+        nameHtml: true,
+        authority: true,
+        family: true,
+        site: true,
+        organisation: { select: { name: true } },
       },
-      logEntries: {
-        orderBy: { date: 'desc' },
-        take: 1,
-        select: { date: true, action: true, location: true },
+    }),
+    prisma.studiedRecord.findMany({
+      where: { userId: user.id },
+      select: {
+        recordNumber: true,
+        date: true,
+        scientificName: true,
+        nameHtml: true,
+        authority: true,
+        family: true,
       },
-      shareToken: true,
-    },
-  })
+    }),
+    prisma.eventRecord.findMany({
+      where: { userId: user.id },
+      select: { recordNumber: true, date: true, title: true, kind: true, site: true },
+    }),
+    prisma.workDay.findMany({
+      where: { userId: user.id },
+      select: { recordNumber: true, date: true, site: true, capacity: true, organisationName: true },
+    }),
+  ])
 
-  const totalEntries = await prisma.workLogEntry.count({
-    where: { workRecord: { userId: user.id } },
-  })
+  const entries: ListEntry[] = [
+    ...worked.map((r) => ({
+      key: `w${r.recordNumber}`,
+      type: 'worked' as const,
+      recordNo: formatRecordNo('worked', r.recordNumber),
+      date: r.firstWorkedDate,
+      href: `/records/${r.id}`,
+      titleHtml: plantNameHtml(r),
+      detail: [r.family, (r.site ?? r.organisation.name).split(',')[0]].filter(Boolean).join(' · '),
+    })),
+    ...studied.map((r) => ({
+      key: `s${r.recordNumber}`,
+      type: 'studied' as const,
+      recordNo: formatRecordNo('studied', r.recordNumber),
+      date: r.date,
+      href: `/records/studied/${r.recordNumber}`,
+      titleHtml: plantNameHtml(r),
+      detail: r.family,
+    })),
+    ...events.map((r) => ({
+      key: `e${r.recordNumber}`,
+      type: 'event' as const,
+      recordNo: formatRecordNo('event', r.recordNumber),
+      date: r.date,
+      href: `/records/events/${r.recordNumber}`,
+      titleHtml: r.title,
+      detail: `${EVENT_KIND_LABELS[r.kind]} · ${r.site.split(',')[0]}`,
+    })),
+    ...days.map((r) => ({
+      key: `d${r.recordNumber}`,
+      type: 'day' as const,
+      recordNo: formatRecordNo('day', r.recordNumber),
+      date: r.date,
+      href: `/records/days/${r.recordNumber}`,
+      titleHtml: r.site,
+      detail: [CAPACITY_LABELS[r.capacity], r.organisationName].filter(Boolean).join(' · '),
+    })),
+  ]
+    .filter((e) => filter === null || e.type === filter)
+    // Newest first; on the same day, a work day before what was done on it.
+    .sort(
+      (a, b) =>
+        b.date.getTime() - a.date.getTime() ||
+        RECORD_TYPES.indexOf(b.type) - RECORD_TYPES.indexOf(a.type) ||
+        b.recordNo.localeCompare(a.recordNo),
+    )
 
-  const sites = new Set(records.map((r) => r.organisation.name))
+  const counts: Record<RecordType, number> = {
+    worked: worked.length,
+    studied: studied.length,
+    event: events.length,
+    day: days.length,
+  }
+  const total = worked.length + studied.length + events.length + days.length
 
   return (
     <div className="mx-auto max-w-3xl">
-      <header className="mb-6">
+      <header className="mb-4">
         <h1 className="text-2xl font-semibold">My record</h1>
-        {records.length > 0 && (
+        {total > 0 && (
           <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
-            <div className="flex gap-1.5">
-              <dt>Records</dt>
-              <dd className="font-medium text-foreground">{records.length}</dd>
-            </div>
-            <div className="flex gap-1.5">
-              <dt>Log entries</dt>
-              <dd className="font-medium text-foreground">{totalEntries}</dd>
-            </div>
-            <div className="flex gap-1.5">
-              <dt>Sites</dt>
-              <dd className="font-medium text-foreground">{sites.size}</dd>
-            </div>
+            {RECORD_TYPES.map((t) => (
+              <div key={t} className="flex gap-1.5">
+                <dt>{RECORD_TYPE_LABELS[t]}</dt>
+                <dd className="font-medium text-foreground">{counts[t]}</dd>
+              </div>
+            ))}
           </dl>
         )}
       </header>
 
-      {records.length === 0 ? (
+      {total === 0 ? (
         <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground">
           <p className="text-sm">You haven&apos;t recorded any work yet.</p>
           <p className="mt-1 text-sm">
@@ -77,61 +164,64 @@ export default async function RecordsPage() {
           </p>
         </div>
       ) : (
-        <ol className="space-y-2" aria-label="Work records">
-          {records.map((record) => {
-            const latest = record.logEntries[0]
-            return (
-              <li key={record.id}>
+        <>
+          <nav aria-label="Filter by type" className="-mx-4 mb-4 overflow-x-auto px-4">
+            <ul className="flex w-max gap-2">
+              {[null, ...RECORD_TYPES].map((t) => {
+                const active = t === filter
+                return (
+                  <li key={t ?? 'all'}>
+                    <Link
+                      href={t ? `/records?type=${t}` : '/records'}
+                      aria-current={active ? 'page' : undefined}
+                      className={cn(
+                        'inline-flex min-h-9 items-center rounded-full border px-3 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                        active
+                          ? 'border-foreground bg-foreground text-background'
+                          : 'border-border bg-card hover:bg-muted/50',
+                      )}
+                    >
+                      {t ? RECORD_TYPE_LABELS[t] : 'All'}
+                      <span className={cn('ml-1.5 tabular-nums', active ? 'opacity-80' : 'text-muted-foreground')}>
+                        {t ? counts[t] : total}
+                      </span>
+                    </Link>
+                  </li>
+                )
+              })}
+            </ul>
+          </nav>
+
+          <ol className="space-y-2" aria-label="Records">
+            {entries.map((e) => (
+              <li key={e.key}>
                 <Link
-                  href={`/records/${record.id}`}
-                  className="flex items-center gap-3 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  href={e.href}
+                  className="flex items-start gap-3 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 >
-                  {record.specimen.imageUrl !== null && (
-                    <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
-                      <SpecimenImage
-                        imageUrl={record.specimen.imageUrl}
-                        alt=""
-                        fill
-                        sizes="40px"
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
+                  <span className="w-11 shrink-0 pt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
+                    {e.recordNo}
+                  </span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium leading-snug">
-                      <ScientificName className="text-sm">
-                        {record.scientificName}
-                      </ScientificName>
+                    <p className="font-heading leading-snug">
+                      <TaxonName html={e.titleHtml} />
                     </p>
-                    {record.family && (
-                      <p className="truncate text-xs text-muted-foreground">{record.family}</p>
-                    )}
-                  </div>
-                  <div className="shrink-0 text-right text-xs text-muted-foreground">
-                    {latest && (
-                      <>
-                        <p>{WORK_ACTION_LABELS[latest.action]}</p>
-                        <p>
-                          {latest.date.toLocaleDateString('en-GB', {
-                            day: '2-digit',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </p>
-                      </>
-                    )}
-                    <p className="mt-0.5 text-xs text-muted-foreground/60">
-                      {record.organisation.name}
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      <span className="sr-only">{KICKERS[e.type]}. </span>
+                      <time dateTime={e.date.toISOString().slice(0, 10)}>
+                        {formatRecordDate(e.date, 'short')}
+                      </time>
+                      {e.detail && ` · ${e.detail}`}
                     </p>
                   </div>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    #{String(record.recordNumber).padStart(3, '0')}
+                  <span className="hidden shrink-0 rounded-full bg-secondary px-2.5 py-0.5 text-xs font-medium text-accent-foreground sm:inline">
+                    {KICKERS[e.type]}
                   </span>
                 </Link>
               </li>
-            )
-          })}
-        </ol>
+            ))}
+          </ol>
+        </>
       )}
     </div>
   )
