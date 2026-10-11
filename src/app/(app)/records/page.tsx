@@ -46,33 +46,28 @@ export default async function RecordsPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <header className="mb-6">
-        <div className="flex items-center gap-3">
-          <UserAvatar user={user} className="h-12 w-12" fallbackClassName="text-sm" />
-          <div className="min-w-0">
-            <h1 className="text-2xl font-semibold leading-tight">My record</h1>
-            <p className="truncate text-sm text-muted-foreground">{user.name ?? user.email}</p>
-            <p className="truncate text-xs text-muted-foreground">
-              {user.recordPublic && user.username ? (
-                <>
-                  Public:{' '}
-                  <Link href={`/u/${user.username}`} className="underline underline-offset-2 hover:text-foreground">
-                    hortlog.com/u/{user.username}
-                  </Link>
-                </>
-              ) : (
-                <>
-                  Private ·{' '}
-                  <Link href="/settings" className="underline underline-offset-2 hover:text-foreground">
-                    Make public
-                  </Link>
-                </>
-              )}
-            </p>
-          </div>
-        </div>
+      <header className="mb-6 flex flex-col items-center text-center">
+        <UserAvatar user={user} className="h-20 w-20" fallbackClassName="text-xl" />
+        <h1 className="mt-3 font-heading text-2xl font-semibold leading-tight">{user.name ?? user.email}</h1>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {user.recordPublic && user.username ? (
+            <>
+              Public:{' '}
+              <Link href={`/u/${user.username}`} className="underline underline-offset-2 hover:text-foreground">
+                hortlog.com/u/{user.username}
+              </Link>
+            </>
+          ) : (
+            <>
+              Private ·{' '}
+              <Link href="/settings" className="underline underline-offset-2 hover:text-foreground">
+                Make public
+              </Link>
+            </>
+          )}
+        </p>
         {records.length > 0 && (
-          <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+          <dl className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
             <div className="flex gap-1.5">
               <dt>Plants worked with</dt>
               <dd className="font-medium text-foreground">{records.length}</dd>
