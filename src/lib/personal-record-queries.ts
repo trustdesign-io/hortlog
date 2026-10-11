@@ -27,9 +27,8 @@ export const WORKED_RECORD_SELECT = {
   sources: true,
   openQuestions: true,
   powoUrl: true,
-  shareToken: true,
   userId: true,
-  organisation: { select: { slug: true, name: true } },
+  organisation: { select: { slug: true, name: true, recordsPublic: true } },
   specimen: {
     select: {
       slug: true,

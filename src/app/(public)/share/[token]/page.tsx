@@ -1,8 +1,5 @@
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
-import { WorkedRecordSheet } from '@/components/records/worked-record-sheet'
-import { PrintButton } from '@/components/print-button'
 
 interface SharePageProps {
   params: Promise<{ token: string }>
@@ -12,21 +9,24 @@ export const metadata = {
   robots: { index: false, follow: false },
 }
 
+/**
+ * Old per-record share links. Records are now shared through the member's public
+ * record, so a link still works only while that record is public.
+ */
 export default async function SharedRecordPage({ params }: SharePageProps) {
   const { token } = await params
 
   const record = await prisma.workRecord.findUnique({
     where: { shareToken: token },
-    select: WORKED_RECORD_SELECT,
+    select: {
+      recordNumber: true,
+      user: { select: { username: true, recordPublic: true } },
+      organisation: { select: { recordsPublic: true } },
+    },
   })
-  if (!record) return notFound()
 
-  return (
-    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 print:max-w-full">
-      <WorkedRecordSheet record={record} privateLinks={false} />
-      <div className="mt-2 print:hidden">
-        <PrintButton />
-      </div>
-    </div>
-  )
+  if (!record?.user.recordPublic || !record.user.username || !record.organisation.recordsPublic) {
+    return notFound()
+  }
+  redirect(`/u/${record.user.username}/${record.recordNumber}`)
 }

@@ -66,3 +66,10 @@ export function licenceUrl(licence: string | null): string | null {
   return licence ? (LICENCE_URLS[licence] ?? null) : null
 }
 
+
+/** "7" → 7; anything that is not a positive whole number → null. */
+export function parseRecordNumber(raw: string): number | null {
+  if (!/^\d{1,6}$/.test(raw)) return null
+  const n = Number(raw)
+  return n > 0 ? n : null
+}

@@ -17,8 +17,13 @@ export type WorkedRecordData = Prisma.WorkRecordGetPayload<{ select: typeof WORK
 
 interface WorkedRecordSheetProps {
   record: WorkedRecordData
-  /** False on the public share page: no links into the member's private pages. */
+  /** False on public pages: no links into the member's private pages. */
   privateLinks?: boolean
+  /**
+   * Set on the public record. Exact locations and grid references are never shown;
+   * Note and Open questions only when the member chose to include them.
+   */
+  publicView?: { showNotes: boolean }
 }
 
 export const quietLink = 'underline decoration-border underline-offset-2 hover:decoration-foreground'
@@ -34,7 +39,8 @@ export function SourcesGroup({
   powoUrl,
 }: {
   sources: string | null
-  openQuestions: string | null
+  /** Undefined leaves the field out altogether (public record without notes). */
+  openQuestions?: string | null
   powoUrl?: string | null
 }) {
   return (
@@ -55,7 +61,7 @@ export function SourcesGroup({
           </span>
         )}
       </RecordField>
-      <RecordField label="Open questions" value={openQuestions} small />
+      {openQuestions !== undefined && <RecordField label="Open questions" value={openQuestions} small />}
     </FieldGroup>
   )
 }
@@ -65,7 +71,10 @@ export function SourcesGroup({
 export function WorkedRecordSheet({
   record: r,
   privateLinks = true,
+  publicView,
 }: WorkedRecordSheetProps) {
+  const showLocation = !publicView
+  const showNotes = !publicView || publicView.showNotes
   const nameHtml = plantNameHtml(r)
   const site = r.site ?? r.organisation.name
   const species = r.specimen.species
@@ -96,9 +105,9 @@ export function WorkedRecordSheet({
             </time>
           </RecordField>
           <RecordField label="Site" value={site} />
-          <RecordField label="Location" value={r.location} />
+          {showLocation && <RecordField label="Location" value={r.location} />}
           <RecordField label="Vice-county" value={r.viceCounty} />
-          <RecordField label="Grid ref." value={r.gridRef} />
+          {showLocation && <RecordField label="Grid ref." value={r.gridRef} />}
           <Projects projects={r.projects} />
         </FieldGroup>
 
@@ -106,7 +115,7 @@ export function WorkedRecordSheet({
           <RecordField label="Family" value={r.family} />
           <RecordField label="Det." value={r.determination} />
           <RecordField label="Label read" value={r.labelText} />
-          {r.note && <RecordField label="Note" value={r.note} small />}
+          {showNotes && r.note && <RecordField label="Note" value={r.note} small />}
         </FieldGroup>
 
         <FieldGroup>
@@ -141,7 +150,7 @@ export function WorkedRecordSheet({
                           <time dateTime={e.date.toISOString().slice(0, 10)} className="text-foreground">
                             {formatRecordDate(e.date)}
                           </time>
-                          {e.location && ` · ${e.location}`}
+                          {showLocation && e.location && ` · ${e.location}`}
                         </p>
                         {showAction && (
                           <p className="font-medium">
@@ -159,7 +168,11 @@ export function WorkedRecordSheet({
           </FieldGroup>
         )}
 
-        <SourcesGroup sources={r.sources} openQuestions={r.openQuestions} powoUrl={r.powoUrl ?? species.powoUrl} />
+        <SourcesGroup
+          sources={r.sources}
+          openQuestions={showNotes ? r.openQuestions : undefined}
+          powoUrl={r.powoUrl ?? species.powoUrl}
+        />
       </div>
     </article>
   )

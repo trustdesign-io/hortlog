@@ -52,6 +52,23 @@ export default async function RecordsPage() {
           <div className="min-w-0">
             <h1 className="text-2xl font-semibold leading-tight">My record</h1>
             <p className="truncate text-sm text-muted-foreground">{user.name ?? user.email}</p>
+            <p className="truncate text-xs text-muted-foreground">
+              {user.recordPublic && user.username ? (
+                <>
+                  Public:{' '}
+                  <Link href={`/u/${user.username}`} className="underline underline-offset-2 hover:text-foreground">
+                    hortlog.com/u/{user.username}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  Private ·{' '}
+                  <Link href="/settings" className="underline underline-offset-2 hover:text-foreground">
+                    Make public
+                  </Link>
+                </>
+              )}
+            </p>
           </div>
         </div>
         {records.length > 0 && (

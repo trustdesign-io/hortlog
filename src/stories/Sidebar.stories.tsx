@@ -10,6 +10,9 @@ const mockUser: UserWithMemberships = {
   avatarUrl: 'https://github.com/shadcn.png',
   isAdmin: false,
   onboardingCompletedAt: new Date('2025-01-15'),
+  username: null,
+  recordPublic: false,
+  recordShowNotes: false,
   createdAt: new Date('2025-01-10'),
   updatedAt: new Date('2025-03-01'),
   memberships: [

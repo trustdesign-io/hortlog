@@ -65,3 +65,14 @@ describe('stripTags and licenceUrl', () => {
     expect(licenceUrl(null)).toBeNull()
   })
 })
+
+describe('parseRecordNumber', () => {
+  it('accepts positive whole numbers only', async () => {
+    const { parseRecordNumber } = await import('./personal-record')
+    expect(parseRecordNumber('3')).toBe(3)
+    expect(parseRecordNumber('003')).toBe(3)
+    expect(parseRecordNumber('0')).toBeNull()
+    expect(parseRecordNumber('-1')).toBeNull()
+    expect(parseRecordNumber('1e3')).toBeNull()
+  })
+})

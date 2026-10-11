@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma'
 import { requireAuth } from '@/lib/auth/permissions'
 import { uploadAvatar } from '@/lib/storage'
 import type { ActionResult } from '@/lib/shared/types'
+import { Prisma } from '@prisma/client'
+import { validateUsername } from '@/lib/public-record'
 
 export async function updateProfile(
   _prevState: ActionResult | null,
@@ -82,5 +84,40 @@ export async function changePassword(
   const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
   if (updateError) return { success: false, error: updateError.message }
 
+  return { success: true }
+}
+
+export async function updatePublicRecord(
+  _prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const user = await requireAuth()
+  const username = ((formData.get('username') as string | null) ?? '').trim().toLowerCase() || null
+  const recordPublic = formData.get('recordPublic') === 'on'
+  const recordShowNotes = formData.get('recordShowNotes') === 'on'
+
+  if (recordPublic && !username) return { success: false, error: 'Choose a username to make your record public.' }
+  if (username) {
+    const error = validateUsername(username)
+    if (error) return { success: false, error }
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { username, recordPublic, recordShowNotes },
+    })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return { success: false, error: 'That username is taken. Please choose another.' }
+    }
+    console.error('[updatePublicRecord] error:', err)
+    return { success: false, error: 'Failed to save. Please try again.' }
+  }
+
+  revalidatePath('/settings')
+  revalidatePath('/records')
+  if (user.username) revalidatePath(`/u/${user.username}`, 'layout')
+  if (username) revalidatePath(`/u/${username}`, 'layout')
   return { success: true }
 }

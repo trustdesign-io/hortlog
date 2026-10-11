@@ -30,9 +30,8 @@ const record: WorkedRecordData = {
   sources: 'POWO, accessed 2 Oct 2026. Kew Bull. 34: 813 (1980).',
   openQuestions: 'Diagnostic from secondary sources; check against the plant.',
   powoUrl: 'https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:144220-1',
-  shareToken: null,
   userId: 'u1',
-  organisation: { slug: 'lullingstone', name: 'Lullingstone Castle and the World Garden' },
+  organisation: { slug: 'lullingstone', name: 'Lullingstone Castle and the World Garden', recordsPublic: true },
   specimen: {
     slug: 'nesocodon-mauritianus',
     species: {
@@ -71,4 +70,8 @@ export const Default: Story = {}
 
 export const Shared: Story = {
   args: { privateLinks: false },
+}
+
+export const PublicWithoutNotes: Story = {
+  args: { privateLinks: false, publicView: { showNotes: false } },
 }
