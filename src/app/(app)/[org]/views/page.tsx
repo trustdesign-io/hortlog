@@ -4,15 +4,13 @@ import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Badge } from '@/components/ui/badge'
-import { cn } from '@/lib/utils'
 
 interface ViewsPageProps {
   params: Promise<{ org: string }>
-  searchParams: Promise<{ filter?: string }>
 }
 
-export default async function ViewsPage({ params, searchParams }: ViewsPageProps) {
-  const [{ org: orgSlug }, { filter }] = await Promise.all([params, searchParams])
+export default async function ViewsPage({ params }: ViewsPageProps) {
+  const { org: orgSlug } = await params
   const { user } = await requireOrgAccess(orgSlug, 'can_view_org')
   const canManage = canManageOrg(user, orgSlug)
 
@@ -22,12 +20,9 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
   })
   if (!org) return notFound()
 
-  const isMineFilter = filter === 'mine'
-
   const views = await prisma.view.findMany({
     where: {
       organisationId: org.id,
-      ...(isMineFilter ? { assignments: { some: { userId: user.id } } } : {}),
     },
     orderBy: { name: 'asc' },
     select: {
@@ -39,14 +34,6 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
       gridCols: true,
       primaryCollection: { select: { name: true, slug: true } },
       _count: { select: { specimens: true } },
-      assignments: {
-        take: 4,
-        select: {
-          id: true,
-          user: { select: { id: true, name: true, email: true } },
-        },
-        orderBy: { assignedAt: 'asc' },
-      },
     },
   })
 
@@ -66,32 +53,10 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
         )}
       </div>
 
-      {/* Filter toggle */}
-      <div className="flex gap-2">
-        <Link
-          href={`/${orgSlug}/views`}
-          className={cn(
-            buttonVariants({ variant: isMineFilter ? 'outline' : 'secondary', size: 'sm' }),
-          )}
-        >
-          All views
-        </Link>
-        <Link
-          href={`/${orgSlug}/views?filter=mine`}
-          className={cn(
-            buttonVariants({ variant: isMineFilter ? 'secondary' : 'outline', size: 'sm' }),
-          )}
-        >
-          Assigned to me
-        </Link>
-      </div>
-
       {views.length === 0 ? (
         <div className="rounded-xl border bg-card py-16 text-center">
-          <p className="text-sm text-muted-foreground">
-            {isMineFilter ? 'No views assigned to you.' : 'No views yet.'}
-          </p>
-          {!isMineFilter && canManage && (
+          <p className="text-sm text-muted-foreground">No views yet.</p>
+          {canManage && (
             <Link
               href={`/${orgSlug}/views/new`}
               className="mt-3 inline-block text-sm text-primary underline-offset-2 hover:underline"
@@ -125,25 +90,6 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
                     </p>
                   </div>
                   <div className="shrink-0 flex items-center gap-2">
-                    {v.assignments.length > 0 && (
-                      <div
-                        className="flex -space-x-2"
-                        aria-label={`Assigned to ${v.assignments.map((a) => a.user.name ?? a.user.email).join(', ')}`}
-                      >
-                        {v.assignments.map((a) => {
-                          const display = a.user.name ?? a.user.email
-                          return (
-                            <div
-                              key={a.id}
-                              className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-card bg-muted text-[10px] font-medium text-muted-foreground"
-                              aria-hidden="true"
-                            >
-                              {display[0]?.toUpperCase()}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    )}
                     <Badge variant="outline" className="font-mono text-xs">
                       {v.shortCode}
                     </Badge>

@@ -7,7 +7,6 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { GridEditor } from './grid-editor'
 import { QRPanel } from './qr-panel'
-import { AssignmentPanel } from './assignment-panel'
 
 interface ViewEditPageProps {
   params: Promise<{ org: string; id: string }>
@@ -15,7 +14,7 @@ interface ViewEditPageProps {
 
 export default async function ViewEditPage({ params }: ViewEditPageProps) {
   const { org: orgSlug, id: viewId } = await params
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_edit_view')
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
@@ -37,10 +36,7 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
   })
   if (!view) return notFound()
 
-  const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
-  const canManageMembers = user.isAdmin || membership?.role === 'MANAGER'
-
-  const [placedSpecimens, availableSpecimens, assignments, orgMembers] = await Promise.all([
+  const [placedSpecimens, availableSpecimens] = await Promise.all([
     prisma.specimen.findMany({
       where: { organisationId: org.id, viewId },
       select: {
@@ -59,21 +55,6 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
       },
       orderBy: { species: { commonName: 'asc' } },
     }),
-    prisma.viewAssignment.findMany({
-      where: { viewId },
-      select: {
-        id: true,
-        user: { select: { id: true, name: true, email: true } },
-      },
-      orderBy: { assignedAt: 'asc' },
-    }),
-    canManageMembers
-      ? prisma.membership.findMany({
-          where: { organisationId: org.id },
-          select: { user: { select: { id: true, name: true, email: true } } },
-          orderBy: { user: { name: 'asc' } },
-        })
-      : Promise.resolve([]),
   ])
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'
@@ -113,14 +94,6 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
           scientificName: s.species.scientificName,
         }))}
       />
-      {canManageMembers && (
-        <AssignmentPanel
-          orgSlug={orgSlug}
-          viewId={view.id}
-          assignments={assignments}
-          orgMembers={orgMembers.map((m) => m.user)}
-        />
-      )}
       <QRPanel
         orgSlug={orgSlug}
         viewId={view.id}

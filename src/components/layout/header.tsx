@@ -20,16 +20,18 @@ interface HeaderProps {
   navLinks?: NavLink[]
   /** Hide auth CTAs (e.g. on auth pages). */
   hideAuth?: boolean
+  /** Signed-in visitors get a link back into the app instead of Sign in / Sign up. */
+  signedIn?: boolean
 }
 
-const DEFAULT_NAV_LINKS: NavLink[] = [
-  { label: 'About', href: '/about' },
-]
+// No page links in the header: it carries the logo and the account action only.
+const DEFAULT_NAV_LINKS: NavLink[] = []
 
 export function Header({
   siteName,
   navLinks = DEFAULT_NAV_LINKS,
   hideAuth = false,
+  signedIn = false,
 }: HeaderProps) {
   const pathname = usePathname()
 
@@ -55,6 +57,7 @@ export function Header({
         <Logo name={siteName} />
 
         {/* Desktop nav */}
+        {navLinks.length > 0 && (
         <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
             <Link
@@ -72,19 +75,25 @@ export function Header({
             </Link>
           ))}
         </nav>
+        )}
 
         {/* Desktop auth CTAs */}
         <div className="hidden md:flex items-center gap-2">
-          {!hideAuth && (
-            <>
-              <Link href="/sign-in" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
-                Sign in
+          {!hideAuth &&
+            (signedIn ? (
+              <Link href="/records" className={buttonVariants({ size: 'sm' })}>
+                My record
               </Link>
-              <Link href="/sign-up" className={buttonVariants({ size: 'sm' })}>
-                Sign up
-              </Link>
-            </>
-          )}
+            ) : (
+              <>
+                <Link href="/sign-in" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+                  Sign in
+                </Link>
+                <Link href="/sign-up" className={buttonVariants({ size: 'sm' })}>
+                  Sign up
+                </Link>
+              </>
+            ))}
         </div>
 
         {/* Mobile hamburger */}
@@ -127,7 +136,16 @@ export function Header({
             </Link>
           ))}
 
-          {!hideAuth && (
+          {!hideAuth && signedIn && (
+            <Link
+              href="/records"
+              tabIndex={mobileOpen ? undefined : -1}
+              className={cn(buttonVariants(), 'w-full justify-center')}
+            >
+              My record
+            </Link>
+          )}
+          {!hideAuth && !signedIn && (
             <div className="flex flex-col gap-2 mt-4 pt-4 border-t border-border">
               <Link
                 href="/sign-in"

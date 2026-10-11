@@ -37,10 +37,11 @@ export default async function TeamPage({ params }: TeamPageProps) {
   if (!org) return notFound()
 
   const team = sortTeam(org.memberships)
-  const managers = team.filter((m) => m.role === 'MANAGER').length
+  const managers = team.filter((m) => m.role === 'MANAGER')
+  const members = team.filter((m) => m.role === 'MEMBER')
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="max-w-4xl space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-medium">Team</h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -53,39 +54,72 @@ export default async function TeamPage({ params }: TeamPageProps) {
           <p className="text-sm text-muted-foreground">No one has joined yet.</p>
         </div>
       ) : (
-        <ul role="list" aria-label="Team" className="overflow-hidden rounded-xl border bg-card">
-          {team.map((m, i) => {
-            const isManager = m.role === 'MANAGER'
-            return (
-              <li
-                key={m.id}
-                className={cn(
-                  'flex items-center gap-3 px-4 py-3',
-                  i < team.length - 1 && 'border-b',
-                  // Rule off the managers from everyone else
-                  isManager && i === managers - 1 && managers < team.length && 'border-b-2',
-                )}
-              >
-                <UserAvatar user={m.user} className="h-10 w-10" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium">
-                    {m.user.name ?? m.user.email.split('@')[0]}
-                    {m.user.id === viewer.id && <span className="font-normal text-muted-foreground"> (you)</span>}
-                  </p>
-                </div>
-                <span
-                  className={cn(
-                    'shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium',
-                    isManager ? 'bg-primary/15 text-primary' : 'bg-secondary text-muted-foreground',
-                  )}
-                >
-                  {isManager ? org.managerLabel : org.memberLabel}
-                </span>
-              </li>
-            )
-          })}
-        </ul>
+        // An org chart: managers on top, a connector, then everyone they manage
+        <div className="flex flex-col items-center">
+          {managers.length > 0 && (
+            <TeamTier label={plural(org.managerLabel, managers.length)} people={managers} viewerId={viewer.id} lead />
+          )}
+          {managers.length > 0 && members.length > 0 && (
+            <div aria-hidden="true" className="h-8 w-px bg-border" />
+          )}
+          {members.length > 0 && (
+            <TeamTier label={plural(org.memberLabel, members.length)} people={members} viewerId={viewer.id} />
+          )}
+        </div>
       )}
     </div>
+  )
+}
+
+function plural(label: string, n: number): string {
+  return n === 1 || /s$/i.test(label) ? label : `${label}s`
+}
+
+interface TierPerson {
+  id: string
+  user: { id: string; name: string | null; email: string; avatarUrl: string | null }
+}
+
+function TeamTier({
+  label,
+  people,
+  viewerId,
+  lead = false,
+}: {
+  label: string
+  people: TierPerson[]
+  viewerId: string
+  lead?: boolean
+}) {
+  return (
+    <section aria-label={label} className="w-full">
+      <h2 className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+        {label}
+      </h2>
+      <ul
+        role="list"
+        className="flex flex-wrap justify-center gap-3"
+      >
+        {people.map((p) => (
+          <li
+            key={p.id}
+            className={cn(
+              'flex w-[calc(50%-0.375rem)] flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center sm:w-40',
+              lead && 'border-primary/40',
+            )}
+          >
+            <UserAvatar
+              user={p.user}
+              className={lead ? 'h-16 w-16' : 'h-12 w-12'}
+              fallbackClassName={lead ? 'text-base' : 'text-sm'}
+            />
+            <p className="w-full truncate text-sm font-medium">
+              {p.user.name ?? p.user.email.split('@')[0]}
+            </p>
+            {p.user.id === viewerId && <p className="-mt-1.5 text-xs text-muted-foreground">You</p>}
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
