@@ -74,7 +74,7 @@ const accountNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { href: '/admin/organisations', label: 'Organisations', icon: Building2 },
-  { href: '/admin/members', label: 'Members', icon: Users },
+  { href: '/admin/members', label: 'All users', icon: Users },
   { href: '/admin/species', label: 'Species', icon: FlaskConical },
 ]
 
