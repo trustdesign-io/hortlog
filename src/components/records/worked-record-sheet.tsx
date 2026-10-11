@@ -50,7 +50,7 @@ export function SourcesGroup({
               rel="noopener noreferrer"
               className="whitespace-nowrap underline underline-offset-2 hover:text-foreground"
             >
-              View on POWO
+              Scene on POWO
             </a>
           </span>
         )}

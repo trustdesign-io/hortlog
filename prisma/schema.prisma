@@ -18,15 +18,15 @@ model User {
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
-  memberships          Membership[]
-  viewAssignments      ViewAssignment[]
-  viewAssignmentsGiven ViewAssignment[]   @relation("AssignedBy")
-  taskAssignments      TaskAssignee[]     @relation("AssignedTasks")
-  taskAssignmentsGiven TaskAssignee[]     @relation("TaskAssignedBy")
-  createdTasks         Task[]             @relation("CreatedTasks")
-  workRecords          WorkRecord[]
-  workRecordEdits      WorkRecordEdit[]   @relation("WorkRecordEditedBy")
-  workLogEntryEdits    WorkLogEntryEdit[] @relation("WorkLogEntryEditedBy")
+  memberships           Membership[]
+  sceneAssignments      SceneAssignment[]
+  sceneAssignmentsGiven SceneAssignment[]  @relation("AssignedBy")
+  taskAssignments       TaskAssignee[]     @relation("AssignedTasks")
+  taskAssignmentsGiven  TaskAssignee[]     @relation("TaskAssignedBy")
+  createdTasks          Task[]             @relation("CreatedTasks")
+  workRecords           WorkRecord[]
+  workRecordEdits       WorkRecordEdit[]   @relation("WorkRecordEditedBy")
+  workLogEntryEdits     WorkLogEntryEdit[] @relation("WorkLogEntryEditedBy")
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -43,7 +43,7 @@ model Organisation {
 
   memberships Membership[]
   specimens   Specimen[]
-  views       View[]
+  scenes      Scene[]
   collections Collection[]
   tasks       Task[]
   workRecords WorkRecord[]
@@ -105,15 +105,15 @@ model Collection {
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
-  specimens    CollectionMembership[]
-  primaryViews View[]                 @relation("PrimaryCollection")
+  specimens     CollectionMembership[]
+  primaryScenes Scene[]                @relation("PrimaryCollection")
 
   @@unique([slug, organisationId])
 }
 
-// ─── Views ────────────────────────────────────────────────────────────────────
+// ─── Scenes ────────────────────────────────────────────────────────────────────
 
-model View {
+model Scene {
   id        String   @id @default(cuid())
   slug      String
   name      String
@@ -130,19 +130,19 @@ model View {
   primaryCollection   Collection? @relation("PrimaryCollection", fields: [primaryCollectionId], references: [id], onDelete: SetNull)
 
   specimens   Specimen[]
-  assignments ViewAssignment[]
+  assignments SceneAssignment[]
 
   @@unique([slug, organisationId])
 }
 
-// ─── View assignments (member ↔ view responsibility) ─────────────────────────
+// ─── Scene assignments (member ↔ scene responsibility) ─────────────────────────
 
-model ViewAssignment {
+model SceneAssignment {
   id         String   @id @default(cuid())
   assignedAt DateTime @default(now())
 
-  viewId String
-  view   View   @relation(fields: [viewId], references: [id], onDelete: Cascade)
+  sceneId String
+  scene   Scene  @relation(fields: [sceneId], references: [id], onDelete: Cascade)
 
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -150,7 +150,7 @@ model ViewAssignment {
   assignedById String?
   assignedBy   User?   @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
 
-  @@unique([viewId, userId])
+  @@unique([sceneId, userId])
 }
 
 // ─── Tasks ────────────────────────────────────────────────────────────────────
@@ -217,8 +217,8 @@ model Specimen {
   speciesId String
   species   Species @relation(fields: [speciesId], references: [id])
 
-  viewId String?
-  view   View?   @relation(fields: [viewId], references: [id], onDelete: SetNull)
+  sceneId String?
+  scene   Scene?  @relation(fields: [sceneId], references: [id], onDelete: SetNull)
 
   collections CollectionMembership[]
   workRecords WorkRecord[]

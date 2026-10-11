@@ -5,11 +5,11 @@ import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-de
 import { GaEvent } from '@/components/ga-event'
 import { truncateDescription } from '@/lib/seo'
 
-interface PublicSpecimenInViewPageProps {
+interface PublicSpecimenInScenePageProps {
   params: Promise<{
     org: string
     collection: string
-    view: string
+    scene: string
     specimen: string
   }>
 }
@@ -17,7 +17,7 @@ interface PublicSpecimenInViewPageProps {
 const resolveData = cache(async function resolveData(
   orgSlug: string,
   collectionSlug: string,
-  viewSlug: string,
+  sceneSlug: string,
   specimenSlug: string,
 ) {
   const org = await prisma.organisation.findUnique({
@@ -32,11 +32,11 @@ const resolveData = cache(async function resolveData(
   })
   if (!collection) return null
 
-  const view = await prisma.view.findFirst({
-    where: { slug: viewSlug, organisationId: org.id, primaryCollectionId: collection.id },
+  const scene = await prisma.scene.findFirst({
+    where: { slug: sceneSlug, organisationId: org.id, primaryCollectionId: collection.id },
     select: { id: true, name: true, slug: true },
   })
-  if (!view) return null
+  if (!scene) return null
 
   const specimen = await prisma.specimen.findUnique({
     where: { slug_organisationId: { slug: specimenSlug, organisationId: org.id } },
@@ -46,7 +46,7 @@ const resolveData = cache(async function resolveData(
       accessionNumber: true,
       notes: true,
       imageUrl: true,
-      viewId: true,
+      sceneId: true,
       species: {
         select: {
           commonName: true,
@@ -65,15 +65,15 @@ const resolveData = cache(async function resolveData(
   })
   if (!specimen) return null
 
-  // Specimen must belong to this specific view
-  if (specimen.viewId !== view.id) return null
+  // Specimen must belong to this specific scene
+  if (specimen.sceneId !== scene.id) return null
 
-  return { org, collection, view, specimen }
+  return { org, collection, scene, specimen }
 })
 
-export async function generateMetadata({ params }: PublicSpecimenInViewPageProps) {
-  const { org: orgSlug, collection: collectionSlug, view: viewSlug, specimen: specimenSlug } = await params
-  const data = await resolveData(orgSlug, collectionSlug, viewSlug, specimenSlug)
+export async function generateMetadata({ params }: PublicSpecimenInScenePageProps) {
+  const { org: orgSlug, collection: collectionSlug, scene: sceneSlug, specimen: specimenSlug } = await params
+  const data = await resolveData(orgSlug, collectionSlug, sceneSlug, specimenSlug)
   if (!data) return {}
 
   const { scientificName, commonName, description } = data.specimen.species
@@ -81,7 +81,7 @@ export async function generateMetadata({ params }: PublicSpecimenInViewPageProps
   const metaDescription = description
     ? truncateDescription(description)
     : `${commonName} specimen record at ${data.org.name}.`
-  const canonical = `/${orgSlug}/${collectionSlug}/${viewSlug}/${specimenSlug}`
+  const canonical = `/${orgSlug}/${collectionSlug}/${sceneSlug}/${specimenSlug}`
 
   return {
     title,
@@ -91,23 +91,23 @@ export async function generateMetadata({ params }: PublicSpecimenInViewPageProps
   }
 }
 
-export default async function PublicSpecimenInViewPage({
+export default async function PublicSpecimenInScenePage({
   params,
-}: PublicSpecimenInViewPageProps) {
-  const { org: orgSlug, collection: collectionSlug, view: viewSlug, specimen: specimenSlug } =
+}: PublicSpecimenInScenePageProps) {
+  const { org: orgSlug, collection: collectionSlug, scene: sceneSlug, specimen: specimenSlug } =
     await params
 
-  const data = await resolveData(orgSlug, collectionSlug, viewSlug, specimenSlug)
+  const data = await resolveData(orgSlug, collectionSlug, sceneSlug, specimenSlug)
   if (!data) return notFound()
 
-  const { org, collection, view, specimen } = data
-  const viewPath = `/${orgSlug}/${collectionSlug}/${viewSlug}`
+  const { org, collection, scene, specimen } = data
+  const scenePath = `/${orgSlug}/${collectionSlug}/${sceneSlug}`
 
   const breadcrumbs = [
     { label: org.name, href: `/${orgSlug}` },
     { label: collection.name, href: `/${orgSlug}/${collectionSlug}` },
-    { label: view.name, href: viewPath },
-    { label: specimen.species.commonName, href: `${viewPath}/${specimenSlug}` },
+    { label: scene.name, href: scenePath },
+    { label: specimen.species.commonName, href: `${scenePath}/${specimenSlug}` },
   ]
 
   return (
@@ -126,7 +126,7 @@ export default async function PublicSpecimenInViewPage({
         species={specimen.species}
         specimen={{ accessionNumber: specimen.accessionNumber, notes: specimen.notes, imageUrl: specimen.imageUrl }}
         breadcrumbs={breadcrumbs}
-        backHref={viewPath}
+        backHref={scenePath}
       />
     </>
   )

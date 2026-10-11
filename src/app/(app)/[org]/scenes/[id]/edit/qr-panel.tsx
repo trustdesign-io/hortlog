@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useTransition } from 'react'
 import QRCode from 'qrcode'
-import { regenerateShortCode } from '@/lib/actions/view'
+import { regenerateShortCode } from '@/lib/actions/scene'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -17,12 +17,12 @@ import { Download, RefreshCw } from 'lucide-react'
 
 interface QRPanelProps {
   orgSlug: string
-  viewId: string
+  sceneId: string
   shortCode: string
   siteUrl: string
 }
 
-export function QRPanel({ orgSlug, viewId, shortCode, siteUrl }: QRPanelProps) {
+export function QRPanel({ orgSlug, sceneId, shortCode, siteUrl }: QRPanelProps) {
   const url = `${siteUrl}/v/${shortCode}`
   const [svgDataUrl, setSvgDataUrl] = useState<string | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -82,7 +82,7 @@ export function QRPanel({ orgSlug, viewId, shortCode, siteUrl }: QRPanelProps) {
 
   function handleRegenerate() {
     startRegenTransition(async () => {
-      const result = await regenerateShortCode(orgSlug, viewId)
+      const result = await regenerateShortCode(orgSlug, sceneId)
       if (result.success) {
         setRegenOpen(false)
       } else {
@@ -138,7 +138,7 @@ export function QRPanel({ orgSlug, viewId, shortCode, siteUrl }: QRPanelProps) {
             <DialogHeader>
               <DialogTitle>Regenerate short code?</DialogTitle>
               <DialogDescription>
-                This will assign a new short code to this view. Any QR codes already printed will
+                This will assign a new short code to this scene. Any QR codes already printed will
                 stop working. This cannot be undone.
               </DialogDescription>
             </DialogHeader>

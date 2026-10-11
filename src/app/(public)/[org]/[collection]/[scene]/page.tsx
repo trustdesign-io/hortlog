@@ -3,24 +3,24 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ScientificName } from '@/components/ui/scientific-name'
-import { ViewTabNav } from './view-tab-nav'
-import { PublicViewGrid } from './public-view-grid'
+import { SceneTabNav } from './scene-tab-nav'
+import { PublicSceneGrid } from './public-scene-grid'
 import { GaEvent } from '@/components/ga-event'
 
-interface PublicViewPageProps {
-  params: Promise<{ org: string; collection: string; view: string }>
+interface PublicScenePageProps {
+  params: Promise<{ org: string; collection: string; scene: string }>
   searchParams: Promise<{ tab?: string }>
 }
 
-export async function generateMetadata({ params }: Pick<PublicViewPageProps, 'params'>) {
-  const { org: orgSlug, collection: collectionSlug, view: viewSlug } = await params
+export async function generateMetadata({ params }: Pick<PublicScenePageProps, 'params'>) {
+  const { org: orgSlug, collection: collectionSlug, scene: sceneSlug } = await params
 
-  const data = await resolveView(orgSlug, collectionSlug, viewSlug)
+  const data = await resolveScene(orgSlug, collectionSlug, sceneSlug)
   if (!data) return {}
 
-  const title = `${data.view.name} — ${data.org.name}`
-  const description = `Browse specimens in the ${data.view.name} view from ${data.org.name}.`
-  const canonical = `/${orgSlug}/${collectionSlug}/${viewSlug}`
+  const title = `${data.scene.name} — ${data.org.name}`
+  const description = `Browse specimens in the ${data.scene.name} scene from ${data.org.name}.`
+  const canonical = `/${orgSlug}/${collectionSlug}/${sceneSlug}`
 
   return {
     title,
@@ -30,7 +30,7 @@ export async function generateMetadata({ params }: Pick<PublicViewPageProps, 'pa
   }
 }
 
-const resolveView = cache(async function resolveView(orgSlug: string, collectionSlug: string, viewSlug: string) {
+const resolveScene = cache(async function resolveScene(orgSlug: string, collectionSlug: string, sceneSlug: string) {
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
     select: { id: true, name: true, slug: true },
@@ -43,31 +43,31 @@ const resolveView = cache(async function resolveView(orgSlug: string, collection
   })
   if (!collection) return null
 
-  const view = await prisma.view.findFirst({
+  const scene = await prisma.scene.findFirst({
     where: {
-      slug: viewSlug,
+      slug: sceneSlug,
       organisationId: org.id,
       primaryCollectionId: collection.id,
     },
     select: { id: true, name: true, slug: true, gridRows: true, gridCols: true },
   })
-  if (!view) return null
+  if (!scene) return null
 
-  return { org, collection, view }
+  return { org, collection, scene }
 })
 
-export default async function PublicViewPage({ params, searchParams }: PublicViewPageProps) {
-  const { org: orgSlug, collection: collectionSlug, view: viewSlug } = await params
+export default async function PublicScenePage({ params, searchParams }: PublicScenePageProps) {
+  const { org: orgSlug, collection: collectionSlug, scene: sceneSlug } = await params
   const rawTab = (await searchParams).tab
   const tab = rawTab === 'grid' ? 'grid' : 'list'
 
-  const data = await resolveView(orgSlug, collectionSlug, viewSlug)
+  const data = await resolveScene(orgSlug, collectionSlug, sceneSlug)
   if (!data) return notFound()
 
-  const { org, collection, view } = data
+  const { org, collection, scene } = data
 
   const specimens = await prisma.specimen.findMany({
-    where: { viewId: view.id, organisationId: org.id },
+    where: { sceneId: scene.id, organisationId: org.id },
     select: {
       id: true,
       slug: true,
@@ -85,17 +85,17 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
     take: 500,
   })
 
-  const basePath = `/${orgSlug}/${collectionSlug}/${viewSlug}`
+  const basePath = `/${orgSlug}/${collectionSlug}/${sceneSlug}`
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
-      <GaEvent name="view_page_load" params={{ view_id: view.id, org: orgSlug }} />
+      <GaEvent name="view_page_load" params={{ view_id: scene.id, org: orgSlug }} />
       {/* Header */}
       <header className="mb-6">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
           {org.name} · {collection.name}
         </p>
-        <h1 className="mt-1 font-heading text-2xl font-medium">{view.name}</h1>
+        <h1 className="mt-1 font-heading text-2xl font-medium">{scene.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           {specimens.length} {specimens.length === 1 ? 'specimen' : 'specimens'}
         </p>
@@ -103,7 +103,7 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
 
       {/* Tab switcher */}
       <Suspense fallback={<div className="h-[42px] rounded-xl border bg-muted" />}>
-        <ViewTabNav basePath={basePath} />
+        <SceneTabNav basePath={basePath} />
       </Suspense>
 
       {/* Content */}
@@ -112,9 +112,9 @@ export default async function PublicViewPage({ params, searchParams }: PublicVie
           <SpecimenList specimens={specimens} basePath={basePath} />
         )}
         {tab === 'grid' && (
-          <PublicViewGrid
-            rows={view.gridRows}
-            cols={view.gridCols}
+          <PublicSceneGrid
+            rows={scene.gridRows}
+            cols={scene.gridCols}
             specimens={specimens
               .filter((s): s is typeof s & { gridCell: string } => s.gridCell !== null)
               .map((s) => ({
@@ -154,7 +154,7 @@ function SpecimenList({
   if (specimens.length === 0) {
     return (
       <p className="py-12 text-center text-sm text-muted-foreground">
-        No specimens have been added to this view yet.
+        No specimens have been added to this scene yet.
       </p>
     )
   }

@@ -20,18 +20,18 @@ function generateShortCode(): string {
 async function uniqueShortCode(): Promise<string> {
   for (let i = 0; i < 10; i++) {
     const code = generateShortCode()
-    const existing = await prisma.view.findUnique({ where: { shortCode: code } })
+    const existing = await prisma.scene.findUnique({ where: { shortCode: code } })
     if (!existing) return code
   }
   throw new Error('Failed to generate a unique short code after 10 attempts.')
 }
 
-export async function createView(
+export async function createScene(
   orgSlug: string,
   _prevState: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
 
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slugRaw = (formData.get('slug') as string | null)?.trim() ?? ''
@@ -62,7 +62,7 @@ export async function createView(
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  const existing = await prisma.view.findUnique({
+  const existing = await prisma.scene.findUnique({
     where: { slug_organisationId: { slug, organisationId: org.id } },
   })
   if (existing) return { success: false, error: `The slug "${slug}" is already in use.` }
@@ -83,7 +83,7 @@ export async function createView(
 
   let newId: string
   try {
-    const created = await prisma.view.create({
+    const created = await prisma.scene.create({
       data: {
         name,
         slug,
@@ -100,31 +100,31 @@ export async function createView(
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return { success: false, error: `The slug "${slug}" is already in use.` }
     }
-    console.error('[createView] error:', err)
-    return { success: false, error: 'Failed to create view. Please try again.' }
+    console.error('[createScene] error:', err)
+    return { success: false, error: 'Failed to create scene. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/views`)
-  redirect(`/${orgSlug}/views/${newId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes`)
+  redirect(`/${orgSlug}/scenes/${newId}/edit`)
 }
 
 export async function placeSpecimen(
   orgSlug: string,
-  viewId: string,
+  sceneId: string,
   specimenId: string,
   row: number,
   col: number,
 ): Promise<ActionResult> {
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
 
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  const view = await prisma.view.findUnique({
-    where: { id: viewId, organisationId: org.id },
+  const scene = await prisma.scene.findUnique({
+    where: { id: sceneId, organisationId: org.id },
     select: { id: true },
   })
-  if (!view) return { success: false, error: 'View not found.' }
+  if (!scene) return { success: false, error: 'Scene not found.' }
 
   const specimen = await prisma.specimen.findUnique({
     where: { id: specimenId, organisationId: org.id },
@@ -138,13 +138,13 @@ export async function placeSpecimen(
     await prisma.$transaction([
       // Evict any current occupant of this cell
       prisma.specimen.updateMany({
-        where: { viewId, gridCell: cell, id: { not: specimenId } },
-        data: { viewId: null, gridCell: null },
+        where: { sceneId, gridCell: cell, id: { not: specimenId } },
+        data: { sceneId: null, gridCell: null },
       }),
       // Place (or move) the specimen into this cell
       prisma.specimen.update({
         where: { id: specimenId, organisationId: org.id },
-        data: { viewId, gridCell: cell },
+        data: { sceneId, gridCell: cell },
       }),
     ])
   } catch (err) {
@@ -152,24 +152,24 @@ export async function placeSpecimen(
     return { success: false, error: 'Failed to place specimen. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/views/${viewId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
   return { success: true }
 }
 
 export async function regenerateShortCode(
   orgSlug: string,
-  viewId: string,
+  sceneId: string,
 ): Promise<ActionResult> {
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
 
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  const view = await prisma.view.findUnique({
-    where: { id: viewId, organisationId: org.id },
+  const scene = await prisma.scene.findUnique({
+    where: { id: sceneId, organisationId: org.id },
     select: { id: true },
   })
-  if (!view) return { success: false, error: 'View not found.' }
+  if (!scene) return { success: false, error: 'Scene not found.' }
 
   let shortCode: string
   try {
@@ -179,8 +179,8 @@ export async function regenerateShortCode(
   }
 
   try {
-    await prisma.view.update({
-      where: { id: viewId, organisationId: org.id },
+    await prisma.scene.update({
+      where: { id: sceneId, organisationId: org.id },
       data: { shortCode },
     })
   } catch (err) {
@@ -188,31 +188,31 @@ export async function regenerateShortCode(
     return { success: false, error: 'Failed to regenerate short code. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/views`)
-  revalidatePath(`/${orgSlug}/views/${viewId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes`)
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
   return { success: true }
 }
 
 export async function removeSpecimenFromCell(
   orgSlug: string,
-  viewId: string,
+  sceneId: string,
   specimenId: string,
 ): Promise<ActionResult> {
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
 
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
   try {
     await prisma.specimen.update({
-      where: { id: specimenId, organisationId: org.id, viewId },
-      data: { viewId: null, gridCell: null },
+      where: { id: specimenId, organisationId: org.id, sceneId },
+      data: { sceneId: null, gridCell: null },
     })
   } catch (err) {
     console.error('[removeSpecimenFromCell] error:', err)
     return { success: false, error: 'Failed to remove specimen. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/views/${viewId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
   return { success: true }
 }

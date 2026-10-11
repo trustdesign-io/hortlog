@@ -190,7 +190,7 @@ export async function deleteSpecimen(
   redirect(`/${orgSlug}/specimens`)
 }
 
-export async function removeSpecimenFromView(
+export async function removeSpecimenFromScene(
   orgSlug: string,
   specimenId: string,
 ): Promise<ActionResult> {
@@ -202,11 +202,11 @@ export async function removeSpecimenFromView(
   try {
     await prisma.specimen.update({
       where: { id: specimenId, organisationId: org.id },
-      data: { viewId: null, gridCell: null },
+      data: { sceneId: null, gridCell: null },
     })
   } catch (err) {
-    console.error('[removeSpecimenFromView] error:', err)
-    return { success: false, error: 'Failed to remove from view. Please try again.' }
+    console.error('[removeSpecimenFromScene] error:', err)
+    return { success: false, error: 'Failed to remove from scene. Please try again.' }
   }
 
   revalidatePath(`/${orgSlug}/specimens/${specimenId}/edit`)

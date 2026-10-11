@@ -49,7 +49,7 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
         managerLabel: true,
         memberLabel: true,
         createdAt: true,
-        _count: { select: { memberships: true, specimens: true, views: true } },
+        _count: { select: { memberships: true, specimens: true, scenes: true } },
       },
     }),
     prisma.organisation.count({ where }),
@@ -98,7 +98,7 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
                 <th scope="col" className="px-4 py-3 text-left font-medium">Organisation</th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">Members</th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">Specimens</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Views</th>
+                <th scope="col" className="px-4 py-3 text-right font-medium">Scenes</th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">Created</th>
                 <th scope="col" className="sr-only">Actions</th>
               </tr>
@@ -121,7 +121,7 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
                     {org._count.specimens}
                   </td>
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
-                    {org._count.views}
+                    {org._count.scenes}
                   </td>
                   <td className="px-4 py-3 text-right text-muted-foreground text-xs">
                     {org.createdAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -131,7 +131,7 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
                       <Link
                         href={`/${org.slug}`}
                         className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
-                        aria-label={`View ${org.name}`}
+                        aria-label={`Scene ${org.name}`}
                       >
                         <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" />
                       </Link>

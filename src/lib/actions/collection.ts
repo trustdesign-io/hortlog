@@ -24,7 +24,7 @@ export async function createCollection(
   _prevState: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
 
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''
@@ -63,7 +63,7 @@ export async function updateCollection(
   _prevState: ActionResult | null,
   formData: FormData,
 ): Promise<ActionResult> {
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
 
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''

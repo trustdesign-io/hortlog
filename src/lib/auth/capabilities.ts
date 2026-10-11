@@ -1,8 +1,8 @@
 export const CAPABILITIES = [
-  'can_view_org',       // see the organisation's specimens, views, collections, team and to-dos
+  'can_view_org',       // see the organisation's specimens, scenes, collections, team and to-dos
   'can_record_work',    // add to their own work record
   'can_edit_specimen',
-  'can_edit_view',
+  'can_edit_scene',
   'can_manage_members',
   'can_edit_org_settings',
   'can_manage_species',  // platform admin only
@@ -18,7 +18,7 @@ const ROLE_CAPABILITIES: Record<MemberRole, readonly Capability[]> = {
     'can_view_org',
     'can_record_work',
     'can_edit_specimen',
-    'can_edit_view',
+    'can_edit_scene',
     'can_manage_members',
     'can_edit_org_settings',
   ],

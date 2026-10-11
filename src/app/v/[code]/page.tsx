@@ -9,7 +9,7 @@ interface ShortLinkPageProps {
 export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
   const { code } = await params
 
-  const view = await prisma.view.findUnique({
+  const scene = await prisma.scene.findUnique({
     where: { shortCode: code },
     select: {
       slug: true,
@@ -18,15 +18,15 @@ export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
     },
   })
 
-  if (!view) return notFound()
+  if (!scene) return notFound()
 
-  const orgSlug = view.organisation.slug
-  const viewSlug = view.slug
-  const collectionSlug = view.primaryCollection?.slug
+  const orgSlug = scene.organisation.slug
+  const sceneSlug = scene.slug
+  const collectionSlug = scene.primaryCollection?.slug
 
   const destination = collectionSlug
-    ? `/${orgSlug}/${collectionSlug}/${viewSlug}`
-    : `/${orgSlug}/views/${viewSlug}`
+    ? `/${orgSlug}/${collectionSlug}/${sceneSlug}`
+    : `/${orgSlug}/scenes/${sceneSlug}`
 
   return <QrRedirect destination={destination} shortCode={code} />
 }

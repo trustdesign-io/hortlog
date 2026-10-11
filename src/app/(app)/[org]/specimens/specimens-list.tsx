@@ -13,10 +13,10 @@ interface SpecimenItem {
   id: string
   slug: string
   accessionNumber: string | null
-  viewId: string | null
+  sceneId: string | null
   imageUrl: string | null
   species: { commonName: string; scientificName: string; photoUrl: string | null }
-  view: { name: string } | null
+  scene: { name: string } | null
   collections: Array<{ collection: { id: string; name: string } }>
 }
 
@@ -123,7 +123,7 @@ export function SpecimensList({
             checked={initialPlaced}
             onChange={handlePlacedChange}
           />
-          Placed on a view
+          Placed on a scene
         </label>
       </div>
 
@@ -164,9 +164,9 @@ export function SpecimensList({
                     )}
                   </div>
                   <div className="shrink-0 flex flex-col items-end gap-1">
-                    {s.view && (
+                    {s.scene && (
                       <Badge variant="secondary" className="text-xs">
-                        {s.view.name}
+                        {s.scene.name}
                       </Badge>
                     )}
                     {s.collections.map(({ collection }) => (

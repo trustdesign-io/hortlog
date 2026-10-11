@@ -12,8 +12,8 @@ describe('hasCapability', () => {
       expect(hasCapability('MANAGER', 'can_edit_specimen')).toBe(true)
     })
 
-    it('can edit views', () => {
-      expect(hasCapability('MANAGER', 'can_edit_view')).toBe(true)
+    it('can edit scenes', () => {
+      expect(hasCapability('MANAGER', 'can_edit_scene')).toBe(true)
     })
 
     it('can manage members', () => {
@@ -39,8 +39,8 @@ describe('hasCapability', () => {
       expect(hasCapability('MEMBER', 'can_edit_specimen')).toBe(false)
     })
 
-    it('cannot create, edit or delete views or collections', () => {
-      expect(hasCapability('MEMBER', 'can_edit_view')).toBe(false)
+    it('cannot create, edit or delete scenes or collections', () => {
+      expect(hasCapability('MEMBER', 'can_edit_scene')).toBe(false)
     })
 
     it('cannot manage members', () => {

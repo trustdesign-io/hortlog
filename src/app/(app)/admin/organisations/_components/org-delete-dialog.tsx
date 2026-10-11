@@ -51,7 +51,7 @@ export function OrgDeleteDialog({ orgSlug, orgName }: OrgDeleteDialogProps) {
           <AlertDialogTitle>Delete organisation</AlertDialogTitle>
           <AlertDialogDescription>
             Permanently delete <strong>{orgName}</strong>? This will remove all members,
-            specimens, views, and collections. This cannot be undone.
+            specimens, scenes, and collections. This cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>
         {error && (
