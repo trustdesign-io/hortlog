@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
-import { findDayFor, findDaysFor, WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
+import { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
 import { WorkedRecordSheet } from '@/components/records/worked-record-sheet'
 import { BackToRecord } from '@/components/records/back-to-record'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -23,15 +23,10 @@ export default async function RecordPage({ params }: RecordPageProps) {
   })
   if (!record) return notFound()
 
-  const [day, logDays] = await Promise.all([
-    findDayFor(user.id, record.firstWorkedDate, record.site),
-    findDaysFor(user.id, record.logEntries),
-  ])
-
   return (
     <div className="mx-auto max-w-2xl print:max-w-full">
       <BackToRecord />
-      <WorkedRecordSheet record={record} day={day} logDays={logDays} />
+      <WorkedRecordSheet record={record} />
 
       <div className="mb-6 print:hidden">
         <PrintButton className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'no-underline')} />

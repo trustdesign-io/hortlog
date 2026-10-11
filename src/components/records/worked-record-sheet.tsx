@@ -1,8 +1,7 @@
 import Link from 'next/link'
 import type { Prisma } from '@prisma/client'
-import type { DayRef, WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
+import type { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
 import {
-  CAPACITY_LABELS,
   formatRecordDate,
   formatRecordNo,
   plantNameHtml,
@@ -18,10 +17,6 @@ export type WorkedRecordData = Prisma.WorkRecordGetPayload<{ select: typeof WORK
 
 interface WorkedRecordSheetProps {
   record: WorkedRecordData
-  /** The work day this plant was first recorded on, if there is one. */
-  day?: DayRef | null
-  /** Work days for log entries, keyed "YYYY-MM-DD|site". */
-  logDays?: Map<string, DayRef>
   /** False on the public share page: no links into the member's private pages. */
   privateLinks?: boolean
 }
@@ -65,31 +60,10 @@ export function SourcesGroup({
   )
 }
 
-export function DayLink({ day, privateLinks }: { day: DayRef; privateLinks: boolean }) {
-  const no = formatRecordNo('day', day.recordNumber)
-  return (
-    <RecordField label="Work day">
-      {privateLinks ? (
-        <Link href={`/records/days/${day.recordNumber}`} className={quietLink}>
-          {no}
-        </Link>
-      ) : (
-        no
-      )}
-      <span className="text-muted-foreground">
-        {' · '}
-        {CAPACITY_LABELS[day.capacity]}
-        {day.organisationName && `, ${day.organisationName}`}
-      </span>
-    </RecordField>
-  )
-}
 
 /** A plant worked with, in the record book's fixed field order. Blank fields stay visible. */
 export function WorkedRecordSheet({
   record: r,
-  day = null,
-  logDays = new Map(),
   privateLinks = true,
 }: WorkedRecordSheetProps) {
   const nameHtml = plantNameHtml(r)
@@ -97,8 +71,8 @@ export function WorkedRecordSheet({
   const species = r.specimen.species
 
   return (
-    <article aria-label={`Record ${formatRecordNo('worked', r.recordNumber)}`}>
-      <RecordHeader kicker="Plant record" titleHtml={nameHtml} recordNo={formatRecordNo('worked', r.recordNumber)}>
+    <article aria-label={`Record ${formatRecordNo(r.recordNumber)}`}>
+      <RecordHeader kicker="Plant record" titleHtml={nameHtml} recordNo={formatRecordNo(r.recordNumber)}>
         <p className="mt-2 text-sm text-muted-foreground">
           {privateLinks ? (
             <Link href={`/${r.organisation.slug}/specimens/${r.specimen.slug}`} className={quietLink}>
@@ -125,7 +99,6 @@ export function WorkedRecordSheet({
           <RecordField label="Location" value={r.location} />
           <RecordField label="Vice-county" value={r.viceCounty} />
           <RecordField label="Grid ref." value={r.gridRef} />
-          {day && <DayLink day={day} privateLinks={privateLinks} />}
           <Projects projects={r.projects} />
         </FieldGroup>
 
@@ -161,8 +134,6 @@ export function WorkedRecordSheet({
               <dd>
                 <ol className="grid gap-4">
                   {r.logEntries.map((e) => {
-                    const logDay = e.site ? logDays.get(`${e.date.toISOString().slice(0, 10)}|${e.site}`) : undefined
-                    const place = [e.location, e.site?.split(',')[0]].filter(Boolean).join(', ')
                     const showAction = e.action !== 'OTHER' || e.actionNote !== null || e.text === null
                     return (
                       <li key={e.id} className="grid gap-1 border-l-2 border-border pl-3">
@@ -170,15 +141,7 @@ export function WorkedRecordSheet({
                           <time dateTime={e.date.toISOString().slice(0, 10)} className="text-foreground">
                             {formatRecordDate(e.date)}
                           </time>
-                          {place && ` · ${place}`}
-                          {logDay && privateLinks && (
-                            <>
-                              {' · '}
-                              <Link href={`/records/days/${logDay.recordNumber}`} className={quietLink}>
-                                {formatRecordNo('day', logDay.recordNumber)}
-                              </Link>
-                            </>
-                          )}
+                          {e.location && ` · ${e.location}`}
                         </p>
                         {showAction && (
                           <p className="font-medium">

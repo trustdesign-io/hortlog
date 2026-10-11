@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
-import { findDayFor, WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
+import { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
 import { WorkedRecordSheet } from '@/components/records/worked-record-sheet'
 import { PrintButton } from '@/components/print-button'
 
@@ -21,11 +21,9 @@ export default async function SharedRecordPage({ params }: SharePageProps) {
   })
   if (!record) return notFound()
 
-  const day = await findDayFor(record.userId, record.firstWorkedDate, record.site)
-
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6 print:max-w-full">
-      <WorkedRecordSheet record={record} day={day} privateLinks={false} />
+      <WorkedRecordSheet record={record} privateLinks={false} />
       <div className="mt-2 print:hidden">
         <PrintButton />
       </div>

@@ -1,23 +1,18 @@
 import { describe, it, expect } from 'vitest'
 import { render } from '@testing-library/react'
 import {
-  binomialKey,
   formatRecordDate,
   formatRecordNo,
   licenceUrl,
-  parseRecordNumber,
   plantNameHtml,
   renderInline,
   stripTags,
-  weekday,
 } from './personal-record'
 
 describe('formatRecordNo', () => {
-  it('numbers each type on its own, with its prefix', () => {
-    expect(formatRecordNo('worked', 7)).toBe('007')
-    expect(formatRecordNo('studied', 1)).toBe('S001')
-    expect(formatRecordNo('event', 12)).toBe('E012')
-    expect(formatRecordNo('day', 1234)).toBe('D1234')
+  it('pads record numbers to three digits', () => {
+    expect(formatRecordNo(7)).toBe('007')
+    expect(formatRecordNo(1234)).toBe('1234')
   })
 })
 
@@ -26,7 +21,6 @@ describe('formatRecordDate', () => {
     const d = new Date('2026-10-03T00:00:00Z')
     expect(formatRecordDate(d)).toBe('3 October 2026')
     expect(formatRecordDate(d, 'short')).toBe('3 Oct 2026')
-    expect(weekday(d)).toBe('Saturday')
   })
 })
 
@@ -56,25 +50,6 @@ describe('plantNameHtml', () => {
   it('builds the name from the scientific name and authority otherwise', () => {
     expect(plantNameHtml({ nameHtml: null, scientificName: 'Taxus baccata', authority: 'L.' })).toBe('<i>Taxus baccata</i> L.')
     expect(plantNameHtml({ nameHtml: null, scientificName: 'Taxus baccata', authority: null })).toBe('<i>Taxus baccata</i>')
-  })
-})
-
-describe('parseRecordNumber', () => {
-  it('accepts positive whole numbers only', () => {
-    expect(parseRecordNumber('3')).toBe(3)
-    expect(parseRecordNumber('003')).toBe(3)
-    expect(parseRecordNumber('0')).toBeNull()
-    expect(parseRecordNumber('-1')).toBeNull()
-    expect(parseRecordNumber('S001')).toBeNull()
-    expect(parseRecordNumber('1e3')).toBeNull()
-  })
-})
-
-describe('binomialKey', () => {
-  it('matches names by genus and species, ignoring tags and case', () => {
-    expect(binomialKey('<i>Nesocodon mauritianus</i>')).toBe('nesocodon mauritianus')
-    expect(binomialKey('Nesocodon mauritianus (I.Richardson) Thulin')).toBe('nesocodon mauritianus')
-    expect(binomialKey('<i>Symphyotrichum</i>')).toBeNull()
   })
 })
 

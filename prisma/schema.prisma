@@ -25,9 +25,6 @@ model User {
   taskAssignmentsGiven TaskAssignee[]     @relation("TaskAssignedBy")
   createdTasks         Task[]             @relation("CreatedTasks")
   workRecords          WorkRecord[]
-  studiedRecords       StudiedRecord[]
-  eventRecords         EventRecord[]
-  workDays             WorkDay[]
   workRecordEdits      WorkRecordEdit[]   @relation("WorkRecordEditedBy")
   workLogEntryEdits    WorkLogEntryEdit[] @relation("WorkLogEntryEditedBy")
 }
@@ -284,7 +281,7 @@ model WorkRecord {
   diagnostic  String?
   nearMisses  String?
   powoUrl     String?
-  // Site as recorded, e.g. "Lullingstone Castle, Eynsford, Kent"; matches a work day\'s site
+  // Site as recorded, e.g. "Lullingstone Castle, Eynsford, Kent"
   site        String?
 
   // Where exactly
@@ -338,8 +335,6 @@ model WorkLogEntry {
   action     WorkAction
   actionNote String? // free text; always shown when action = OTHER
   location   String?
-  // A work day\'s site, so the entry appears on that day; null when elsewhere
-  site       String?
   text       String?
 
   workRecordId String
@@ -380,112 +375,4 @@ model WorkLogEntryEdit {
 
   workLogEntryId String
   workLogEntry   WorkLogEntry @relation(fields: [workLogEntryId], references: [id], onDelete: Cascade)
-}
-
-// ─── Personal record: studied species, events and work days ──────────────────
-// Numbered per member like work records: S001, E001, D001.
-
-model StudiedRecord {
-  id           String   @id @default(cuid())
-  recordNumber Int
-  date         DateTime
-
-  scientificName String
-  nameHtml       String?
-  authority      String?
-  family         String?
-  commonNames    String?
-  nativeRange    String?
-  habit          String?
-  diagnostic     String?
-  nearMisses     String?
-  observed       String?
-  powoUrl        String?
-
-  // Where and how it was studied: a book, a glasshouse visit, a herbarium sheet
-  site       String?
-  howStudied String?
-
-  projects      String[] @default([])
-  note          String?
-  sources       String?
-  openQuestions String?
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, recordNumber])
-  @@index([userId, date])
-}
-
-enum EventKind {
-  LECTURE
-  VISIT
-  COURSE
-  OTHER
-}
-
-model EventRecord {
-  id           String    @id @default(cuid())
-  recordNumber Int
-  date         DateTime
-  title        String
-  kind         EventKind
-  site         String
-  organiser    String?
-  notes        String?
-  // Species seen or covered, botanical names wrapped in <i>…</i>
-  species      String[]  @default([])
-  url          String?
-
-  projects      String[] @default([])
-  note          String?
-  sources       String?
-  openQuestions String?
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, recordNumber])
-  @@index([userId, date])
-}
-
-enum WorkCapacity {
-  VOLUNTEER
-  CONTRACT
-  OWN
-}
-
-model WorkDay {
-  id               String       @id @default(cuid())
-  recordNumber     Int
-  date             DateTime
-  site             String
-  // Who the work was for
-  organisationName String?
-  capacity         WorkCapacity
-  hours            Float?
-  withWhom         String?
-  // Work that did not involve a specific plant, one item each
-  tasks            String[]     @default([])
-
-  projects      String[] @default([])
-  note          String?
-  sources       String?
-  openQuestions String?
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([userId, recordNumber])
-  @@index([userId, date])
 }
