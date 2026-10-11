@@ -5,7 +5,7 @@ import { TeamTabs } from './team-tabs'
 import { prisma } from '@/lib/prisma'
 import { Fragment } from 'react'
 import { sortTeam } from '@/lib/team'
-import { isLeader, ROLES, roleLabel, type Role } from '@/lib/roles'
+import { roleLabel, type Role, type RoleLabels } from '@/lib/roles'
 import { UserAvatar } from '@/components/user-avatar'
 import { cn } from '@/lib/utils'
 
@@ -41,12 +41,14 @@ export default async function TeamPage({ params }: TeamPageProps) {
   if (!org) return notFound()
 
   const team = sortTeam(org.memberships)
-  // One tier per role, most senior at the top; empty tiers are left out
-  const tiers = ROLES.map((role) => ({
-    role,
-    label: plural(roleLabel(role, org), team.filter((m) => m.role === role).length),
-    people: team.filter((m) => m.role === role),
-  })).filter((t) => t.people.length > 0)
+  // Directors lead; managers and members sit on one level together. Managers
+  // have more permissions in hortlog, not authority over other people.
+  const directors = team.filter((m) => m.role === 'DIRECTOR')
+  const everyoneElse = sortByName(team.filter((m) => m.role !== 'DIRECTOR'))
+  const tiers = [
+    { key: 'directors', label: plural(org.directorLabel, directors.length), people: directors, lead: true },
+    { key: 'team', label: directors.length > 0 ? 'Team' : '', people: everyoneElse, lead: false },
+  ].filter((t) => t.people.length > 0)
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -63,12 +65,18 @@ export default async function TeamPage({ params }: TeamPageProps) {
           <p className="text-sm text-muted-foreground">No one has joined yet.</p>
         </div>
       ) : (
-        // An org chart: directors, then managers, then members, joined by connectors
+        // An org chart: directors on top, everyone else on one level below
         <div className="flex flex-col items-center">
           {tiers.map((tier, i) => (
-            <Fragment key={tier.role}>
+            <Fragment key={tier.key}>
               {i > 0 && <div aria-hidden="true" className="h-8 w-px bg-border" />}
-              <TeamTier label={tier.label} people={tier.people} viewerId={viewer.id} role={tier.role} />
+              <TeamTier
+                label={tier.label}
+                people={tier.people}
+                viewerId={viewer.id}
+                lead={tier.lead}
+                labels={org}
+              />
             </Fragment>
           ))}
         </div>
@@ -81,8 +89,14 @@ function plural(label: string, n: number): string {
   return n === 1 || /s$/i.test(label) ? label : `${label}s`
 }
 
+function sortByName<T extends { user: { name: string | null; email: string } }>(people: T[]): T[] {
+  const key = (p: T) => (p.user.name ?? p.user.email).toLocaleLowerCase('en-GB')
+  return [...people].sort((a, b) => key(a).localeCompare(key(b), 'en-GB'))
+}
+
 interface TierPerson {
   id: string
+  role: Role
   user: { id: string; name: string | null; email: string; avatarUrl: string | null }
 }
 
@@ -90,24 +104,24 @@ function TeamTier({
   label,
   people,
   viewerId,
-  role,
+  lead,
+  labels,
 }: {
+  /** Empty when there is only one level: the page heading says enough. */
   label: string
   people: TierPerson[]
   viewerId: string
-  /** Senior roles get larger avatars. */
-  role: Role
+  lead: boolean
+  labels: RoleLabels
 }) {
-  const lead = isLeader(role)
   return (
-    <section aria-label={label} className="w-full">
-      <h2 className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        {label}
-      </h2>
-      <ul
-        role="list"
-        className="flex flex-wrap justify-center gap-3"
-      >
+    <section aria-label={label || 'Team'} className="w-full">
+      {label && (
+        <h2 className="mb-3 text-center text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </h2>
+      )}
+      <ul role="list" className="flex flex-wrap justify-center gap-3">
         {people.map((p) => (
           <li
             key={p.id}
@@ -118,13 +132,15 @@ function TeamTier({
           >
             <UserAvatar
               user={p.user}
-              className={role === 'DIRECTOR' ? 'h-20 w-20' : lead ? 'h-16 w-16' : 'h-12 w-12'}
+              className={lead ? 'h-16 w-16' : 'h-12 w-12'}
               fallbackClassName={lead ? 'text-base' : 'text-sm'}
             />
             <p className="w-full truncate text-sm font-medium">
               {p.user.name ?? p.user.email.split('@')[0]}
             </p>
-            {p.user.id === viewerId && <p className="-mt-1.5 text-xs text-muted-foreground">You</p>}
+            {/* Title on every card below the directors, so managers are visible without being ranked */}
+            {!lead && <p className="-mt-1.5 text-xs text-muted-foreground">{roleLabel(p.role, labels)}</p>}
+            {p.user.id === viewerId && <p className="-mt-1 text-xs text-muted-foreground">You</p>}
           </li>
         ))}
       </ul>
