@@ -1,8 +1,11 @@
 import type { ReactNode } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
+import { getCurrentUser } from '@/lib/auth/current-user'
 
-const NAV_COLUMNS = [
+const LEGAL = { heading: 'Legal', links: [{ label: 'Privacy', href: '/privacy' }] }
+
+const SIGNED_OUT_COLUMNS = [
   {
     heading: 'Product',
     links: [
@@ -10,13 +13,14 @@ const NAV_COLUMNS = [
       { label: 'Sign in', href: '/sign-in' },
     ],
   },
-  {
-    heading: 'Legal',
-    links: [{ label: 'Privacy', href: '/privacy' }],
-  },
+  LEGAL,
 ]
 
-export default function PublicLayout({ children }: { children: ReactNode }) {
+const SIGNED_IN_COLUMNS = [{ heading: 'Product', links: [{ label: 'My record', href: '/records' }] }, LEGAL]
+
+export default async function PublicLayout({ children }: { children: ReactNode }) {
+  const signedIn = (await getCurrentUser()) !== null
+
   return (
     <div className="flex min-h-screen flex-col">
       {/* Skip link: appears on focus for keyboard/screen-reader users */}
@@ -26,9 +30,9 @@ export default function PublicLayout({ children }: { children: ReactNode }) {
       >
         Skip to main content
       </a>
-      <Header />
+      <Header signedIn={signedIn} />
       <main id="main-content" className="flex-1">{children}</main>
-      <Footer navColumns={NAV_COLUMNS} tagline="A living record for botanical collections." />
+      <Footer navColumns={signedIn ? SIGNED_IN_COLUMNS : SIGNED_OUT_COLUMNS} tagline="A living record for botanical collections." />
     </div>
   )
 }
