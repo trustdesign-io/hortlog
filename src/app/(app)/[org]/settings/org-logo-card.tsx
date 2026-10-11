@@ -37,7 +37,7 @@ export function OrgLogoCard({ orgSlug, orgName, logoUrl }: OrgLogoCardProps) {
           action={boundAction}
           fieldName="logo"
           label="Choose image"
-          hint="PNG, JPEG, or WebP. Max 2 MB."
+          hint="Any image: large ones are resized before upload."
         />
       </CardContent>
     </Card>

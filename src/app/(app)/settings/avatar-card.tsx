@@ -52,7 +52,7 @@ export function AvatarCard({ user }: AvatarCardProps) {
           action={boundAction}
           fieldName="avatar"
           label="Choose photo"
-          hint="PNG, JPEG, or WebP. Max 2 MB."
+          hint="Any photo: large ones are resized before upload."
         />
       </CardContent>
     </Card>

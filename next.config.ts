@@ -4,6 +4,8 @@ import withBundleAnalyzer from '@next/bundle-analyzer'
 const supabaseHostname = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https://placeholder.supabase.co').hostname
 
 const nextConfig: NextConfig = {
+  // Uploads are resized in the browser; this leaves room for a full 2 MB image
+  experimental: { serverActions: { bodySizeLimit: '3mb' } },
   // Views were renamed to Scenes; keep old links working
   async redirects() {
     return [

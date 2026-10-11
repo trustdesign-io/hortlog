@@ -1,8 +1,9 @@
 'use client'
 
-import { useActionState, useRef } from 'react'
+import { startTransition, useActionState, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Upload } from 'lucide-react'
+import { resizeImage } from '@/lib/resize-image'
 import type { ActionResult } from '@/lib/shared/types'
 
 interface ImageUploadFormProps {
@@ -15,10 +16,26 @@ interface ImageUploadFormProps {
 export function ImageUploadForm({ action, fieldName, label, hint }: ImageUploadFormProps) {
   const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(action, null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [fileName, setFileName] = useState<string | null>(null)
+  const [preparing, setPreparing] = useState(false)
+  const busy = isPending || preparing
+
+  // Shrink large photos first so they fit the upload limit
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const file = inputRef.current?.files?.[0]
+    if (!file) return
+    setPreparing(true)
+    const prepared = await resizeImage(file)
+    setPreparing(false)
+    const data = new FormData()
+    data.set(fieldName, prepared)
+    startTransition(() => formAction(data))
+  }
 
   return (
-    <form action={formAction} className="flex flex-col gap-3">
-      <div className="flex items-center gap-3">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <input
           ref={inputRef}
           type="file"
@@ -27,7 +44,8 @@ export function ImageUploadForm({ action, fieldName, label, hint }: ImageUploadF
           className="sr-only"
           id={`upload-${fieldName}`}
           aria-label={label}
-          disabled={isPending}
+          disabled={busy}
+          onChange={(e) => setFileName(e.target.files?.[0]?.name ?? null)}
         />
         <label
           htmlFor={`upload-${fieldName}`}
@@ -36,17 +54,18 @@ export function ImageUploadForm({ action, fieldName, label, hint }: ImageUploadF
           <Upload className="h-4 w-4" aria-hidden="true" />
           {label}
         </label>
-        <Button type="submit" size="sm" disabled={isPending}>
-          {isPending ? 'Uploading…' : 'Upload'}
+        <Button type="submit" size="sm" disabled={busy || !fileName}>
+          {busy ? 'Uploading…' : 'Upload'}
         </Button>
       </div>
+      {fileName && !busy && <p className="truncate text-xs text-muted-foreground">Selected: {fileName}</p>}
       {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
       {state?.success === false && (
         <p className="text-sm text-destructive" role="alert">
           {state.error}
         </p>
       )}
-      {state?.success === true && !isPending && (
+      {state?.success === true && !busy && (
         <p className="text-sm text-green-600 dark:text-green-400" role="status" aria-live="polite">
           Uploaded successfully.
         </p>

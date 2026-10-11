@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useTransition, useState } from 'react'
+import { EmptyState } from '@/components/empty-state'
 import { createCollection, updateCollection, deleteCollection } from '@/lib/actions/collection'
 import { toSlug } from '@/lib/utils/slug'
 import { Button } from '@/components/ui/button'
@@ -295,15 +296,18 @@ function DeleteCollectionDialog({
 
 export function CollectionsManager({ orgSlug, collections, canEdit, canDelete }: CollectionsManagerProps) {
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          {collections.length === 0
-            ? 'No collections yet.'
-            : `${collections.length} collection${collections.length === 1 ? '' : 's'}`}
-        </p>
+    <div className="space-y-6">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-heading text-2xl font-medium">Collections</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Themed groups of specimens for display purposes.</p>
+        </div>
         {canEdit && <CreateCollectionDialog orgSlug={orgSlug} />}
       </div>
+
+      {collections.length === 0 && (
+        <EmptyState message="No collections yet." hint={canEdit ? 'Use New collection to add the first one.' : null} />
+      )}
 
       {collections.length > 0 && (
         <div className="rounded-xl border bg-card overflow-hidden">
