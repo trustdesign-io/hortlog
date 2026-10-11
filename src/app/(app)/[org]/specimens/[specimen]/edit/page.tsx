@@ -51,7 +51,7 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
   if (!specimen) return notFound()
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Link
           href={`/${orgSlug}/specimens`}

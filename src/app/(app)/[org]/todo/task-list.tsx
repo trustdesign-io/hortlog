@@ -412,7 +412,7 @@ function ToggleStatusButton({ orgSlug, task }: { orgSlug: string; task: Task }) 
 
 export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProps) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-medium">To do</h1>

@@ -28,7 +28,7 @@ export default async function NewSpecimenPage({ params }: NewSpecimenPageProps) 
   })
 
   return (
-    <div className="max-w-xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Link
           href={`/${orgSlug}/specimens`}

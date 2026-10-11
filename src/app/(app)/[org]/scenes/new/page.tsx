@@ -28,7 +28,7 @@ export default async function NewScenePage({ params }: NewScenePageProps) {
   })
 
   return (
-    <div className="max-w-lg space-y-6">
+    <div className="space-y-6">
       <div>
         <Link
           href={`/${orgSlug}/scenes`}

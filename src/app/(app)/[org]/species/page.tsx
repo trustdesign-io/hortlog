@@ -29,7 +29,7 @@ export default async function SpeciesPage({ params, searchParams }: SpeciesPageP
   })
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
         <h1 className="font-heading text-2xl font-medium">Species</h1>
         <p className="mt-1 text-sm text-muted-foreground">
