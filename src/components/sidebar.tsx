@@ -44,11 +44,11 @@ interface NavItem {
 function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
   return [
     { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
+    { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
     { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
     { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3 },
     { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen },
     { href: `/${orgSlug}/team`, label: 'Team', icon: UsersRound },
-    { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
     // Manager-only pages: members would only hit the no-access page
     ...(canManage
       ? [
@@ -287,9 +287,9 @@ function MobileBottomNav({ user, allOrgs }: MobileBottomNavProps) {
     ? [
         ...myRecordNav,
         { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
+        { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
         { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
         { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3 },
-        { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
       ]
     : mobileNav
 
