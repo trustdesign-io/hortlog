@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
         hostname: supabaseHostname,
         pathname: '/storage/v1/object/public/**',
       },
+      // Openly licensed species reference photos from iNaturalist
+      {
+        protocol: 'https',
+        hostname: 'inaturalist-open-data.s3.amazonaws.com',
+        pathname: '/photos/**',
+      },
     ],
   },
 };

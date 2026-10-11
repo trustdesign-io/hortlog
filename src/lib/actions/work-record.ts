@@ -38,7 +38,17 @@ export async function recordWork(
       id: true,
       slug: true,
       organisationId: true,
-      species: { select: { scientificName: true, family: true } },
+      organisation: { select: { name: true } },
+      species: {
+        select: {
+          scientificName: true,
+          family: true,
+          authority: true,
+          commonName: true,
+          origin: true,
+          powoUrl: true,
+        },
+      },
     },
   })
   if (!specimen) return { success: false, error: 'Specimen not found.' }
@@ -65,6 +75,11 @@ export async function recordWork(
             firstWorkedDate: date,
             scientificName: specimen.species.scientificName,
             family: specimen.species.family,
+            authority: specimen.species.authority,
+            commonNames: specimen.species.commonName,
+            nativeRange: specimen.species.origin,
+            powoUrl: specimen.species.powoUrl,
+            site: specimen.organisation.name,
             userId: user.id,
             specimenId,
             organisationId: specimen.organisationId,

@@ -9,56 +9,59 @@ datasource db {
 // ─── Users ────────────────────────────────────────────────────────────────────
 
 model User {
-  id                    String       @id
-  email                 String       @unique
+  id                    String    @id
+  email                 String    @unique
   name                  String?
   avatarUrl             String?
-  isAdmin               Boolean      @default(false)
+  isAdmin               Boolean   @default(false)
   onboardingCompletedAt DateTime?
-  createdAt             DateTime     @default(now())
-  updatedAt             DateTime     @updatedAt
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  memberships           Membership[]
-  viewAssignments       ViewAssignment[]
-  viewAssignmentsGiven  ViewAssignment[]   @relation("AssignedBy")
-  taskAssignments       TaskAssignee[]     @relation("AssignedTasks")
-  taskAssignmentsGiven  TaskAssignee[]     @relation("TaskAssignedBy")
-  createdTasks          Task[]             @relation("CreatedTasks")
-  workRecords           WorkRecord[]
-  workRecordEdits       WorkRecordEdit[]   @relation("WorkRecordEditedBy")
-  workLogEntryEdits     WorkLogEntryEdit[] @relation("WorkLogEntryEditedBy")
+  memberships          Membership[]
+  viewAssignments      ViewAssignment[]
+  viewAssignmentsGiven ViewAssignment[]   @relation("AssignedBy")
+  taskAssignments      TaskAssignee[]     @relation("AssignedTasks")
+  taskAssignmentsGiven TaskAssignee[]     @relation("TaskAssignedBy")
+  createdTasks         Task[]             @relation("CreatedTasks")
+  workRecords          WorkRecord[]
+  studiedRecords       StudiedRecord[]
+  eventRecords         EventRecord[]
+  workDays             WorkDay[]
+  workRecordEdits      WorkRecordEdit[]   @relation("WorkRecordEditedBy")
+  workLogEntryEdits    WorkLogEntryEdit[] @relation("WorkLogEntryEditedBy")
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
 
 model Organisation {
-  id             String       @id @default(cuid())
-  slug           String       @unique
-  name           String
-  logoUrl        String?
-  managerLabel   String       @default("Manager")
-  memberLabel    String       @default("Member")
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  name         String
+  logoUrl      String?
+  managerLabel String   @default("Manager")
+  memberLabel  String   @default("Member")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  memberships    Membership[]
-  specimens      Specimen[]
-  views          View[]
-  collections    Collection[]
-  tasks          Task[]
-  workRecords    WorkRecord[]
+  memberships Membership[]
+  specimens   Specimen[]
+  views       View[]
+  collections Collection[]
+  tasks       Task[]
+  workRecords WorkRecord[]
 }
 
 model Membership {
-  id             String           @id @default(cuid())
-  role           MembershipRole
-  createdAt      DateTime         @default(now())
+  id        String         @id @default(cuid())
+  role      MembershipRole
+  createdAt DateTime       @default(now())
 
-  userId         String
-  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   organisationId String
-  organisation   Organisation     @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   @@unique([userId, organisationId])
 }
@@ -71,8 +74,8 @@ enum MembershipRole {
 // ─── Species (shared across all organisations) ────────────────────────────────
 
 model Species {
-  id                 String     @id @default(cuid())
-  slug               String     @unique
+  id                 String   @id @default(cuid())
+  slug               String   @unique
   commonName         String
   scientificName     String
   family             String?
@@ -80,27 +83,33 @@ model Species {
   description        String?
   conservationStatus String?
   powoUrl            String?
-  createdAt          DateTime   @default(now())
-  updatedAt          DateTime   @updatedAt
+  authority          String?
+  photoUrl           String?
+  photoAttribution   String?
+  photoLicence       String?
+  photoSourceUrl     String?
+  inatTaxonId        Int?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  specimens          Specimen[]
+  specimens Specimen[]
 }
 
 // ─── Collections ──────────────────────────────────────────────────────────────
 
 model Collection {
-  id             String                @id @default(cuid())
-  slug           String
-  name           String
-  description    String?
-  createdAt      DateTime              @default(now())
-  updatedAt      DateTime              @updatedAt
+  id          String   @id @default(cuid())
+  slug        String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   organisationId String
-  organisation   Organisation          @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
-  specimens      CollectionMembership[]
-  primaryViews   View[]                @relation("PrimaryCollection")
+  specimens    CollectionMembership[]
+  primaryViews View[]                 @relation("PrimaryCollection")
 
   @@unique([slug, organisationId])
 }
@@ -108,23 +117,23 @@ model Collection {
 // ─── Views ────────────────────────────────────────────────────────────────────
 
 model View {
-  id                  String     @id @default(cuid())
-  slug                String
-  name                String
-  gridRows            Int        @default(4)
-  gridCols            Int        @default(4)
-  shortCode           String     @unique
-  createdAt           DateTime   @default(now())
-  updatedAt           DateTime   @updatedAt
+  id        String   @id @default(cuid())
+  slug      String
+  name      String
+  gridRows  Int      @default(4)
+  gridCols  Int      @default(4)
+  shortCode String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  organisationId      String
-  organisation        Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   primaryCollectionId String?
-  primaryCollection   Collection?  @relation("PrimaryCollection", fields: [primaryCollectionId], references: [id], onDelete: SetNull)
+  primaryCollection   Collection? @relation("PrimaryCollection", fields: [primaryCollectionId], references: [id], onDelete: SetNull)
 
-  specimens           Specimen[]
-  assignments         ViewAssignment[]
+  specimens   Specimen[]
+  assignments ViewAssignment[]
 
   @@unique([slug, organisationId])
 }
@@ -132,17 +141,17 @@ model View {
 // ─── View assignments (member ↔ view responsibility) ─────────────────────────
 
 model ViewAssignment {
-  id           String   @id @default(cuid())
-  assignedAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  assignedAt DateTime @default(now())
 
-  viewId       String
-  view         View     @relation(fields: [viewId], references: [id], onDelete: Cascade)
+  viewId String
+  view   View   @relation(fields: [viewId], references: [id], onDelete: Cascade)
 
-  userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   assignedById String?
-  assignedBy   User?    @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedBy   User?   @relation("AssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
 
   @@unique([viewId, userId])
 }
@@ -150,37 +159,37 @@ model ViewAssignment {
 // ─── Tasks ────────────────────────────────────────────────────────────────────
 
 model Task {
-  id             String     @id @default(cuid())
-  title          String
-  description    String?
-  dueDate        DateTime?
-  status         TaskStatus @default(OPEN)
-  createdAt      DateTime   @default(now())
-  updatedAt      DateTime   @updatedAt
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime?
+  status      TaskStatus @default(OPEN)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
 
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
-  assignees      TaskAssignee[]
+  assignees TaskAssignee[]
 
-  createdById    String?
-  createdBy      User?        @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: SetNull)
+  createdById String?
+  createdBy   User?   @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: SetNull)
 
   @@index([organisationId])
 }
 
 model TaskAssignee {
-  id           String   @id @default(cuid())
-  assignedAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  assignedAt DateTime @default(now())
 
-  taskId       String
-  task         Task     @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  taskId String
+  task   Task   @relation(fields: [taskId], references: [id], onDelete: Cascade)
 
-  userId       String
-  user         User     @relation("AssignedTasks", fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation("AssignedTasks", fields: [userId], references: [id], onDelete: Cascade)
 
   assignedById String?
-  assignedBy   User?    @relation("TaskAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  assignedBy   User?   @relation("TaskAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
 
   @@unique([taskId, userId])
   @@index([userId])
@@ -194,28 +203,28 @@ enum TaskStatus {
 // ─── Specimens ────────────────────────────────────────────────────────────────
 
 model Specimen {
-  id              String     @id @default(cuid())
+  id              String   @id @default(cuid())
   slug            String
   accessionNumber String?
   notes           String?
   imageUrl        String?
-  gridCell        String?    // e.g. "2,3" (row,col)
+  gridCell        String? // e.g. "2,3" (row,col)
   latitude        Float?
   longitude       Float?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  organisationId  String
-  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
-  speciesId       String
-  species         Species      @relation(fields: [speciesId], references: [id])
+  speciesId String
+  species   Species @relation(fields: [speciesId], references: [id])
 
-  viewId          String?
-  view            View?        @relation(fields: [viewId], references: [id], onDelete: SetNull)
+  viewId String?
+  view   View?   @relation(fields: [viewId], references: [id], onDelete: SetNull)
 
-  collections     CollectionMembership[]
-  workRecords     WorkRecord[]
+  collections CollectionMembership[]
+  workRecords WorkRecord[]
 
   @@unique([slug, organisationId])
 }
@@ -223,11 +232,11 @@ model Specimen {
 // ─── Collection membership (specimen ↔ collection, many-to-many) ──────────────
 
 model CollectionMembership {
-  specimenId    String
-  specimen      Specimen   @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+  specimenId String
+  specimen   Specimen @relation(fields: [specimenId], references: [id], onDelete: Cascade)
 
-  collectionId  String
-  collection    Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
+  collectionId String
+  collection   Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
   @@id([specimenId, collectionId])
 }
@@ -254,43 +263,68 @@ enum WorkAction {
 
 // One per member per specimen. recordNumber is sequential per user (their personal record book).
 model WorkRecord {
-  id              String   @id @default(cuid())
-  recordNumber    Int
+  id           String @id @default(cuid())
+  recordNumber Int
 
   // Date of first work (date portion used; stored as DateTime for Prisma compatibility)
   firstWorkedDate DateTime
 
   // Species fields denormalised at record creation for archival integrity
-  scientificName  String
-  family          String?
+  scientificName String
+  family         String?
+
+  // Name as recorded: botanical parts wrapped in <i>…</i>, authority upright
+  nameHtml  String?
+  authority String?
+
+  // Plant facts as recorded by the member (botany record-book order)
+  commonNames String?
+  nativeRange String?
+  habit       String?
+  diagnostic  String?
+  nearMisses  String?
+  powoUrl     String?
+  // Site as recorded, e.g. "Lullingstone Castle, Eynsford, Kent"; matches a work day\'s site
+  site        String?
+
+  // Where exactly
+  location   String?
+  viceCounty String?
+  gridRef    String?
+
+  // Projects this record belongs to
+  projects String[] @default([])
+
+  // Set when the plant was also studied, not only worked with: how
+  howStudied String?
 
   // Botany-standard fields (all optional; null = not yet recorded)
-  determination   String?
-  labelText       String?
-  provenance      String?
-  workDone        String?
-  observed        String?
-  note            String?
-  sources         String?
-  openQuestions   String?
+  determination String?
+  labelText     String?
+  provenance    String?
+  workDone      String?
+  observed      String?
+  note          String?
+  sources       String?
+  openQuestions String?
 
   // Sharing: opt-in public link via a random token
-  shareToken      String?  @unique
+  shareToken String? @unique
 
-  userId          String
-  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  specimenId      String
-  specimen        Specimen     @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+  specimenId String
+  specimen   Specimen @relation(fields: [specimenId], references: [id], onDelete: Cascade)
 
-  organisationId  String
-  organisation    Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
-  logEntries      WorkLogEntry[]
-  editHistory     WorkRecordEdit[]
+  logEntries  WorkLogEntry[]
+  editHistory WorkRecordEdit[]
 
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([userId, specimenId])
   @@unique([userId, recordNumber])
@@ -299,49 +333,159 @@ model WorkRecord {
 }
 
 model WorkLogEntry {
-  id           String     @id @default(cuid())
-  date         DateTime
-  action       WorkAction
-  actionNote   String?    // free text; always shown when action = OTHER
-  location     String?
-  text         String?
+  id         String     @id @default(cuid())
+  date       DateTime
+  action     WorkAction
+  actionNote String? // free text; always shown when action = OTHER
+  location   String?
+  // A work day\'s site, so the entry appears on that day; null when elsewhere
+  site       String?
+  text       String?
 
   workRecordId String
   workRecord   WorkRecord @relation(fields: [workRecordId], references: [id], onDelete: Cascade)
 
-  editHistory  WorkLogEntryEdit[]
+  editHistory WorkLogEntryEdit[]
 
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([workRecordId, date])
   @@index([date])
 }
 
 model WorkRecordEdit {
-  id           String     @id @default(cuid())
-  field        String
-  oldValue     String?
-  newValue     String?
-  editedAt     DateTime   @default(now())
+  id       String   @id @default(cuid())
+  field    String
+  oldValue String?
+  newValue String?
+  editedAt DateTime @default(now())
 
-  editedById   String?
-  editedBy     User?      @relation("WorkRecordEditedBy", fields: [editedById], references: [id], onDelete: SetNull)
+  editedById String?
+  editedBy   User?   @relation("WorkRecordEditedBy", fields: [editedById], references: [id], onDelete: SetNull)
 
   workRecordId String
   workRecord   WorkRecord @relation(fields: [workRecordId], references: [id], onDelete: Cascade)
 }
 
 model WorkLogEntryEdit {
-  id             String       @id @default(cuid())
-  field          String
-  oldValue       String?
-  newValue       String?
-  editedAt       DateTime     @default(now())
+  id       String   @id @default(cuid())
+  field    String
+  oldValue String?
+  newValue String?
+  editedAt DateTime @default(now())
 
-  editedById     String?
-  editedBy       User?        @relation("WorkLogEntryEditedBy", fields: [editedById], references: [id], onDelete: SetNull)
+  editedById String?
+  editedBy   User?   @relation("WorkLogEntryEditedBy", fields: [editedById], references: [id], onDelete: SetNull)
 
   workLogEntryId String
   workLogEntry   WorkLogEntry @relation(fields: [workLogEntryId], references: [id], onDelete: Cascade)
+}
+
+// ─── Personal record: studied species, events and work days ──────────────────
+// Numbered per member like work records: S001, E001, D001.
+
+model StudiedRecord {
+  id           String   @id @default(cuid())
+  recordNumber Int
+  date         DateTime
+
+  scientificName String
+  nameHtml       String?
+  authority      String?
+  family         String?
+  commonNames    String?
+  nativeRange    String?
+  habit          String?
+  diagnostic     String?
+  nearMisses     String?
+  observed       String?
+  powoUrl        String?
+
+  // Where and how it was studied: a book, a glasshouse visit, a herbarium sheet
+  site       String?
+  howStudied String?
+
+  projects      String[] @default([])
+  note          String?
+  sources       String?
+  openQuestions String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, recordNumber])
+  @@index([userId, date])
+}
+
+enum EventKind {
+  LECTURE
+  VISIT
+  COURSE
+  OTHER
+}
+
+model EventRecord {
+  id           String    @id @default(cuid())
+  recordNumber Int
+  date         DateTime
+  title        String
+  kind         EventKind
+  site         String
+  organiser    String?
+  notes        String?
+  // Species seen or covered, botanical names wrapped in <i>…</i>
+  species      String[]  @default([])
+  url          String?
+
+  projects      String[] @default([])
+  note          String?
+  sources       String?
+  openQuestions String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, recordNumber])
+  @@index([userId, date])
+}
+
+enum WorkCapacity {
+  VOLUNTEER
+  CONTRACT
+  OWN
+}
+
+model WorkDay {
+  id               String       @id @default(cuid())
+  recordNumber     Int
+  date             DateTime
+  site             String
+  // Who the work was for
+  organisationName String?
+  capacity         WorkCapacity
+  hours            Float?
+  withWhom         String?
+  // Work that did not involve a specific plant, one item each
+  tasks            String[]     @default([])
+
+  projects      String[] @default([])
+  note          String?
+  sources       String?
+  openQuestions String?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, recordNumber])
+  @@index([userId, date])
 }
