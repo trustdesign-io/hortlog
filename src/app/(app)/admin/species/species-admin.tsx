@@ -3,6 +3,7 @@
 import { useActionState, useTransition, useState, useEffect, useMemo } from 'react'
 import { createSpecies, updateSpecies, deleteSpecies } from '@/lib/actions/species'
 import { ScientificName } from '@/components/ui/scientific-name'
+import { SpecimenImage } from '@/components/ui/specimen-image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -289,6 +290,9 @@ export function SpeciesAdminList({ species }: SpeciesAdminListProps) {
     <ul role="list" className="divide-y rounded-xl border bg-card overflow-hidden">
       {species.map((s) => (
         <li key={s.id} className="flex items-center gap-3 px-4 py-3">
+          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+            <SpecimenImage imageUrl={s.photoUrl} alt="" fill sizes="48px" className="object-cover" />
+          </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">{s.commonName}</p>
             <ScientificName className="text-xs text-muted-foreground">
