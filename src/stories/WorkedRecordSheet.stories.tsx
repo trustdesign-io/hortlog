@@ -51,7 +51,6 @@ const record: WorkedRecordData = {
       action: 'OTHER',
       actionNote: null,
       location: 'Terrarium at home',
-      site: null,
       text: 'At home in the terrarium.',
     },
   ],
@@ -60,16 +59,7 @@ const record: WorkedRecordData = {
 const meta: Meta<typeof WorkedRecordSheet> = {
   title: 'Records/WorkedRecordSheet',
   component: WorkedRecordSheet,
-  args: {
-    record,
-    day: {
-      recordNumber: 20,
-      date: new Date('2026-09-18T00:00:00Z'),
-      site: 'Lullingstone Castle, Eynsford, Kent',
-      capacity: 'VOLUNTEER',
-      organisationName: 'Lullingstone Castle',
-    },
-  },
+  args: { record },
   decorators: [(Story) => <div className="mx-auto max-w-2xl p-4">{Story()}</div>],
 }
 
