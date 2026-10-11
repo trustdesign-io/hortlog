@@ -9,6 +9,12 @@ import { uploadSpecimenImage } from '@/lib/storage'
 import { toSlug } from '@/lib/utils/slug'
 import type { ActionResult } from '@/lib/shared/types'
 
+/** Cultivar name as typed, without the quotes people often add: "‘Flamingo’" → "Flamingo". */
+function cleanCultivar(raw: FormDataEntryValue | null): string | null {
+  const v = typeof raw === 'string' ? raw.trim().replace(/^['‘’"“”]+|['‘’"“”]+$/g, '').trim() : ''
+  return v || null
+}
+
 export async function createSpecimen(
   orgSlug: string,
   _prevState: ActionResult | null,
@@ -18,12 +24,14 @@ export async function createSpecimen(
 
   const speciesId = (formData.get('speciesId') as string | null)?.trim() ?? ''
   const accessionNumber = (formData.get('accessionNumber') as string | null)?.trim() || null
+  const cultivar = cleanCultivar(formData.get('cultivar'))
   const notes = (formData.get('notes') as string | null)?.trim() || null
   const latRaw = formData.get('latitude') as string | null
   const lngRaw = formData.get('longitude') as string | null
   const collectionIds = formData.getAll('collectionId') as string[]
 
   if (!speciesId) return { success: false, error: 'A species is required.' }
+  if (cultivar && cultivar.length > 80) return { success: false, error: 'Cultivar must be 80 characters or fewer.' }
 
   const latitude = latRaw ? parseFloat(latRaw) : null
   const longitude = lngRaw ? parseFloat(lngRaw) : null
@@ -46,9 +54,7 @@ export async function createSpecimen(
     }
   }
 
-  const slugBase = accessionNumber
-    ? `${species.scientificName} ${accessionNumber}`
-    : species.scientificName
+  const slugBase = [species.scientificName, cultivar, accessionNumber].filter(Boolean).join(' ')
   const slug = toSlug(slugBase)
 
   let newId: string
@@ -56,6 +62,7 @@ export async function createSpecimen(
     const created = await prisma.specimen.create({
       data: {
         slug,
+        cultivar,
         accessionNumber,
         notes,
         latitude,
@@ -94,6 +101,7 @@ export async function updateSpecimen(
   await requireOrgAccess(orgSlug, 'can_edit_specimen')
 
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''
+  const cultivar = cleanCultivar(formData.get('cultivar'))
   const accessionNumber = (formData.get('accessionNumber') as string | null)?.trim() || null
   const notes = (formData.get('notes') as string | null)?.trim() || null
   const latRaw = formData.get('latitude') as string | null
@@ -146,7 +154,7 @@ export async function updateSpecimen(
     await prisma.$transaction([
       prisma.specimen.update({
         where: { id: specimenId, organisationId: org.id },
-        data: { slug, accessionNumber, notes, latitude, longitude },
+        data: { slug, cultivar, accessionNumber, notes, latitude, longitude },
       }),
       prisma.collectionMembership.deleteMany({ where: { specimenId } }),
       ...(validCollectionIds.length > 0

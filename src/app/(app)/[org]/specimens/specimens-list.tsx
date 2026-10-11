@@ -15,6 +15,7 @@ interface SpecimenItem {
   accessionNumber: string | null
   sceneId: string | null
   imageUrl: string | null
+  cultivar: string | null
   species: { commonName: string; scientificName: string; photoUrl: string | null }
   scene: { name: string } | null
   collections: Array<{ collection: { id: string; name: string } }>
@@ -157,6 +158,7 @@ export function SpecimensList({
                     <ScientificName className="text-xs text-muted-foreground">
                       {s.species.scientificName}
                     </ScientificName>
+                    {s.cultivar && <span className="text-xs text-muted-foreground"> ‘{s.cultivar}’</span>}
                     {s.accessionNumber && (
                       <p className="mt-0.5 text-xs text-muted-foreground">
                         #{s.accessionNumber}

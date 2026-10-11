@@ -1,7 +1,9 @@
 'use client'
 
 import { useActionState, useTransition, useState, useEffect, useMemo } from 'react'
-import { createSpecies, updateSpecies, deleteSpecies } from '@/lib/actions/species'
+import { updateSpecies, deleteSpecies } from '@/lib/actions/species'
+import { useRouter } from 'next/navigation'
+import { SpeciesPicker } from '@/components/species/species-picker'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { Button } from '@/components/ui/button'
@@ -15,7 +17,7 @@ import {
   DialogTrigger,
   DialogFooter,
 } from '@/components/ui/dialog'
-import { Field, FieldLabel, FieldError } from '@/components/ui/field'
+import { Field, FieldLabel } from '@/components/ui/field'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { ActionResult } from '@/lib/shared/types'
 import type { Species } from '@prisma/client'
@@ -56,15 +58,9 @@ function SpeciesFormFields({ defaultValues, error }: SpeciesFormFieldsProps) {
         />
       </Field>
       <Field>
-        <FieldLabel htmlFor="scientificName">Scientific name *</FieldLabel>
-        <Input
-          id="scientificName"
-          name="scientificName"
-          required
-          defaultValue={defaultValues?.scientificName}
-          placeholder="e.g. Rosa canina"
-        />
-        <FieldError>Must follow binomial nomenclature (e.g. Rosa canina)</FieldError>
+        <FieldLabel htmlFor="scientificName">Botanical name</FieldLabel>
+        {/* Fixed: it comes from the Catalogue of Life. Add the correct taxon instead of renaming. */}
+        <Input id="scientificName" value={defaultValues?.scientificName ?? ''} readOnly disabled className="italic" />
       </Field>
       <Field>
         <FieldLabel htmlFor="family">Family</FieldLabel>
@@ -115,17 +111,7 @@ function SpeciesFormFields({ defaultValues, error }: SpeciesFormFieldsProps) {
 
 export function CreateSpeciesDialog() {
   const [open, setOpen] = useState(false)
-  const [state, action, isPending] = useActionState<ActionResult | null, FormData>(
-    createSpecies,
-    null,
-  )
-
-  useEffect(() => {
-    if (state?.success) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setOpen(false)
-    }
-  }, [state])
+  const router = useRouter()
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -137,17 +123,19 @@ export function CreateSpeciesDialog() {
         <DialogHeader>
           <DialogTitle>Add species</DialogTitle>
         </DialogHeader>
-        <form action={action} key={String(open)}>
-          <SpeciesFormFields error={state?.success === false ? state.error : null} />
-          <DialogFooter className="mt-6">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? 'Saving…' : 'Save'}
-            </Button>
-          </DialogFooter>
-        </form>
+        <p className="text-sm text-muted-foreground">
+          Search the botanical name. Names come from the Catalogue of Life (built on Kew&apos;s World Checklist);
+          a synonym is added under its accepted name, and a species already in hortlog is never added twice.
+        </p>
+        <SpeciesPicker
+          key={String(open)}
+          value={null}
+          onChange={(picked) => {
+            if (!picked) return
+            setOpen(false)
+            router.refresh()
+          }}
+        />
       </DialogContent>
     </Dialog>
   )

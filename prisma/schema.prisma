@@ -95,6 +95,10 @@ model Species {
   description        String?
   conservationStatus String?
   powoUrl            String?
+  // Identity in the botanical name sources, so the same taxon can't be added twice
+  colId              String?  @unique
+  ipniId             String?  @unique
+  nameKey            String?  @unique
   authority          String?
   photoUrl           String?
   photoAttribution   String?
@@ -217,6 +221,8 @@ enum TaskStatus {
 model Specimen {
   id              String   @id @default(cuid())
   slug            String
+  // Cultivar name without quotes, e.g. Flamingo; the species stays the botanical taxon
+  cultivar        String?
   accessionNumber String?
   notes           String?
   imageUrl        String?

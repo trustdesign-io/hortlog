@@ -44,6 +44,7 @@ const resolveData = cache(async function resolveData(
       id: true,
       slug: true,
       accessionNumber: true,
+      cultivar: true,
       notes: true,
       imageUrl: true,
       sceneId: true,
@@ -124,7 +125,12 @@ export default async function PublicSpecimenInScenePage({
       />
       <SpecimenDetail
         species={specimen.species}
-        specimen={{ accessionNumber: specimen.accessionNumber, notes: specimen.notes, imageUrl: specimen.imageUrl }}
+        specimen={{
+          accessionNumber: specimen.accessionNumber,
+          notes: specimen.notes,
+          imageUrl: specimen.imageUrl,
+          cultivar: specimen.cultivar,
+        }}
         breadcrumbs={breadcrumbs}
         backHref={scenePath}
       />
