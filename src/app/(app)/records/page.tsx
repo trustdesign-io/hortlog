@@ -45,7 +45,7 @@ export default async function RecordsPage() {
   const sites = new Set(records.map((r) => r.site ?? r.organisation.name))
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <header className="mb-6 flex flex-col items-center text-center">
         <UserAvatar user={user} className="h-20 w-20" fallbackClassName="text-xl" />
         <h1 className="mt-3 font-heading text-2xl font-semibold leading-tight">{user.name ?? user.email}</h1>
