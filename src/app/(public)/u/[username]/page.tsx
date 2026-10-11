@@ -32,19 +32,15 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-6 sm:px-6">
-      <header className="mb-6">
-        <div className="flex items-center gap-3">
-          <UserAvatar
-            user={{ name: owner.name, email: owner.username, avatarUrl: owner.avatarUrl }}
-            className="h-14 w-14"
-            fallbackClassName="text-base"
-          />
-          <div className="min-w-0">
-            <h1 className="font-heading text-2xl font-semibold leading-tight">{displayName}</h1>
-            <p className="text-sm text-muted-foreground">Work record</p>
-          </div>
-        </div>
-        <dl className="mt-4 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
+      <header className="mb-6 flex flex-col items-center text-center">
+        <UserAvatar
+          user={{ name: owner.name, email: owner.username, avatarUrl: owner.avatarUrl }}
+          className="h-20 w-20"
+          fallbackClassName="text-xl"
+        />
+        <h1 className="mt-3 font-heading text-2xl font-semibold leading-tight">{displayName}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Work record</p>
+        <dl className="mt-4 flex flex-wrap justify-center gap-x-6 gap-y-1 text-sm text-muted-foreground">
           <div className="flex gap-1.5">
             <dt>Plants worked with</dt>
             <dd className="font-medium text-foreground">{records.length + hiddenCount}</dd>
