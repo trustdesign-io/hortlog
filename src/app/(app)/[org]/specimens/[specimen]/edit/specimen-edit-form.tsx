@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useTransition, useState } from 'react'
-import { updateSpecimen, deleteSpecimen, removeSpecimenFromView } from '@/lib/actions/specimen'
+import { updateSpecimen, deleteSpecimen, removeSpecimenFromScene } from '@/lib/actions/specimen'
 import { toSlug } from '@/lib/utils/slug'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -34,10 +34,10 @@ interface SpecimenData {
   notes: string | null
   latitude: number | null
   longitude: number | null
-  viewId: string | null
+  sceneId: string | null
   gridCell: string | null
   species: { id: string; commonName: string; scientificName: string }
-  view: { id: string; name: string } | null
+  scene: { id: string; name: string } | null
   collectionIds: string[]
 }
 
@@ -101,7 +101,7 @@ function DeleteSpecimenDialog({
         </DialogHeader>
         {isPlaced && (
           <p className="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
-            This specimen is currently placed on a view. Deleting it will remove it from the view.
+            This specimen is currently placed on a scene. Deleting it will remove it from the scene.
           </p>
         )}
         {error && (
@@ -128,10 +128,10 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
     boundAction,
     null,
   )
-  const [isRemovingFromView, startRemoveTransition] = useTransition()
+  const [isRemovingFromScene, startRemoveTransition] = useTransition()
   const [slug, setSlug] = useState(specimen.slug)
   const [slugEdited, setSlugEdited] = useState(true)
-  const [removeViewError, setRemoveViewError] = useState<string | null>(null)
+  const [removeSceneError, setRemoveSceneError] = useState<string | null>(null)
 
   function handleAccessionChange(e: React.ChangeEvent<HTMLInputElement>) {
     if (!slugEdited) setSlug(toSlug(e.target.value))
@@ -142,25 +142,25 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
     setSlugEdited(true)
   }
 
-  function handleRemoveFromView() {
+  function handleRemoveFromScene() {
     startRemoveTransition(async () => {
-      const result = await removeSpecimenFromView(orgSlug, specimen.id)
-      if (!result.success) setRemoveViewError(result.error)
+      const result = await removeSpecimenFromScene(orgSlug, specimen.id)
+      if (!result.success) setRemoveSceneError(result.error)
     })
   }
 
   return (
     <div className="space-y-4">
       {/* Grid placement */}
-      {specimen.view && (
+      {specimen.scene && (
         <div className="rounded-xl border bg-card p-4">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
               <MapPin className="h-4 w-4 text-muted-foreground" aria-hidden="true" />
               <div>
-                <p className="text-sm font-medium">Placed on view</p>
+                <p className="text-sm font-medium">Placed on scene</p>
                 <p className="text-xs text-muted-foreground">
-                  {specimen.view.name}
+                  {specimen.scene.name}
                   {specimen.gridCell && ` — cell ${specimen.gridCell}`}
                 </p>
               </div>
@@ -168,17 +168,17 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleRemoveFromView}
-              disabled={isRemovingFromView}
-              aria-label="Remove from view"
+              onClick={handleRemoveFromScene}
+              disabled={isRemovingFromScene}
+              aria-label="Remove from scene"
             >
               <X className="mr-1 h-3 w-3" aria-hidden="true" />
               Remove
             </Button>
           </div>
-          {removeViewError && (
+          {removeSceneError && (
             <p className="mt-2 text-xs text-destructive" role="alert">
-              {removeViewError}
+              {removeSceneError}
             </p>
           )}
         </div>
@@ -343,7 +343,7 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
             orgSlug={orgSlug}
             specimenId={specimen.id}
             specimenName={specimen.species.commonName}
-            isPlaced={!!specimen.viewId}
+            isPlaced={!!specimen.sceneId}
           />
         </div>
       </form>

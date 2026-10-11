@@ -96,9 +96,9 @@ export default async function HomePage() {
                 <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
                   2
                 </div>
-                <h3 className="font-heading text-lg font-medium">See what&apos;s in the view</h3>
+                <h3 className="font-heading text-lg font-medium">See what&apos;s in the scene</h3>
                 <p className="text-sm text-muted-foreground">
-                  A grid or list of every specimen placed in that view,
+                  A grid or list of every specimen placed in that scene,
                   laid out the way the garden staff decided.
                 </p>
               </div>

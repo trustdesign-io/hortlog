@@ -5,11 +5,11 @@ import { useSearchParams } from 'next/navigation'
 import { List, Grid2X2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-interface ViewTabNavProps {
+interface SceneTabNavProps {
   basePath: string
 }
 
-export function ViewTabNav({ basePath }: ViewTabNavProps) {
+export function SceneTabNav({ basePath }: SceneTabNavProps) {
   const searchParams = useSearchParams()
   const rawTab = searchParams.get('tab')
   const tab = rawTab === 'grid' ? 'grid' : 'list'
@@ -17,7 +17,7 @@ export function ViewTabNav({ basePath }: ViewTabNavProps) {
   return (
     <nav
       className="flex gap-1 rounded-xl border bg-muted p-1"
-      aria-label="View layout"
+      aria-label="Scene layout"
     >
       <Link
         href={`${basePath}?tab=list`}

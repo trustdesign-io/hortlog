@@ -5,9 +5,9 @@ import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import type { ActionResult } from '@/lib/shared/types'
 
-export async function assignMemberToView(
+export async function assignMemberToScene(
   orgSlug: string,
-  viewId: string,
+  sceneId: string,
   userId: string,
 ): Promise<ActionResult> {
   const { user } = await requireOrgAccess(orgSlug, 'can_manage_members')
@@ -15,8 +15,8 @@ export async function assignMemberToView(
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  const view = await prisma.view.findUnique({ where: { id: viewId, organisationId: org.id }, select: { id: true } })
-  if (!view) return { success: false, error: 'View not found.' }
+  const scene = await prisma.scene.findUnique({ where: { id: sceneId, organisationId: org.id }, select: { id: true } })
+  if (!scene) return { success: false, error: 'Scene not found.' }
 
   const member = await prisma.membership.findFirst({
     where: { userId, organisationId: org.id },
@@ -25,19 +25,19 @@ export async function assignMemberToView(
   if (!member) return { success: false, error: 'User is not a member of this organisation.' }
 
   try {
-    await prisma.viewAssignment.create({
-      data: { viewId, userId, assignedById: user.id },
+    await prisma.sceneAssignment.create({
+      data: { sceneId, userId, assignedById: user.id },
     })
   } catch {
-    return { success: false, error: 'User is already assigned to this view.' }
+    return { success: false, error: 'User is already assigned to this scene.' }
   }
 
-  revalidatePath(`/${orgSlug}/views`)
-  revalidatePath(`/${orgSlug}/views/${viewId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes`)
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
   return { success: true }
 }
 
-export async function unassignMemberFromView(
+export async function unassignMemberFromScene(
   orgSlug: string,
   assignmentId: string,
 ): Promise<ActionResult> {
@@ -46,17 +46,17 @@ export async function unassignMemberFromView(
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  const assignment = await prisma.viewAssignment.findUnique({
+  const assignment = await prisma.sceneAssignment.findUnique({
     where: { id: assignmentId },
-    select: { id: true, view: { select: { organisationId: true, id: true } } },
+    select: { id: true, scene: { select: { organisationId: true, id: true } } },
   })
-  if (!assignment || assignment.view.organisationId !== org.id) {
+  if (!assignment || assignment.scene.organisationId !== org.id) {
     return { success: false, error: 'Assignment not found.' }
   }
 
-  await prisma.viewAssignment.delete({ where: { id: assignmentId } })
+  await prisma.sceneAssignment.delete({ where: { id: assignmentId } })
 
-  revalidatePath(`/${orgSlug}/views`)
-  revalidatePath(`/${orgSlug}/views/${assignment.view.id}/edit`)
+  revalidatePath(`/${orgSlug}/scenes`)
+  revalidatePath(`/${orgSlug}/scenes/${assignment.scene.id}/edit`)
   return { success: true }
 }

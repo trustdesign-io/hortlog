@@ -12,20 +12,20 @@ test.describe('Member management — unauthenticated redirects', () => {
     await expect(page).toHaveURL(/\/(sign-in|no-access)/)
   })
 
-  test('unauthenticated user visiting org views page is redirected', async ({ page }) => {
-    await page.goto('/some-org/views')
+  test('unauthenticated user visiting org scenes page is redirected', async ({ page }) => {
+    await page.goto('/some-org/scenes')
     await expect(page).toHaveURL(/\/(sign-in|no-access)/)
   })
 
-  test('unauthenticated user visiting view edit page is redirected', async ({ page }) => {
-    await page.goto('/some-org/views/view-id-123/edit')
+  test('unauthenticated user visiting scene edit page is redirected', async ({ page }) => {
+    await page.goto('/some-org/scenes/scene-id-123/edit')
     await expect(page).toHaveURL(/\/(sign-in|no-access)/)
   })
 })
 
-test.describe('Views list — filter param', () => {
-  test('views page with filter=mine redirects unauthenticated users', async ({ page }) => {
-    await page.goto('/some-org/views?filter=mine')
+test.describe('Scenes list — filter param', () => {
+  test('scenes page with filter=mine redirects unauthenticated users', async ({ page }) => {
+    await page.goto('/some-org/scenes?filter=mine')
     await expect(page).toHaveURL(/\/(sign-in|no-access)/)
   })
 })

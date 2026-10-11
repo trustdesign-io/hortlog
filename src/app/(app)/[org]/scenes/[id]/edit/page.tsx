@@ -8,13 +8,13 @@ import { cn } from '@/lib/utils'
 import { GridEditor } from './grid-editor'
 import { QRPanel } from './qr-panel'
 
-interface ViewEditPageProps {
+interface SceneEditPageProps {
   params: Promise<{ org: string; id: string }>
 }
 
-export default async function ViewEditPage({ params }: ViewEditPageProps) {
-  const { org: orgSlug, id: viewId } = await params
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+export default async function SceneEditPage({ params }: SceneEditPageProps) {
+  const { org: orgSlug, id: sceneId } = await params
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
@@ -22,8 +22,8 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
   })
   if (!org) return notFound()
 
-  const view = await prisma.view.findUnique({
-    where: { id: viewId, organisationId: org.id },
+  const scene = await prisma.scene.findUnique({
+    where: { id: sceneId, organisationId: org.id },
     select: {
       id: true,
       name: true,
@@ -34,11 +34,11 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
       primaryCollection: { select: { name: true } },
     },
   })
-  if (!view) return notFound()
+  if (!scene) return notFound()
 
   const [placedSpecimens, availableSpecimens] = await Promise.all([
     prisma.specimen.findMany({
-      where: { organisationId: org.id, viewId },
+      where: { organisationId: org.id, sceneId },
       select: {
         id: true,
         gridCell: true,
@@ -47,7 +47,7 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
       },
     }),
     prisma.specimen.findMany({
-      where: { organisationId: org.id, viewId: null },
+      where: { organisationId: org.id, sceneId: null },
       select: {
         id: true,
         accessionNumber: true,
@@ -63,23 +63,23 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
     <div className="space-y-6">
       <div>
         <Link
-          href={`/${orgSlug}/views`}
+          href={`/${orgSlug}/scenes`}
           className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), '-ml-2 mb-2')}
         >
           <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
-          Back to views
+          Back to scenes
         </Link>
-        <h1 className="font-heading text-2xl font-medium">{view.name}</h1>
+        <h1 className="font-heading text-2xl font-medium">{scene.name}</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {view.gridRows}×{view.gridCols} grid
-          {view.primaryCollection && ` · ${view.primaryCollection.name}`}
+          {scene.gridRows}×{scene.gridCols} grid
+          {scene.primaryCollection && ` · ${scene.primaryCollection.name}`}
         </p>
       </div>
       <GridEditor
         orgSlug={orgSlug}
-        viewId={view.id}
-        gridRows={view.gridRows}
-        gridCols={view.gridCols}
+        sceneId={scene.id}
+        gridRows={scene.gridRows}
+        gridCols={scene.gridCols}
         placedSpecimens={placedSpecimens.map((s) => ({
           id: s.id,
           gridCell: s.gridCell!,
@@ -96,8 +96,8 @@ export default async function ViewEditPage({ params }: ViewEditPageProps) {
       />
       <QRPanel
         orgSlug={orgSlug}
-        viewId={view.id}
-        shortCode={view.shortCode}
+        sceneId={scene.id}
+        shortCode={scene.shortCode}
         siteUrl={siteUrl}
       />
     </div>

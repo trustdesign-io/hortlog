@@ -4,7 +4,7 @@ import { getActiveHref, getOrgSlugFromPath, resolveOrgSlug } from './nav-utils'
 const orgNav = [
   { href: '/demo' },
   { href: '/demo/specimens' },
-  { href: '/demo/views' },
+  { href: '/demo/scenes' },
   { href: '/demo/collections' },
   { href: '/demo/members' },
   { href: '/demo/todo' },
@@ -49,8 +49,8 @@ describe('getActiveHref', () => {
     expect(getActiveHref(orgNav, '/demo/specimens/new')).toBe('/demo/specimens')
   })
 
-  it('matches Views on /{org}/views/{view}', () => {
-    expect(getActiveHref(orgNav, '/demo/views/my-view')).toBe('/demo/views')
+  it('matches Scenes on /{org}/scenes/{scene}', () => {
+    expect(getActiveHref(orgNav, '/demo/scenes/my-scene')).toBe('/demo/scenes')
   })
 
   it('does NOT keep Overview active on /{org}/todo (longest match wins)', () => {

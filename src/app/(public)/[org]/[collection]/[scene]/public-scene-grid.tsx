@@ -9,14 +9,14 @@ interface GridSpecimen {
   scientificName: string
 }
 
-interface PublicViewGridProps {
+interface PublicSceneGridProps {
   rows: number
   cols: number
   specimens: GridSpecimen[]
   basePath: string
 }
 
-export function PublicViewGrid({ rows, cols, specimens, basePath }: PublicViewGridProps) {
+export function PublicSceneGrid({ rows, cols, specimens, basePath }: PublicSceneGridProps) {
   if (rows <= 0 || cols <= 0) {
     return (
       <p className="py-12 text-center text-sm text-muted-foreground">

@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState, useState } from 'react'
-import { createView } from '@/lib/actions/view'
+import { createScene } from '@/lib/actions/scene'
 import { toSlug } from '@/lib/utils/slug'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,13 +20,13 @@ interface CollectionOption {
   name: string
 }
 
-interface CreateViewFormProps {
+interface CreateSceneFormProps {
   orgSlug: string
   collections: CollectionOption[]
 }
 
-export function CreateViewForm({ orgSlug, collections }: CreateViewFormProps) {
-  const boundAction = createView.bind(null, orgSlug)
+export function CreateSceneForm({ orgSlug, collections }: CreateSceneFormProps) {
+  const boundAction = createScene.bind(null, orgSlug)
   const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(
     boundAction,
     null,
@@ -106,7 +106,7 @@ export function CreateViewForm({ orgSlug, collections }: CreateViewFormProps) {
                 ))}
               </select>
               <p className="text-xs text-muted-foreground">
-                Used by the public view to show specimens from a specific collection.
+                Used by the public scene to show specimens from a specific collection.
               </p>
             </div>
           )}
@@ -151,7 +151,7 @@ export function CreateViewForm({ orgSlug, collections }: CreateViewFormProps) {
       </Card>
 
       <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
-        {isPending ? 'Creating…' : 'Create view'}
+        {isPending ? 'Creating…' : 'Create scene'}
       </Button>
     </form>
   )

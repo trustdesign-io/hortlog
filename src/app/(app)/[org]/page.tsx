@@ -21,9 +21,9 @@ export default async function OrgPage({ params }: OrgPageProps) {
     where: { slug: orgSlug },
     include: {
       _count: {
-        select: { specimens: true, views: true, collections: true },
+        select: { specimens: true, scenes: true, collections: true },
       },
-      views: {
+      scenes: {
         orderBy: { updatedAt: 'desc' },
         take: 5,
         include: {
@@ -83,11 +83,11 @@ export default async function OrgPage({ params }: OrgPageProps) {
             Add Specimen
           </Link>
           <Link
-            href={`/${orgSlug}/views/new`}
+            href={`/${orgSlug}/scenes/new`}
             className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
-            New View
+            New Scene
           </Link>
         </div>
         )}
@@ -111,11 +111,11 @@ export default async function OrgPage({ params }: OrgPageProps) {
           <CardHeader className="pb-1">
             <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Grid3x3 className="h-4 w-4" aria-hidden="true" />
-              Views
+              Scenes
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="font-heading text-3xl font-semibold">{org._count.views}</p>
+            <p className="font-heading text-3xl font-semibold">{org._count.scenes}</p>
           </CardContent>
         </Card>
 
@@ -133,13 +133,13 @@ export default async function OrgPage({ params }: OrgPageProps) {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Recent views */}
+        {/* Recent scenes */}
         <Card>
           <CardHeader className="border-b">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base">Recent Views</CardTitle>
+              <CardTitle className="text-base">Recent Scenes</CardTitle>
               <Link
-                href={`/${orgSlug}/views`}
+                href={`/${orgSlug}/scenes`}
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               >
                 See all
@@ -147,13 +147,13 @@ export default async function OrgPage({ params }: OrgPageProps) {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            {org.views.length === 0 ? (
+            {org.scenes.length === 0 ? (
               <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-                No views yet.
+                No scenes yet.
                 {canManage && (
                   <>
                     {' '}
-                    <Link href={`/${orgSlug}/views/new`} className="text-primary hover:underline">
+                    <Link href={`/${orgSlug}/scenes/new`} className="text-primary hover:underline">
                       Create one
                     </Link>
                   </>
@@ -161,15 +161,15 @@ export default async function OrgPage({ params }: OrgPageProps) {
               </p>
             ) : (
               <ul className="divide-y">
-                {org.views.map((view) => (
-                  <li key={view.id}>
+                {org.scenes.map((scene) => (
+                  <li key={scene.id}>
                     <Link
-                      href={canManage ? `/${orgSlug}/views/${view.id}/edit` : `/${orgSlug}/views`}
+                      href={canManage ? `/${orgSlug}/scenes/${scene.id}/edit` : `/${orgSlug}/scenes`}
                       className="flex items-center justify-between px-4 py-3 text-sm hover:bg-muted transition-colors"
                     >
-                      <span className="font-medium truncate">{view.name}</span>
+                      <span className="font-medium truncate">{scene.name}</span>
                       <span className="ml-4 shrink-0 text-muted-foreground tabular-nums">
-                        {view._count.specimens} specimen{view._count.specimens !== 1 ? 's' : ''}
+                        {scene._count.specimens} specimen{scene._count.specimens !== 1 ? 's' : ''}
                       </span>
                     </Link>
                   </li>

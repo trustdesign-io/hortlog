@@ -20,7 +20,7 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
   })
   if (!org) return notFound()
 
-  const views = await prisma.view.findMany({
+  const scenes = await prisma.scene.findMany({
     where: {
       organisationId: org.id,
     },
@@ -41,43 +41,43 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-medium">Views</h1>
+          <h1 className="font-heading text-2xl font-medium">Scenes</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             Grid displays shown on Vantage screens.
           </p>
         </div>
         {canManage && (
-          <Link href={`/${orgSlug}/views/new`} className={buttonVariants({ size: 'sm' })}>
-            New view
+          <Link href={`/${orgSlug}/scenes/new`} className={buttonVariants({ size: 'sm' })}>
+            New scene
           </Link>
         )}
       </div>
 
-      {views.length === 0 ? (
+      {scenes.length === 0 ? (
         <div className="rounded-xl border bg-card py-16 text-center">
-          <p className="text-sm text-muted-foreground">No views yet.</p>
+          <p className="text-sm text-muted-foreground">No scenes yet.</p>
           {canManage && (
             <Link
-              href={`/${orgSlug}/views/new`}
+              href={`/${orgSlug}/scenes/new`}
               className="mt-3 inline-block text-sm text-primary underline-offset-2 hover:underline"
             >
-              Create your first view
+              Create your first scene
             </Link>
           )}
         </div>
       ) : (
         <div className="rounded-xl border bg-card overflow-hidden">
           <ul role="list">
-            {views.map((v) => (
+            {scenes.map((v) => (
               <li key={v.id} className="border-b last:border-0">
                 <Link
-                  // Members see the view as it is displayed; managers open the editor
+                  // Members see the scene as it is displayed; managers open the editor
                   href={
                     canManage
-                      ? `/${orgSlug}/views/${v.id}/edit`
+                      ? `/${orgSlug}/scenes/${v.id}/edit`
                       : v.primaryCollection
                         ? `/${orgSlug}/${v.primaryCollection.slug}/${v.slug}`
-                        : `/${orgSlug}/views`
+                        : `/${orgSlug}/scenes`
                   }
                   className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 >
