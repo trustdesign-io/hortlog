@@ -8,6 +8,7 @@ import {
   Grid3x3,
   BookOpen,
   Users,
+  UsersRound,
   Settings,
   LayoutDashboard,
   FlaskConical,
@@ -39,16 +40,28 @@ interface NavItem {
   icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
 }
 
-function buildOrgNav(orgSlug: string): NavItem[] {
+function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
   return [
     { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
     { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
     { href: `/${orgSlug}/views`, label: 'Views', icon: Grid3x3 },
     { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen },
-    { href: `/${orgSlug}/members`, label: 'Members', icon: Users },
+    { href: `/${orgSlug}/team`, label: 'Team', icon: UsersRound },
     { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
-    { href: `/${orgSlug}/settings`, label: 'Org Settings', icon: Settings },
+    // Manager-only pages: members would only hit the no-access page
+    ...(canManage
+      ? [
+          { href: `/${orgSlug}/members`, label: 'Members', icon: Users },
+          { href: `/${orgSlug}/settings`, label: 'Org Settings', icon: Settings },
+        ]
+      : []),
   ]
+}
+
+/** Platform admins and the organisation's managers can manage it. */
+function canManageOrg(user: UserWithMemberships, orgSlug: string): boolean {
+  if (user.isAdmin) return true
+  return user.memberships.some((m) => m.organisation.slug === orgSlug && m.role === 'MANAGER')
 }
 
 const myRecordNav: NavItem[] = [
@@ -202,7 +215,7 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
   const pathname = usePathname()
   const knownSlugs = getKnownSlugs(user, allOrgs)
   const orgSlug = getOrgSlugFromPath(pathname, knownSlugs)
-  const orgNav = orgSlug ? buildOrgNav(orgSlug) : []
+  const orgNav = orgSlug ? buildOrgNav(orgSlug, canManageOrg(user, orgSlug)) : []
 
   return (
     <div className="flex h-full flex-col">
