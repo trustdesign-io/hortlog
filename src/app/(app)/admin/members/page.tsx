@@ -17,7 +17,7 @@ interface AdminMembersPageProps {
   searchParams: Promise<{ q?: string; page?: string }>
 }
 
-export const metadata = { title: 'Admin — Members' }
+export const metadata = { title: 'Admin — All users' }
 
 export default async function AdminMembersPage({ searchParams }: AdminMembersPageProps) {
   const user = await requireAuth()
@@ -69,7 +69,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-medium">Members</h1>
+          <h1 className="font-heading text-2xl font-medium">All users</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {total} user{total === 1 ? '' : 's'} on the platform.
           </p>
