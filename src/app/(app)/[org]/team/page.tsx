@@ -17,8 +17,7 @@ interface TeamPageProps {
 
 export default async function TeamPage({ params }: TeamPageProps) {
   const { org: orgSlug } = await params
-  // can_edit_specimen is held by every member, so the whole team can see who is on it.
-  const { user: viewer } = await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const { user: viewer } = await requireOrgAccess(orgSlug, 'can_view_org')
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },

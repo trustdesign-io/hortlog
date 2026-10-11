@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { requireOrgAccess } from '@/lib/auth/permissions'
+import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { hasCapability } from '@/lib/auth/capabilities'
 import { prisma } from '@/lib/prisma'
 import { CollectionsManager } from './collections-manager'
@@ -10,7 +10,8 @@ interface CollectionsPageProps {
 
 export default async function CollectionsPage({ params }: CollectionsPageProps) {
   const { org: orgSlug } = await params
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_view')
+  const { user } = await requireOrgAccess(orgSlug, 'can_view_org')
+  const canEdit = canManageOrg(user, orgSlug)
 
   const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
   const canDelete = membership
@@ -46,6 +47,7 @@ export default async function CollectionsPage({ params }: CollectionsPageProps) 
       <CollectionsManager
         orgSlug={orgSlug}
         collections={collections}
+        canEdit={canEdit}
         canDelete={canDelete}
       />
     </div>

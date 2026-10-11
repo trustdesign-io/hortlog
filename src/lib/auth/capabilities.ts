@@ -1,4 +1,6 @@
 export const CAPABILITIES = [
+  'can_view_org',       // see the organisation's specimens, views, collections, team and to-dos
+  'can_record_work',    // add to their own work record
   'can_edit_specimen',
   'can_edit_view',
   'can_manage_members',
@@ -13,14 +15,17 @@ type MemberRole = 'MANAGER' | 'MEMBER'
 
 const ROLE_CAPABILITIES: Record<MemberRole, readonly Capability[]> = {
   MANAGER: [
+    'can_view_org',
+    'can_record_work',
     'can_edit_specimen',
     'can_edit_view',
     'can_manage_members',
     'can_edit_org_settings',
   ],
+  // Members can look and record their own work; creating, editing and deleting is for managers.
   MEMBER: [
-    'can_edit_specimen',
-    'can_edit_view',
+    'can_view_org',
+    'can_record_work',
   ],
 }
 

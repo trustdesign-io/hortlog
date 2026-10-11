@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { requireOrgAccess } from '@/lib/auth/permissions'
+import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +13,8 @@ interface ViewsPageProps {
 
 export default async function ViewsPage({ params, searchParams }: ViewsPageProps) {
   const [{ org: orgSlug }, { filter }] = await Promise.all([params, searchParams])
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_view')
+  const { user } = await requireOrgAccess(orgSlug, 'can_view_org')
+  const canManage = canManageOrg(user, orgSlug)
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
@@ -36,7 +37,7 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
       shortCode: true,
       gridRows: true,
       gridCols: true,
-      primaryCollection: { select: { name: true } },
+      primaryCollection: { select: { name: true, slug: true } },
       _count: { select: { specimens: true } },
       assignments: {
         take: 4,
@@ -58,9 +59,11 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
             Grid displays shown on Vantage screens.
           </p>
         </div>
-        <Link href={`/${orgSlug}/views/new`} className={buttonVariants({ size: 'sm' })}>
-          New view
-        </Link>
+        {canManage && (
+          <Link href={`/${orgSlug}/views/new`} className={buttonVariants({ size: 'sm' })}>
+            New view
+          </Link>
+        )}
       </div>
 
       {/* Filter toggle */}
@@ -88,7 +91,7 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
           <p className="text-sm text-muted-foreground">
             {isMineFilter ? 'No views assigned to you.' : 'No views yet.'}
           </p>
-          {!isMineFilter && (
+          {!isMineFilter && canManage && (
             <Link
               href={`/${orgSlug}/views/new`}
               className="mt-3 inline-block text-sm text-primary underline-offset-2 hover:underline"
@@ -103,7 +106,14 @@ export default async function ViewsPage({ params, searchParams }: ViewsPageProps
             {views.map((v) => (
               <li key={v.id} className="border-b last:border-0">
                 <Link
-                  href={`/${orgSlug}/views/${v.id}/edit`}
+                  // Members see the view as it is displayed; managers open the editor
+                  href={
+                    canManage
+                      ? `/${orgSlug}/views/${v.id}/edit`
+                      : v.primaryCollection
+                        ? `/${orgSlug}/${v.primaryCollection.slug}/${v.slug}`
+                        : `/${orgSlug}/views`
+                  }
                   className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 >
                   <div className="min-w-0 flex-1">

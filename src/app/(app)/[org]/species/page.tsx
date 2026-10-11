@@ -10,7 +10,7 @@ interface SpeciesPageProps {
 export default async function SpeciesPage({ params, searchParams }: SpeciesPageProps) {
   const { org: orgSlug } = await params
   const { q } = await searchParams
-  await requireOrgAccess(orgSlug, 'can_edit_view')
+  await requireOrgAccess(orgSlug, 'can_view_org')
 
   const query = q?.trim() ?? ''
 

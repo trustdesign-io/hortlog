@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import { Leaf, Grid3x3, BookOpen, Plus } from 'lucide-react'
-import { requireOrgAccess } from '@/lib/auth/permissions'
+import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,7 +14,8 @@ interface OrgPageProps {
 
 export default async function OrgPage({ params }: OrgPageProps) {
   const { org: orgSlug } = await params
-  const { user } = await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const { user } = await requireOrgAccess(orgSlug, 'can_view_org')
+  const canManage = canManageOrg(user, orgSlug)
 
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
@@ -72,6 +73,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
           </div>
         </div>
 
+        {canManage && (
         <div className="flex gap-2 shrink-0">
           <Link
             href={`/${orgSlug}/specimens/new`}
@@ -88,6 +90,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
             New View
           </Link>
         </div>
+        )}
       </div>
 
       {/* Summary stats */}
@@ -146,17 +149,22 @@ export default async function OrgPage({ params }: OrgPageProps) {
           <CardContent className="p-0">
             {org.views.length === 0 ? (
               <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-                No views yet.{' '}
-                <Link href={`/${orgSlug}/views/new`} className="text-primary hover:underline">
-                  Create one
-                </Link>
+                No views yet.
+                {canManage && (
+                  <>
+                    {' '}
+                    <Link href={`/${orgSlug}/views/new`} className="text-primary hover:underline">
+                      Create one
+                    </Link>
+                  </>
+                )}
               </p>
             ) : (
               <ul className="divide-y">
                 {org.views.map((view) => (
                   <li key={view.id}>
                     <Link
-                      href={`/${orgSlug}/views/${view.slug}`}
+                      href={canManage ? `/${orgSlug}/views/${view.id}/edit` : `/${orgSlug}/views`}
                       className="flex items-center justify-between px-4 py-3 text-sm hover:bg-muted transition-colors"
                     >
                       <span className="font-medium truncate">{view.name}</span>
@@ -187,17 +195,22 @@ export default async function OrgPage({ params }: OrgPageProps) {
           <CardContent className="p-0">
             {org.collections.length === 0 ? (
               <p className="px-4 py-6 text-sm text-muted-foreground text-center">
-                No collections yet.{' '}
-                <Link href={`/${orgSlug}/collections/new`} className="text-primary hover:underline">
-                  Create one
-                </Link>
+                No collections yet.
+                {canManage && (
+                  <>
+                    {' '}
+                    <Link href={`/${orgSlug}/collections`} className="text-primary hover:underline">
+                      Create one
+                    </Link>
+                  </>
+                )}
               </p>
             ) : (
               <ul className="divide-y">
                 {org.collections.map((collection) => (
                   <li key={collection.id}>
                     <Link
-                      href={`/${orgSlug}/collections/${collection.slug}`}
+                      href={`/${orgSlug}/collections`}
                       className="flex items-center justify-between px-4 py-3 text-sm hover:bg-muted transition-colors"
                     >
                       <span className="font-medium truncate">{collection.name}</span>
