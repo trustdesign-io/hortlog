@@ -24,7 +24,7 @@ export default async function RecordPage({ params }: RecordPageProps) {
   if (!record) return notFound()
 
   return (
-    <div className="mx-auto max-w-2xl print:max-w-full">
+    <div className="print:max-w-full">
       <BackToRecord />
       <WorkedRecordSheet record={record} />
 
