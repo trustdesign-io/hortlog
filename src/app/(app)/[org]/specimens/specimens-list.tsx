@@ -7,13 +7,15 @@ import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Badge } from '@/components/ui/badge'
+import { SpecimenImage } from '@/components/ui/specimen-image'
 
 interface SpecimenItem {
   id: string
   slug: string
   accessionNumber: string | null
   viewId: string | null
-  species: { commonName: string; scientificName: string }
+  imageUrl: string | null
+  species: { commonName: string; scientificName: string; photoUrl: string | null }
   view: { name: string } | null
   collections: Array<{ collection: { id: string; name: string } }>
 }
@@ -140,6 +142,16 @@ export function SpecimensList({
                   href={canManage ? `/${orgSlug}/specimens/${s.id}/edit` : `/${orgSlug}/specimens/${s.slug}`}
                   className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 >
+                  {/* The specimen's own photo, else the species reference photo */}
+                  <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                    <SpecimenImage
+                      imageUrl={s.imageUrl ?? s.species.photoUrl}
+                      alt=""
+                      fill
+                      sizes="48px"
+                      className="object-cover"
+                    />
+                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium">{s.species.commonName}</p>
                     <ScientificName className="text-xs text-muted-foreground">
