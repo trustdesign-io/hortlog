@@ -16,11 +16,13 @@ import {
   adminUpdateUserName,
   adminAddMembership,
   adminRemoveMembership,
+  adminChangeMembershipRole,
 } from '@/lib/actions/admin'
+import { DEFAULT_ROLE_LABELS, parseRole, roleLabel, ROLES, type Role } from '@/lib/roles'
 
 interface Membership {
   id: string
-  role: 'MANAGER' | 'MEMBER'
+  role: Role
   organisation: { name: string; slug: string }
 }
 
@@ -34,7 +36,6 @@ function MembershipRow({ userId, membership, onRefresh }: MembershipRowProps) {
   const [removing, startRemove] = useTransition()
   const [changingRole, startRoleChange] = useTransition()
   const [error, setError] = useState<string | null>(null)
-  const newRole: 'MANAGER' | 'MEMBER' = membership.role === 'MANAGER' ? 'MEMBER' : 'MANAGER'
   const isPending = removing || changingRole
 
   function handleRemove() {
@@ -49,17 +50,13 @@ function MembershipRow({ userId, membership, onRefresh }: MembershipRowProps) {
     })
   }
 
-  function handleRoleChange() {
+  function handleRoleChange(role: Role) {
+    if (role === membership.role) return
     setError(null)
     startRoleChange(async () => {
-      const removeResult = await adminRemoveMembership(userId, membership.id)
-      if (!removeResult.success) {
-        setError(removeResult.error ?? 'Failed to change role.')
-        return
-      }
-      const addResult = await adminAddMembership(userId, membership.organisation.slug, newRole)
-      if (!addResult.success) {
-        setError(addResult.error ?? 'Failed to change role.')
+      const result = await adminChangeMembershipRole(membership.id, role)
+      if (!result.success) {
+        setError(result.error ?? 'Failed to change role.')
         return
       }
       onRefresh()
@@ -71,16 +68,19 @@ function MembershipRow({ userId, membership, onRefresh }: MembershipRowProps) {
       <div className="flex flex-wrap items-center gap-2">
         <span className="min-w-0 flex-1 truncate text-sm">{membership.organisation.name}</span>
         <div className="flex shrink-0 items-center gap-1">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={handleRoleChange}
+          <select
+            aria-label={`Role in ${membership.organisation.name}`}
+            value={membership.role}
+            onChange={(e) => handleRoleChange(parseRole(e.target.value))}
             disabled={isPending}
-            className="h-7 px-2 text-xs"
+            className="h-7 rounded-md border border-input bg-background px-2 text-xs"
           >
-            {changingRole ? '…' : membership.role === 'MANAGER' ? 'Manager' : 'Member'}
-          </Button>
+            {ROLES.map((r) => (
+              <option key={r} value={r}>
+                {roleLabel(r, DEFAULT_ROLE_LABELS)}
+              </option>
+            ))}
+          </select>
           <Button
             type="button"
             variant="ghost"
@@ -133,7 +133,7 @@ export function MemberEditDialog({
     setAddError(null)
     const fd = new FormData(e.currentTarget)
     const orgSlug = fd.get('addOrgSlug') as string
-    const role = fd.get('addRole') === 'MANAGER' ? ('MANAGER' as const) : ('MEMBER' as const)
+    const role = parseRole(fd.get('addRole'))
     if (!orgSlug) return
     startAdd(async () => {
       const result = await adminAddMembership(userId, orgSlug, role)
@@ -253,6 +253,7 @@ export function MemberEditDialog({
                     >
                       <option value="MEMBER">Member</option>
                       <option value="MANAGER">Manager</option>
+                      <option value="DIRECTOR">Director</option>
                     </select>
                     <Button type="submit" size="sm" disabled={addPending} aria-busy={addPending}>
                       {addPending ? '…' : 'Add'}

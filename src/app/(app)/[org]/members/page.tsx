@@ -20,6 +20,7 @@ export default async function MembersPage({ params }: MembersPageProps) {
     where: { slug: orgSlug },
     select: {
       name: true,
+      directorLabel: true,
       managerLabel: true,
       memberLabel: true,
       memberships: {
@@ -43,8 +44,7 @@ export default async function MembersPage({ params }: MembersPageProps) {
       </div>
       <MemberList
         orgSlug={orgSlug}
-        managerLabel={org.managerLabel}
-        memberLabel={org.memberLabel}
+        labels={{ directorLabel: org.directorLabel, managerLabel: org.managerLabel, memberLabel: org.memberLabel }}
         members={org.memberships.map((m) => ({
           id: m.id,
           role: m.role,

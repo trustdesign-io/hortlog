@@ -32,14 +32,15 @@ model User {
 // ─── Organisations ────────────────────────────────────────────────────────────
 
 model Organisation {
-  id           String   @id @default(cuid())
-  slug         String   @unique
-  name         String
-  logoUrl      String?
-  managerLabel String   @default("Manager")
-  memberLabel  String   @default("Member")
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(cuid())
+  slug          String   @unique
+  name          String
+  logoUrl       String?
+  directorLabel String   @default("Director")
+  managerLabel  String   @default("Manager")
+  memberLabel   String   @default("Member")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   memberships Membership[]
   specimens   Specimen[]
@@ -64,6 +65,7 @@ model Membership {
 }
 
 enum MembershipRole {
+  DIRECTOR
   MANAGER
   MEMBER
 }

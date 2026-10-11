@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation'
-import { requireOrgAccess } from '@/lib/auth/permissions'
+import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { TaskList } from './task-list'
 
@@ -17,8 +17,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
   })
   if (!org) return notFound()
 
-  const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
-  const canManage = user.isAdmin || membership?.role === 'MANAGER'
+  const canManage = canManageOrg(user, orgSlug)
 
   const [tasks, orgMembers] = await Promise.all([
     prisma.task.findMany({

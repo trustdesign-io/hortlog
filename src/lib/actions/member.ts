@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { isLeader, LEADER_ROLES, parseRole, type Role } from '@/lib/roles'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ActionResult } from '@/lib/shared/types'
@@ -16,7 +17,7 @@ export async function inviteMember(
   await requireOrgAccess(orgSlug, 'can_manage_members')
 
   const roleRaw = formData.get('role')
-  const role: 'MANAGER' | 'MEMBER' = roleRaw === 'MANAGER' ? 'MANAGER' : 'MEMBER'
+  const role = parseRole(roleRaw)
   const inviteName = (formData.get('name') as string | null)?.trim() || null
 
   const raw = (formData.get('email') as string | null) ?? ''
@@ -80,23 +81,25 @@ export async function inviteMember(
 export async function changeMemberRole(
   orgSlug: string,
   membershipId: string,
-  role: 'MANAGER' | 'MEMBER',
+  roleRaw: Role,
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_manage_members')
+  const role = parseRole(roleRaw)
 
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  if (role === 'MEMBER') {
-    const managerCount = await prisma.membership.count({
-      where: { organisationId: org.id, role: 'MANAGER' },
+  // An organisation always keeps at least one director or manager
+  if (!isLeader(role)) {
+    const leaderCount = await prisma.membership.count({
+      where: { organisationId: org.id, role: { in: LEADER_ROLES } },
     })
     const target = await prisma.membership.findUnique({
       where: { id: membershipId, organisationId: org.id },
       select: { role: true },
     })
-    if (target?.role === 'MANAGER' && managerCount <= 1) {
-      return { success: false, error: 'Cannot downgrade the last manager.' }
+    if (target && isLeader(target.role) && leaderCount <= 1) {
+      return { success: false, error: 'Cannot downgrade the last director or manager.' }
     }
   }
 
@@ -128,12 +131,12 @@ export async function removeMember(
     select: { role: true },
   })
 
-  if (target?.role === 'MANAGER') {
-    const managerCount = await prisma.membership.count({
-      where: { organisationId: org.id, role: 'MANAGER' },
+  if (target && isLeader(target.role)) {
+    const leaderCount = await prisma.membership.count({
+      where: { organisationId: org.id, role: { in: LEADER_ROLES } },
     })
-    if (managerCount <= 1) {
-      return { success: false, error: 'Cannot remove the last manager.' }
+    if (leaderCount <= 1) {
+      return { success: false, error: 'Cannot remove the last director or manager.' }
     }
   }
 

@@ -1,6 +1,7 @@
 'use client'
 
 import { useActionState, useTransition, useState } from 'react'
+import { isRole, roleLabel, ROLES, type RoleLabels } from '@/lib/roles'
 import { inviteMember, changeMemberRole, removeMember } from '@/lib/actions/member'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -41,8 +42,7 @@ interface Member {
 
 interface MemberListProps {
   orgSlug: string
-  managerLabel: string
-  memberLabel: string
+  labels: RoleLabels
   members: Member[]
 }
 
@@ -50,20 +50,18 @@ function RoleSelect({
   orgSlug,
   membershipId,
   currentRole,
-  managerLabel,
-  memberLabel,
+  labels,
 }: {
   orgSlug: string
   membershipId: string
   currentRole: MembershipRole
-  managerLabel: string
-  memberLabel: string
+  labels: RoleLabels
 }) {
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   function handleChange(value: string | null) {
-    if (value !== 'MANAGER' && value !== 'MEMBER') return
+    if (!isRole(value)) return
     setError(null)
     startTransition(async () => {
       const result = await changeMemberRole(orgSlug, membershipId, value)
@@ -78,8 +76,11 @@ function RoleSelect({
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="MANAGER">{managerLabel}</SelectItem>
-          <SelectItem value="MEMBER">{memberLabel}</SelectItem>
+          {ROLES.map((role) => (
+            <SelectItem key={role} value={role}>
+              {roleLabel(role, labels)}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       {error && <p className="mt-1 text-xs text-destructive" role="alert">{error}</p>}
@@ -147,7 +148,7 @@ function RemoveMemberButton({
   )
 }
 
-export function MemberList({ orgSlug, managerLabel, memberLabel, members }: MemberListProps) {
+export function MemberList({ orgSlug, labels, members }: MemberListProps) {
   const boundInvite = inviteMember.bind(null, orgSlug)
   const [inviteState, inviteAction, inviteIsPending] = useActionState<ActionResult | null, FormData>(boundInvite, null)
 
@@ -199,8 +200,11 @@ export function MemberList({ orgSlug, managerLabel, memberLabel, members }: Memb
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="MEMBER">{memberLabel}</SelectItem>
-                  <SelectItem value="MANAGER">{managerLabel}</SelectItem>
+                  {[...ROLES].reverse().map((role) => (
+                    <SelectItem key={role} value={role}>
+                      {roleLabel(role, labels)}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -256,7 +260,7 @@ export function MemberList({ orgSlug, managerLabel, memberLabel, members }: Memb
 
                   {/* Role badge (mobile) */}
                   <Badge variant="outline" className="hidden sm:inline-flex">
-                    {member.role === 'MANAGER' ? managerLabel : memberLabel}
+                    {roleLabel(member.role, labels)}
                   </Badge>
 
                   {/* Role change */}
@@ -264,8 +268,7 @@ export function MemberList({ orgSlug, managerLabel, memberLabel, members }: Memb
                     orgSlug={orgSlug}
                     membershipId={member.id}
                     currentRole={member.role}
-                    managerLabel={managerLabel}
-                    memberLabel={memberLabel}
+                    labels={labels}
                   />
 
                   {/* Remove */}

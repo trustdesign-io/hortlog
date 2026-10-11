@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
+import { isLeader, LEADER_ROLES, parseRole, type Role } from '@/lib/roles'
 import { createAdminClient } from '@/lib/supabase/admin'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -112,6 +113,7 @@ export async function adminUpdateOrg(
 
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() ?? ''
+  const directorLabel = (formData.get('directorLabel') as string | null)?.trim().slice(0, 60) ?? ''
   const managerLabel = (formData.get('managerLabel') as string | null)?.trim() ?? ''
   const memberLabel = (formData.get('memberLabel') as string | null)?.trim() ?? ''
 
@@ -130,7 +132,13 @@ export async function adminUpdateOrg(
   try {
     await prisma.organisation.update({
       where: { slug: orgSlug },
-      data: { name, slug, managerLabel: managerLabel || 'Manager', memberLabel: memberLabel || 'Member' },
+      data: {
+        name,
+        slug,
+        directorLabel: directorLabel || 'Director',
+        managerLabel: managerLabel || 'Manager',
+        memberLabel: memberLabel || 'Member',
+      },
     })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -214,10 +222,11 @@ export async function adminUpdateUserName(
 export async function adminAddMembership(
   userId: string,
   orgSlug: string,
-  role: 'MANAGER' | 'MEMBER',
+  roleRaw: Role,
 ): Promise<ActionResult> {
   const currentUser = await requireAuth()
   if (!isAdmin(currentUser)) return { success: false, error: 'Admin access required.' }
+  const role = parseRole(roleRaw)
 
   const org = await prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
   if (!org) return { success: false, error: 'Organisation not found.' }
@@ -250,16 +259,46 @@ export async function adminRemoveMembership(
   })
   if (!membership) return { success: false, error: 'Membership not found.' }
 
-  if (membership.role === 'MANAGER') {
-    const managerCount = await prisma.membership.count({
-      where: { organisationId: membership.organisationId, role: 'MANAGER' },
+  if (isLeader(membership.role)) {
+    const leaderCount = await prisma.membership.count({
+      where: { organisationId: membership.organisationId, role: { in: LEADER_ROLES } },
     })
-    if (managerCount <= 1) {
-      return { success: false, error: 'Cannot remove the last manager from an organisation.' }
+    if (leaderCount <= 1) {
+      return { success: false, error: 'Cannot remove the last director or manager from an organisation.' }
     }
   }
 
   await prisma.membership.delete({ where: { id: membershipId } })
+
+  revalidatePath('/admin/members')
+  return { success: true }
+}
+
+export async function adminChangeMembershipRole(
+  membershipId: string,
+  roleRaw: Role,
+): Promise<ActionResult> {
+  const currentUser = await requireAuth()
+  if (!isAdmin(currentUser)) return { success: false, error: 'Admin access required.' }
+  const role = parseRole(roleRaw)
+
+  const membership = await prisma.membership.findUnique({
+    where: { id: membershipId },
+    select: { role: true, organisationId: true },
+  })
+  if (!membership) return { success: false, error: 'Membership not found.' }
+
+  // An organisation always keeps at least one director or manager
+  if (isLeader(membership.role) && !isLeader(role)) {
+    const leaderCount = await prisma.membership.count({
+      where: { organisationId: membership.organisationId, role: { in: LEADER_ROLES } },
+    })
+    if (leaderCount <= 1) {
+      return { success: false, error: 'Cannot downgrade the last director or manager.' }
+    }
+  }
+
+  await prisma.membership.update({ where: { id: membershipId }, data: { role } })
 
   revalidatePath('/admin/members')
   return { success: true }
@@ -274,7 +313,7 @@ export async function adminInviteUser(
 
   const email = (formData.get('email') as string | null)?.trim().toLowerCase() ?? ''
   const orgSlug = (formData.get('orgSlug') as string | null)?.trim() ?? ''
-  const role = formData.get('role') === 'MANAGER' ? 'MANAGER' as const : 'MEMBER' as const
+  const role = parseRole(formData.get('role'))
   const inviteName = (formData.get('name') as string | null)?.trim() || null
 
   if (!email) return { success: false, error: 'Email address is required.' }

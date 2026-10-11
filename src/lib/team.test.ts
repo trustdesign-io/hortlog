@@ -8,6 +8,11 @@ const m = (id: string, role: TeamMember['role'], name: string | null, email = `$
 })
 
 describe('sortTeam', () => {
+  it('puts directors first, then managers, then members', () => {
+    const sorted = sortTeam([m('1', 'MEMBER', 'Ann'), m('2', 'MANAGER', 'Ben'), m('3', 'DIRECTOR', 'Cat')])
+    expect(sorted.map((x) => x.id)).toEqual(['3', '2', '1'])
+  })
+
   it('puts managers first, then members, each by name', () => {
     const sorted = sortTeam([
       m('1', 'MEMBER', 'Zoe'),

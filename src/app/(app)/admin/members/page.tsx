@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
+import { DEFAULT_ROLE_LABELS, roleLabel } from '@/lib/roles'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -140,7 +141,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                           >
                             {m.organisation.name}
                             <span className="text-muted-foreground">
-                              ({m.role === 'MANAGER' ? 'Manager' : 'Member'})
+                              ({roleLabel(m.role, DEFAULT_ROLE_LABELS)})
                             </span>
                           </Link>
                         ))}
