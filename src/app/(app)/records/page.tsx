@@ -3,6 +3,8 @@ import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { formatRecordDate, formatRecordNo, plantNameHtml } from '@/lib/personal-record'
 import { TaxonName } from '@/components/records/taxon-name'
+import { SpecimenImage } from '@/components/ui/specimen-image'
+import { UserAvatar } from '@/components/user-avatar'
 
 export const metadata = {
   title: 'My record',
@@ -25,6 +27,12 @@ export default async function RecordsPage() {
       family: true,
       site: true,
       organisation: { select: { name: true } },
+      specimen: {
+        select: {
+          imageUrl: true,
+          species: { select: { photoUrl: true } },
+        },
+      },
     },
   })
 
@@ -37,7 +45,13 @@ export default async function RecordsPage() {
   return (
     <div className="mx-auto max-w-3xl">
       <header className="mb-6">
-        <h1 className="text-2xl font-semibold">My record</h1>
+        <div className="flex items-center gap-3">
+          <UserAvatar user={user} className="h-12 w-12" fallbackClassName="text-sm" />
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold leading-tight">My record</h1>
+            <p className="truncate text-sm text-muted-foreground">{user.name ?? user.email}</p>
+          </div>
+        </div>
         {records.length > 0 && (
           <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted-foreground">
             <div className="flex gap-1.5">
@@ -73,9 +87,18 @@ export default async function RecordsPage() {
             <li key={r.id}>
               <Link
                 href={`/records/${r.id}`}
-                className="flex items-start gap-3 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="flex items-center gap-3 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
-                <span className="w-9 shrink-0 pt-0.5 font-mono text-xs tabular-nums text-muted-foreground">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
+                  <SpecimenImage
+                    imageUrl={r.specimen.imageUrl ?? r.specimen.species.photoUrl}
+                    alt=""
+                    fill
+                    sizes="48px"
+                    className="object-cover"
+                  />
+                </div>
+                <span className="w-8 shrink-0 font-mono text-xs tabular-nums text-muted-foreground">
                   {formatRecordNo(r.recordNumber)}
                 </span>
                 <div className="min-w-0 flex-1">
