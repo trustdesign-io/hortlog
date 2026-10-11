@@ -136,7 +136,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                         {u.memberships.map((m) => (
                           <Link
                             key={m.id}
-                            href={`/${m.organisation.slug}/members`}
+                            href={`/${m.organisation.slug}/team/members`}
                             className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted transition-colors"
                           >
                             {m.organisation.name}

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { requireOrgAccess } from '@/lib/auth/permissions'
+import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
+import { TeamTabs } from './team-tabs'
 import { prisma } from '@/lib/prisma'
 import { Fragment } from 'react'
 import { sortTeam } from '@/lib/team'
@@ -55,6 +56,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
           {team.length === 1 ? '1 person' : `${team.length} people`} at {org.name}
         </p>
       </div>
+      {canManageOrg(viewer, orgSlug) && <TeamTabs orgSlug={orgSlug} active="team" />}
 
       {team.length === 0 ? (
         <div className="rounded-xl border bg-card py-16 text-center">

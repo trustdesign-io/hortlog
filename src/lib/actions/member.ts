@@ -69,7 +69,7 @@ export async function inviteMember(
     return { success: false, error: `Failed to invite: ${failures.join(', ')}` }
   }
 
-  revalidatePath(`/${orgSlug}/members`)
+  revalidatePath(`/${orgSlug}/team/members`)
 
   if (failures.length > 0) {
     return { success: false, error: `Some invites failed: ${failures.join(', ')}` }
@@ -113,7 +113,7 @@ export async function changeMemberRole(
     return { success: false, error: 'Failed to update role. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/members`)
+  revalidatePath(`/${orgSlug}/team/members`)
   return { success: true }
 }
 
@@ -147,6 +147,6 @@ export async function removeMember(
     return { success: false, error: 'Failed to remove member. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/members`)
+  revalidatePath(`/${orgSlug}/team/members`)
   return { success: true }
 }
