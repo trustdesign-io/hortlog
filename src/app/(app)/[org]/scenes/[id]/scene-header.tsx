@@ -9,10 +9,10 @@ interface SceneHeaderProps {
   sceneId: string
   name: string
   collectionName: string | null
-  active: 'layout' | 'qr'
+  active: 'layout' | 'qr' | 'details'
 }
 
-/** Back link, title and the Layout / QR code tabs shared by a scene's pages. */
+/** Back link, title and the Layout / QR code / Details tabs shared by a scene's pages. */
 export function SceneHeader({ orgSlug, sceneId, name, collectionName, active }: SceneHeaderProps) {
   const base = `/${orgSlug}/scenes/${sceneId}`
   return (
@@ -34,6 +34,7 @@ export function SceneHeader({ orgSlug, sceneId, name, collectionName, active }: 
         tabs={[
           { key: 'layout', label: 'Layout', href: `${base}/edit` },
           { key: 'qr', label: 'QR code', href: `${base}/qr` },
+          { key: 'details', label: 'Details', href: `${base}/details` },
         ]}
       />
     </div>
