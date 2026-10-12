@@ -118,7 +118,7 @@ export default async function HomePage() {
             </h1>
           }
           body={
-            <p className="text-lg text-muted-foreground mb-10 max-w-xl mx-auto">
+            <p className="text-lg text-white mb-10 max-w-xl mx-auto">
               hortlog gives every specimen its own page — identification, provenance,
               conservation status — readable from a QR code at the vantage point,
               however far back the plant is planted.
@@ -126,10 +126,16 @@ export default async function HomePage() {
           }
           actions={
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }), 'w-full sm:w-auto')}>
+              <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }), 'w-full text-white sm:w-auto')}>
                 Sign up
               </Link>
-              <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline', size: 'xl' }), 'w-full sm:w-auto')}>
+              <Link
+                href="/sign-in"
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'xl' }),
+                  'w-full border-white bg-transparent text-white hover:bg-white/10 hover:text-white sm:w-auto',
+                )}
+              >
                 Sign in
               </Link>
             </div>
@@ -138,11 +144,6 @@ export default async function HomePage() {
 
         {/* How it works */}
         <section className="bg-card border-t border-border">
-          <LandingBand
-            wideSrc="/images/landing/discovery-wide.png"
-            phoneSrc="/images/landing/discovery-phone.png"
-            alt="A visitor scanning a QR label at an orchid display"
-          />
           <div className="px-6 py-20">
             <div className="max-w-4xl mx-auto">
               <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-4 text-center">
@@ -191,7 +192,12 @@ export default async function HomePage() {
         </section>
 
         {/* Vantage benefits */}
-        <section className="px-6 py-20 bg-card border-t border-border">
+        <LandingBand
+          wideSrc="/images/landing/discovery-wide.png"
+          phoneSrc="/images/landing/discovery-phone.png"
+          alt="A visitor scanning a QR label at an orchid display"
+        />
+        <section className="px-6 py-20">
           <div className="max-w-5xl mx-auto">
             <div className="text-center mb-16">
               <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
@@ -239,7 +245,7 @@ export default async function HomePage() {
         </section>
 
         {/* Natural interpretation */}
-        <section className="px-6 py-20">
+        <section className="px-6 py-20 bg-card border-t border-border">
           <div className="max-w-2xl mx-auto text-center">
             <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
               Natural interpretation
