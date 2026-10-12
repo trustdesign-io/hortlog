@@ -24,7 +24,7 @@ import { getActiveHref, resolveOrgSlug } from '@/lib/nav-utils'
 import { isLeader } from '@/lib/roles'
 import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
-import { UserMenu } from '@/components/user-menu'
+import { SignOutButton, UserIdentity, UserMenu } from '@/components/user-menu'
 import { Logo } from '@/components/layout/logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { TourButton } from '@/components/tour/tour-button'
@@ -286,6 +286,27 @@ function YouSection({ user, onNavigate, showPanel }: YouSectionProps) {
   )
 }
 
+/** Mobile You panel: who you are at the top, your links in the middle, sign out at the foot. */
+function YouPanel({ user, onNavigate, showPanel }: YouSectionProps) {
+  return (
+    <div className="flex h-full flex-col">
+      <div className="border-b pb-5 pt-12">
+        <UserIdentity user={user} />
+      </div>
+      <div className="flex-1 overflow-y-auto py-3">
+        <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
+        <div className="mt-1 flex flex-col items-stretch gap-0.5 px-3">
+          <TourButton user={user} showPanel={showPanel} showLabel />
+          <ThemeToggle showLabel />
+        </div>
+      </div>
+      <div className="border-t p-3">
+        <SignOutButton variant="outline" size="lg" className="w-full" />
+      </div>
+    </div>
+  )
+}
+
 export function Sidebar({ user, allOrgs }: SidebarProps) {
   // Mobile has two slide-out panels: the menu (left) and You (right). At most one is open.
   const [panel, setPanel] = useState<TourPanel | null>(null)
@@ -312,9 +333,7 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
             </SheetTrigger>
             <SheetContent side="right" className="w-72 p-0">
               <SheetTitle className="sr-only">You</SheetTitle>
-              <div className="pt-14">
-                <YouSection user={user} onNavigate={close} showPanel={setPanel} />
-              </div>
+              <YouPanel user={user} onNavigate={close} showPanel={setPanel} />
             </SheetContent>
           </Sheet>
           <Sheet {...panelProps('nav')}>
