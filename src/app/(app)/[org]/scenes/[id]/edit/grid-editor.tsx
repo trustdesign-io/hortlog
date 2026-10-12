@@ -111,8 +111,7 @@ export function GridEditor({
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerCell, setPickerCell] = useState<{ row: number; col: number } | null>(null)
   const [search, setSearch] = useState('')
-  const [isFlat, setIsFlat] = useState(false)
-  const tilt = sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM, isFlat)
+  const tilt = sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)
   const cellWidthRem = CELL_WIDTH_REM * sceneCellScale(rows, tilt)
 
   // Roving tabindex: track which cell currently owns the tab stop
@@ -252,20 +251,6 @@ export function GridEditor({
           resizeError={resizeError}
         />
       </div>
-      {perspective === 'BED' && (
-        <div className="mb-3 flex justify-end">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="min-h-9"
-            aria-pressed={isFlat}
-            onClick={() => setIsFlat((v) => !v)}
-          >
-            Flat view
-          </Button>
-        </div>
-      )}
       <div className="overflow-x-auto pb-4">
         <HexGrid
           role="grid"

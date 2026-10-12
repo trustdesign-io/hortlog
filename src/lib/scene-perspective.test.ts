@@ -94,10 +94,6 @@ describe('sceneTilt', () => {
   it('tilts a bed', () => {
     expect(sceneTilt('BED', 4, 120)).toBeGreaterThan(0)
   })
-
-  it('is flat for a bed in flat view', () => {
-    expect(sceneTilt('BED', 4, 120, true)).toBe(0)
-  })
 })
 
 describe('sceneCellScale', () => {
