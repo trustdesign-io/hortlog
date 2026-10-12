@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import Link from 'next/link'
 import { cn } from '@/lib/utils'
-import { Logo, DEFAULT_BRAND_NAME } from './logo'
+import { Logo, COPYRIGHT_HOLDER } from './logo'
 
 export interface FooterNavColumn {
   heading: string
@@ -113,7 +113,7 @@ export function Footer({
         {/* Bottom row: copyright */}
         <div className="mt-10 pt-6 border-t border-border flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-muted-foreground">
-            &copy; {year} {siteName ?? DEFAULT_BRAND_NAME}. All rights reserved.
+            &copy; {year} {COPYRIGHT_HOLDER}. All rights reserved.
           </p>
         </div>
       </div>

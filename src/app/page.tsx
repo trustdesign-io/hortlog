@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getLandingPath } from '@/lib/auth/landing'
-import { Logo } from '@/components/layout/logo'
+import { COPYRIGHT_HOLDER, Logo } from '@/components/layout/logo'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { HeroSection } from '@/components/landing/hero-section'
@@ -177,7 +177,7 @@ export default async function HomePage() {
       <footer className="border-t border-border px-6 py-6">
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <Logo href="/" />
-          <p>&copy; {new Date().getFullYear()} hortlog. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {COPYRIGHT_HOLDER}. All rights reserved.</p>
           <nav aria-label="Footer" className="flex gap-4">
             <Link href="/sign-in" className="hover:text-foreground transition-colors">Sign in</Link>
             <Link href="/sign-up" className="hover:text-foreground transition-colors">Sign up</Link>
