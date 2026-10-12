@@ -17,6 +17,7 @@ interface TourButtonProps {
   user: UserWithMemberships
   openDrawer?: () => void
   closeDrawer?: () => void
+  showLabel?: boolean
 }
 
 function userRole(user: UserWithMemberships): 'admin' | 'manager' | 'member' {
@@ -27,7 +28,7 @@ function userRole(user: UserWithMemberships): 'admin' | 'manager' | 'member' {
 
 const ROLE_ORDER = { member: 0, manager: 1, admin: 2 } as const
 
-export function TourButton({ user, openDrawer, closeDrawer }: TourButtonProps) {
+export function TourButton({ user, openDrawer, closeDrawer, showLabel = false }: TourButtonProps) {
   const role = userRole(user)
   const running = useRef(false)
 
@@ -96,12 +97,14 @@ export function TourButton({ user, openDrawer, closeDrawer }: TourButtonProps) {
   return (
     <Button
       variant="ghost"
-      size="icon"
-      aria-label="Take the tour"
+      size={showLabel ? 'sm' : 'icon'}
+      className={showLabel ? 'min-h-9 justify-start gap-2 px-2 text-muted-foreground hover:text-foreground' : undefined}
+      aria-label={showLabel ? undefined : 'Take the tour'}
       data-tour="tour-button"
       onClick={() => void startTour()}
     >
       <GraduationCap className="h-4 w-4" aria-hidden="true" />
+      {showLabel && 'Take the tour'}
     </Button>
   )
 }
