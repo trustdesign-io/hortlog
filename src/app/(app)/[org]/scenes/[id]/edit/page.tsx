@@ -1,12 +1,9 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { ChevronLeft } from 'lucide-react'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
-import { buttonVariants } from '@/components/ui/button-variants'
-import { cn } from '@/lib/utils'
 import { GridEditor } from './grid-editor'
-import { QRPanel } from './qr-panel'
+import { SceneHeader } from '../scene-header'
+import { GridSizeControls } from './grid-size-controls'
 
 interface SceneEditPageProps {
   params: Promise<{ org: string; id: string }>
@@ -30,7 +27,6 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       slug: true,
       gridRows: true,
       gridCols: true,
-      shortCode: true,
       primaryCollection: { select: { name: true } },
     },
   })
@@ -59,24 +55,16 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
     }),
   ])
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'
-
   return (
     <div className="space-y-6">
-      <div>
-        <Link
-          href={`/${orgSlug}/scenes`}
-          className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), '-ml-2 mb-2')}
-        >
-          <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
-          Back to scenes
-        </Link>
-        <h1 className="font-heading text-2xl font-medium">{scene.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {scene.gridRows}×{scene.gridCols} grid
-          {scene.primaryCollection && ` · ${scene.primaryCollection.name}`}
-        </p>
-      </div>
+      <SceneHeader
+        orgSlug={orgSlug}
+        sceneId={scene.id}
+        name={scene.name}
+        collectionName={scene.primaryCollection?.name ?? null}
+        active="layout"
+      />
+      <GridSizeControls orgSlug={orgSlug} sceneId={scene.id} rows={scene.gridRows} cols={scene.gridCols} />
       <GridEditor
         orgSlug={orgSlug}
         sceneId={scene.id}
@@ -97,14 +85,6 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
           scientificName: s.species.scientificName,
           thumbnailUrl: s.imageUrl ?? s.species.photoUrl,
         }))}
-      />
-      <QRPanel
-        orgSlug={orgSlug}
-        sceneId={scene.id}
-        sceneName={scene.name}
-        sceneSlug={scene.slug}
-        shortCode={scene.shortCode}
-        siteUrl={siteUrl}
       />
     </div>
   )
