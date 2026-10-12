@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useRef, useState, useTransition } from 'react'
+import { useEffect, useState, useTransition } from 'react'
 import QRCode from 'qrcode'
 import { regenerateShortCode } from '@/lib/actions/scene'
+import { labelSvg, QR_MARGIN } from '@/lib/qr-label'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -18,66 +19,61 @@ import { Download, RefreshCw } from 'lucide-react'
 interface QRPanelProps {
   orgSlug: string
   sceneId: string
+  sceneName: string
+  sceneSlug: string
   shortCode: string
   siteUrl: string
 }
 
-export function QRPanel({ orgSlug, sceneId, shortCode, siteUrl }: QRPanelProps) {
+const QR_OPTIONS = { margin: QR_MARGIN, color: { dark: '#000000', light: '#ffffff' } }
+
+function download(href: string, filename: string) {
+  const a = document.createElement('a')
+  a.href = href
+  a.download = filename
+  a.click()
+}
+
+/** The printable label: the code with a white border and the scene name beneath. */
+export function QRPanel({ orgSlug, sceneId, sceneName, sceneSlug, shortCode, siteUrl }: QRPanelProps) {
   const url = `${siteUrl}/v/${shortCode}`
-  const [svgDataUrl, setSvgDataUrl] = useState<string | null>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [label, setLabel] = useState<string | null>(null)
   const [regenOpen, setRegenOpen] = useState(false)
   const [regenError, setRegenError] = useState<string | null>(null)
   const [isRegenerating, startRegenTransition] = useTransition()
 
   useEffect(() => {
     let cancelled = false
-    QRCode.toString(url, {
-      type: 'svg',
-      width: 400,
-      margin: 2,
-      color: { dark: '#000000', light: '#ffffff' },
-    }).then((svg) => {
-      if (!cancelled) {
-        setSvgDataUrl(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`)
-      }
+    QRCode.toString(url, { type: 'svg', ...QR_OPTIONS }).then((qr) => {
+      if (!cancelled) setLabel(labelSvg(qr, sceneName))
     })
     return () => {
       cancelled = true
     }
-  }, [url])
+  }, [url, sceneName])
 
-  useEffect(() => {
-    if (!canvasRef.current) return
-    QRCode.toCanvas(canvasRef.current, url, {
-      width: 1000,
-      margin: 2,
-      color: { dark: '#000000', light: '#ffffff' },
-    }).catch(console.error)
-  }, [url])
+  const labelDataUrl = label ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(label)}` : null
+  const filename = `hortlog-${sceneSlug}-qr`
 
   function downloadSvg() {
-    QRCode.toString(url, {
-      type: 'svg',
-      width: 1000,
-      margin: 2,
-      color: { dark: '#000000', light: '#ffffff' },
-    }).then((svg) => {
-      const blob = new Blob([svg], { type: 'image/svg+xml' })
-      const a = document.createElement('a')
-      a.href = URL.createObjectURL(blob)
-      a.download = `hortlog-qr-${shortCode}.svg`
-      a.click()
-      URL.revokeObjectURL(a.href)
-    })
+    if (!label) return
+    const href = URL.createObjectURL(new Blob([label], { type: 'image/svg+xml' }))
+    download(href, `${filename}.svg`)
+    URL.revokeObjectURL(href)
   }
 
   function downloadPng() {
-    if (!canvasRef.current) return
-    const a = document.createElement('a')
-    a.href = canvasRef.current.toDataURL('image/png')
-    a.download = `hortlog-qr-${shortCode}.png`
-    a.click()
+    if (!labelDataUrl) return
+    // Draw the same label onto a canvas so the PNG matches the SVG exactly
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      canvas.getContext('2d')?.drawImage(img, 0, 0)
+      download(canvas.toDataURL('image/png'), `${filename}.png`)
+    }
+    img.src = labelDataUrl
   }
 
   function handleRegenerate() {
@@ -96,32 +92,28 @@ export function QRPanel({ orgSlug, sceneId, shortCode, siteUrl }: QRPanelProps) 
       <h2 className="font-heading text-base font-medium">QR code</h2>
 
       <div className="flex flex-col items-center gap-3">
-        {svgDataUrl ? (
+        {labelDataUrl ? (
           /* eslint-disable-next-line @next/next/no-img-element */
           <img
-            src={svgDataUrl}
-            alt={`QR code for ${url}`}
-            width={200}
-            height={200}
-            className="rounded-lg border"
+            src={labelDataUrl}
+            alt={`QR code for ${url}, labelled ${sceneName}`}
+            width={220}
+            className="h-auto w-[220px] rounded-lg border"
           />
         ) : (
-          <div className="h-[200px] w-[200px] animate-pulse rounded-lg bg-muted" />
+          <div className="h-[250px] w-[220px] animate-pulse rounded-lg bg-muted" />
         )}
         <p className="text-center font-mono text-xs text-muted-foreground">{url}</p>
       </div>
 
-      {/* Hidden canvas for PNG generation */}
-      <canvas ref={canvasRef} className="hidden" aria-hidden="true" />
-
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={downloadSvg} disabled={!svgDataUrl}>
+        <Button variant="outline" size="sm" onClick={downloadSvg} disabled={!label}>
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
           SVG
         </Button>
-        <Button variant="outline" size="sm" onClick={downloadPng}>
+        <Button variant="outline" size="sm" onClick={downloadPng} disabled={!label}>
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
-          PNG (1000px)
+          PNG
         </Button>
         <Dialog
           open={regenOpen}
