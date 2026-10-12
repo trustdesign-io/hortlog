@@ -66,7 +66,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         collectionName={scene.primaryCollection?.name ?? null}
         active="layout"
       />
-      <GridSizeControls orgSlug={orgSlug} sceneId={scene.id} rows={scene.gridRows} cols={scene.gridCols} />
+      <GridSizeControls orgSlug={orgSlug} sceneId={scene.id} rows={scene.gridRows} cols={scene.gridCols} perspective={scene.perspective} />
       <GridEditor
         orgSlug={orgSlug}
         sceneId={scene.id}
