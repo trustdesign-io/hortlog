@@ -47,6 +47,7 @@ function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
   return [
     { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard, tourId: 'org-overview' },
     { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare, tourId: 'org-todo' },
+    // Specimens has no tour step — it's a data-dense list page, not a concept to introduce
     { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
     { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3, tourId: 'org-scenes' },
     { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen, tourId: 'org-collections' },

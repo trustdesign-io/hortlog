@@ -163,6 +163,9 @@
 
 /* ── hortlog dark theme ─────────────────────────────────────────────────── */
 .dark {
+  /* Tour blue slightly lightened for dark backgrounds — still passes WCAG AA */
+  --tour: #3B82F6;
+  --tour-foreground: #FFFFFF;
   --background: #121A14;
   --foreground: #E8E9DC;
   --card: #1A251D;
