@@ -150,9 +150,8 @@ export default async function HomePage() {
                 label could only say so much.
               </p>
               <p>
-                hortlog was made by someone who works where design and botany meet, to give
-                every plant room to tell its story, and to give the people who care for it
-                the credit they deserve.
+                hortlog was made by someone who works where technology and botanical
+                horticulture meet, to give every plant room to tell its story.
               </p>
             </div>
           </div>
