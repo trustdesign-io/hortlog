@@ -262,3 +262,83 @@ export async function resizeSceneGrid(
   revalidatePath(`/${orgSlug}/scenes`)
   return { success: true }
 }
+
+/** Renames a scene, changes its slug or primary collection. */
+export async function updateScene(
+  orgSlug: string,
+  sceneId: string,
+  _prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+
+  const name = (formData.get('name') as string | null)?.trim() ?? ''
+  const slug = (formData.get('slug') as string | null)?.trim() || toSlug(name)
+  const primaryCollectionId = (formData.get('primaryCollectionId') as string | null)?.trim() || null
+
+  if (!name) return { success: false, error: 'Name is required.' }
+  if (name.length > 120) return { success: false, error: 'Name must be 120 characters or fewer.' }
+  if (slug.length < 2 || slug.length > 48) return { success: false, error: 'Slug must be 2–48 characters.' }
+  if (!SLUG_PATTERN.test(slug)) {
+    return { success: false, error: 'Slug may only contain lowercase letters, numbers, and hyphens.' }
+  }
+
+  const scene = await prisma.scene.findFirst({
+    where: { id: sceneId, organisation: { slug: orgSlug } },
+    select: { id: true, organisationId: true },
+  })
+  if (!scene) return { success: false, error: 'Scene not found.' }
+
+  const clash = await prisma.scene.findFirst({
+    where: { organisationId: scene.organisationId, slug, id: { not: scene.id } },
+    select: { id: true },
+  })
+  if (clash) return { success: false, error: `The slug "${slug}" is already in use.` }
+
+  if (primaryCollectionId) {
+    const collection = await prisma.collection.findFirst({
+      where: { id: primaryCollectionId, organisationId: scene.organisationId },
+      select: { id: true },
+    })
+    if (!collection) return { success: false, error: 'Selected collection not found.' }
+  }
+
+  try {
+    await prisma.scene.update({ where: { id: scene.id }, data: { name, slug, primaryCollectionId } })
+  } catch (err) {
+    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
+      return { success: false, error: `The slug "${slug}" is already in use.` }
+    }
+    console.error('[updateScene] error:', err)
+    return { success: false, error: 'Failed to save. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/scenes`)
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}`, 'layout')
+  return { success: true }
+}
+
+/** Deletes a scene. Its plants stay in the organisation, just no longer placed. */
+export async function deleteScene(orgSlug: string, sceneId: string): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+
+  const scene = await prisma.scene.findFirst({
+    where: { id: sceneId, organisation: { slug: orgSlug } },
+    select: { id: true },
+  })
+  if (!scene) return { success: false, error: 'Scene not found.' }
+
+  try {
+    await prisma.$transaction([
+      prisma.specimen.updateMany({ where: { sceneId: scene.id }, data: { sceneId: null, gridCell: null } }),
+      prisma.scene.delete({ where: { id: scene.id } }),
+    ])
+  } catch (err) {
+    console.error('[deleteScene] error:', err)
+    return { success: false, error: 'Failed to delete the scene. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/scenes`)
+  revalidatePath(`/${orgSlug}`)
+  redirect(`/${orgSlug}/scenes`)
+}
