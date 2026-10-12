@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { SceneTabNav } from './scene-tab-nav'
-import { PublicSceneGrid } from './public-scene-grid'
+import { SceneZonesView, type PublicZone } from './scene-zones-view'
 import { GaEvent } from '@/components/ga-event'
 import { CheckInButton } from '@/components/offline/check-in-button'
 import { OfflineNotice } from '@/components/offline/offline-notice'
@@ -61,31 +61,104 @@ const resolveScene = cache(async function resolveScene(orgSlug: string, collecti
 export default async function PublicScenePage({ params, searchParams }: PublicScenePageProps) {
   const { org: orgSlug, collection: collectionSlug, scene: sceneSlug } = await params
   const rawTab = (await searchParams).tab
-  const tab = rawTab === 'grid' ? 'grid' : 'list'
+  const tab = rawTab === 'list' ? 'list' : 'grid'
 
   const data = await resolveScene(orgSlug, collectionSlug, sceneSlug)
   if (!data) return notFound()
 
   const { org, collection, scene } = data
 
-  const specimens = await prisma.specimen.findMany({
-    where: { sceneId: scene.id, organisationId: org.id },
+  // Load zones with their specimens
+  const zones = await prisma.sceneZone.findMany({
+    where: { sceneId: scene.id },
+    orderBy: { position: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      rows: true,
+      cols: true,
+      specimens: {
+        where: { gridCell: { not: null } },
+        select: {
+          id: true,
+          slug: true,
+          gridCell: true,
+          accessionNumber: true,
+          species: { select: { commonName: true, scientificName: true, description: true } },
+        },
+      },
+    },
+  })
+
+  // Specimens without a zone (legacy data not yet backfilled), placed only
+  const legacySpecimens = await prisma.specimen.findMany({
+    where: { sceneId: scene.id, organisationId: org.id, zoneId: null, gridCell: { not: null } },
     select: {
       id: true,
       slug: true,
       accessionNumber: true,
       gridCell: true,
-      species: {
-        select: {
-          commonName: true,
-          scientificName: true,
-          description: true,
-        },
-      },
+      species: { select: { commonName: true, scientificName: true, description: true } },
     },
     orderBy: { species: { commonName: 'asc' } },
-    take: 500,
   })
+
+  // Merge legacy specimens into a synthetic zone if needed
+  const publicZones: PublicZone[] = zones.map((z) => ({
+    id: z.id,
+    name: z.name,
+    type: z.type,
+    rows: z.rows,
+    cols: z.cols,
+    specimens: z.specimens.map((s) => ({
+      id: s.id,
+      slug: s.slug,
+      gridCell: s.gridCell!,
+      commonName: s.species.commonName,
+      scientificName: s.species.scientificName,
+    })),
+  }))
+
+  if (legacySpecimens.length > 0 && publicZones.length === 0) {
+    publicZones.push({
+      id: 'legacy',
+      name: 'Bed',
+      type: 'BED',
+      rows: scene.gridRows,
+      cols: scene.gridCols,
+      specimens: legacySpecimens
+        .map((s) => ({
+          id: s.id,
+          slug: s.slug,
+          gridCell: s.gridCell!,
+          commonName: s.species.commonName,
+          scientificName: s.species.scientificName,
+        })),
+    })
+  }
+
+  // All specimens for the list tab (across all zones)
+  const allSpecimens = [
+    ...zones.flatMap((z) =>
+      z.specimens.map((s) => ({
+        id: s.id,
+        slug: s.slug,
+        accessionNumber: s.accessionNumber,
+        gridCell: s.gridCell,
+        zoneName: z.name,
+        species: s.species,
+      })),
+    ),
+    ...legacySpecimens.map((s) => ({
+      id: s.id,
+      slug: s.slug,
+      accessionNumber: s.accessionNumber,
+      gridCell: s.gridCell,
+      zoneName: null as string | null,
+      species: s.species,
+    })),
+  ].sort((a, b) => a.species.commonName.localeCompare(b.species.commonName))
 
   const basePath = `/${orgSlug}/${collectionSlug}/${sceneSlug}`
 
@@ -101,7 +174,7 @@ export default async function PublicScenePage({ params, searchParams }: PublicSc
           <div>
             <h1 className="font-heading text-2xl font-medium">{scene.name}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              {specimens.length} {specimens.length === 1 ? 'specimen' : 'specimens'}
+              {allSpecimens.length} {allSpecimens.length === 1 ? 'specimen' : 'specimens'}
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -119,23 +192,10 @@ export default async function PublicScenePage({ params, searchParams }: PublicSc
       {/* Content */}
       <div className="mt-4">
         {tab === 'list' && (
-          <SpecimenList specimens={specimens} basePath={basePath} />
+          <SpecimenList specimens={allSpecimens} basePath={basePath} showZone={publicZones.length > 1} />
         )}
         {tab === 'grid' && (
-          <PublicSceneGrid
-            rows={scene.gridRows}
-            cols={scene.gridCols}
-            specimens={specimens
-              .filter((s): s is typeof s & { gridCell: string } => s.gridCell !== null)
-              .map((s) => ({
-                id: s.id,
-                slug: s.slug,
-                gridCell: s.gridCell,
-                commonName: s.species.commonName,
-                scientificName: s.species.scientificName,
-              }))}
-            basePath={basePath}
-          />
+          <SceneZonesView zones={publicZones} basePath={basePath} />
         )}
       </div>
     </div>
@@ -147,6 +207,7 @@ interface SpecimenEntry {
   slug: string
   accessionNumber: string | null
   gridCell: string | null
+  zoneName: string | null
   species: {
     commonName: string
     scientificName: string
@@ -157,9 +218,11 @@ interface SpecimenEntry {
 function SpecimenList({
   specimens,
   basePath,
+  showZone,
 }: {
   specimens: SpecimenEntry[]
   basePath: string
+  showZone: boolean
 }) {
   if (specimens.length === 0) {
     return (
@@ -193,6 +256,9 @@ function SpecimenList({
               <ScientificName className="text-xs text-muted-foreground">
                 {s.species.scientificName}
               </ScientificName>
+              {showZone && s.zoneName && (
+                <p className="text-xs text-muted-foreground">{s.zoneName}</p>
+              )}
               {descriptionSnippet && (
                 <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
                   {descriptionSnippet}

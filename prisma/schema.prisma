@@ -85,6 +85,13 @@ enum MembershipRole {
   MEMBER
 }
 
+enum ZoneType {
+  BED
+  WALL
+  HANGING
+  CANOPY
+}
+
 // ─── Species (shared across all organisations) ────────────────────────────────
 
 model Species {
@@ -173,11 +180,29 @@ model Scene {
   primaryCollectionId String?
   primaryCollection   Collection? @relation("PrimaryCollection", fields: [primaryCollectionId], references: [id], onDelete: SetNull)
 
+  zones       SceneZone[]
   specimens   Specimen[]
   assignments SceneAssignment[]
   tasks       Task[]
 
   @@unique([slug, organisationId])
+}
+
+model SceneZone {
+  id       String   @id @default(cuid())
+  name     String
+  type     ZoneType @default(BED)
+  rows     Int      @default(4)
+  cols     Int      @default(4)
+  position Int      @default(0)
+
+  sceneId String
+  scene   Scene  @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  specimens Specimen[]
+  tasks     Task[]
+
+  @@index([sceneId, position])
 }
 
 // ─── Scene assignments (member ↔ scene responsibility) ─────────────────────────
@@ -223,6 +248,8 @@ model Task {
   specimen        Specimen?      @relation(fields: [specimenId], references: [id], onDelete: SetNull)
   sceneId         String?
   scene           Scene?         @relation(fields: [sceneId], references: [id], onDelete: SetNull)
+  zoneId          String?
+  zone            SceneZone?     @relation(fields: [zoneId], references: [id], onDelete: SetNull)
   cells           String[]       @default([])
   // The plants care was logged on, fixed when ticked off so later moves don't rewrite history
   careSpecimenIds String[]       @default([])
@@ -281,6 +308,9 @@ model Specimen {
 
   sceneId String?
   scene   Scene?  @relation(fields: [sceneId], references: [id], onDelete: SetNull)
+
+  zoneId String?
+  zone   SceneZone? @relation(fields: [zoneId], references: [id], onDelete: SetNull)
 
   collections CollectionMembership[]
   workRecords WorkRecord[]
