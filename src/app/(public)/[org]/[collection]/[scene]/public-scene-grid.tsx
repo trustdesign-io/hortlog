@@ -1,5 +1,9 @@
 import Link from 'next/link'
-import { ScientificName } from '@/components/ui/scientific-name'
+import { HexGrid, HexOutline } from '@/components/hex-grid'
+import { SpecimenImage } from '@/components/ui/specimen-image'
+import { hexCellStyle } from '@/lib/hex-grid'
+
+const CELL_WIDTH = '6rem'
 
 interface GridSpecimen {
   id: string
@@ -7,6 +11,7 @@ interface GridSpecimen {
   gridCell: string
   commonName: string
   scientificName: string
+  thumbnailUrl: string | null
 }
 
 interface PublicSceneGridProps {
@@ -44,48 +49,54 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath }: PublicScene
       role="region"
       aria-label="Specimen grid"
     >
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: `repeat(${cols}, minmax(80px, 1fr))`,
-          gap: '6px',
-          minWidth: `${cols * 86}px`,
-        }}
-      >
-        {Array.from({ length: rows }, (_, row) =>
-          Array.from({ length: cols }, (_, col) => {
-            const cell = `${row},${col}`
-            const specimen = cellMap[cell]
+      <HexGrid
+        rows={rows}
+        cols={cols}
+        cellWidth={CELL_WIDTH}
+        renderCell={(row, col) => {
+          const cell = `${row},${col}`
+          const specimen = cellMap[cell]
 
-            if (specimen) {
-              return (
-                <Link
-                  key={cell}
-                  href={`${basePath}/${specimen.slug}`}
-                  className="flex min-h-[80px] flex-col rounded-lg p-2 transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  style={{ backgroundColor: 'color-mix(in srgb, #DCE5D3 80%, transparent)' }}
-                  aria-label={`${specimen.commonName} — row ${row + 1}, column ${col + 1}`}
-                >
-                  <p className="truncate text-[11px] font-medium leading-tight">
-                    {specimen.commonName}
-                  </p>
-                  <ScientificName className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground">
-                    {specimen.scientificName}
-                  </ScientificName>
-                </Link>
-              )
-            }
-
+          if (specimen) {
             return (
-              <div
+              <Link
                 key={cell}
-                className="min-h-[80px] rounded-lg bg-muted/50"
-                aria-hidden="true"
-              />
+                href={`${basePath}/${specimen.slug}`}
+                className="hex-cell group"
+                style={hexCellStyle(row, col)}
+                aria-label={`${specimen.commonName} — row ${row + 1}, column ${col + 1}`}
+                title={`${specimen.commonName} (${specimen.scientificName})`}
+              >
+                <span className="hex-shape block bg-muted group-hover:opacity-80">
+                  <SpecimenImage
+                    imageUrl={specimen.thumbnailUrl}
+                    alt=""
+                    fill
+                    sizes="120px"
+                    className="object-cover"
+                  />
+                  <span className="absolute inset-x-0 bottom-[22%] block truncate bg-black/65 px-3 py-0.5 text-center text-[10px] font-medium leading-tight text-white">
+                    {specimen.commonName}
+                  </span>
+                </span>
+              </Link>
             )
-          }),
-        )}
-      </div>
+          }
+
+          return (
+            <div
+              key={cell}
+              className="hex-cell"
+              style={hexCellStyle(row, col)}
+              aria-hidden="true"
+            >
+              <span className="hex-shape block bg-muted/50">
+                <HexOutline className="text-border/60" />
+              </span>
+            </div>
+          )
+        }}
+      />
     </div>
   )
 }

@@ -1,6 +1,6 @@
 'use client'
 
-import { forwardRef, useOptimistic, useTransition, useState, useCallback, useRef } from 'react'
+import { useOptimistic, useTransition, useState, useCallback, useRef } from 'react'
 import { placeSpecimen, removeSpecimenFromCell } from '@/lib/actions/scene'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Input } from '@/components/ui/input'
@@ -11,17 +11,20 @@ import {
   SheetTitle,
   SheetDescription,
 } from '@/components/ui/sheet'
-import { Search, X, Plus } from 'lucide-react'
+import { Search } from 'lucide-react'
 import { SpecimenImage } from '@/components/ui/specimen-image'
+import { HexGrid } from '@/components/hex-grid'
+import { moveHexCell, type HexDirection } from '@/lib/hex-grid'
 import { RotatePrompt } from './rotate-prompt'
+import { EmptyCell, FilledCell, type PlacedSpecimen } from './grid-cells'
 
-interface PlacedSpecimen {
-  id: string
-  gridCell: string
-  accessionNumber: string | null
-  commonName: string
-  scientificName: string
-  thumbnailUrl: string | null
+const CELL_WIDTH = '7.5rem'
+
+const ARROW_DIRECTIONS: Record<string, HexDirection> = {
+  ArrowLeft: 'left',
+  ArrowRight: 'right',
+  ArrowUp: 'up',
+  ArrowDown: 'down',
 }
 
 interface AvailableSpecimen {
@@ -88,20 +91,13 @@ export function GridEditor({
   const [activeCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 })
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map())
 
-  function moveFocus(row: number, col: number) {
-    const r = Math.max(0, Math.min(gridRows - 1, row))
-    const c = Math.max(0, Math.min(gridCols - 1, col))
-    setActiveCell({ row: r, col: c })
-    cellRefs.current.get(`${r},${c}`)?.focus()
-  }
-
   function handleCellKeyDown(e: React.KeyboardEvent, row: number, col: number) {
-    switch (e.key) {
-      case 'ArrowRight': e.preventDefault(); moveFocus(row, col + 1); break
-      case 'ArrowLeft':  e.preventDefault(); moveFocus(row, col - 1); break
-      case 'ArrowDown':  e.preventDefault(); moveFocus(row + 1, col); break
-      case 'ArrowUp':    e.preventDefault(); moveFocus(row - 1, col); break
-    }
+    const direction = ARROW_DIRECTIONS[e.key]
+    if (!direction) return
+    e.preventDefault()
+    const next = moveHexCell({ row, col }, direction, gridRows, gridCols)
+    setActiveCell(next)
+    cellRefs.current.get(`${next.row},${next.col}`)?.focus()
   }
 
   const placedIds = new Set(Object.values(optimisticGrid).map((s) => s.id))
@@ -149,61 +145,50 @@ export function GridEditor({
     <>
       <RotatePrompt />
       <div className="overflow-x-auto pb-4">
-        {/* Outer div carries the CSS grid layout; ARIA grid is on the inner container */}
-        <div
+        <HexGrid
           role="grid"
           aria-label="Specimen placement grid"
           aria-rowcount={gridRows}
           aria-colcount={gridCols}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: `repeat(${gridCols}, minmax(100px, 1fr))`,
-            gap: '8px',
-            minWidth: `${gridCols * 108}px`,
-          }}
-        >
-          {Array.from({ length: gridRows }, (_, row) => (
-            // display:contents makes the row invisible to CSS grid so cells flow into the parent grid
-            <div key={row} role="row" aria-rowindex={row + 1} style={{ display: 'contents' }}>
-              {Array.from({ length: gridCols }, (_, col) => {
-                const cell = `${row},${col}`
-                const placed = optimisticGrid[cell]
-                const isActive = activeCell.row === row && activeCell.col === col
+          rows={gridRows}
+          cols={gridCols}
+          cellWidth={CELL_WIDTH}
+          rowProps={(row) => ({ role: 'row', 'aria-rowindex': row + 1 })}
+          renderCell={(row, col) => {
+            const cell = `${row},${col}`
+            const placed = optimisticGrid[cell]
+            const isActive = activeCell.row === row && activeCell.col === col
+            const setRef = (el: HTMLElement | null) => {
+              if (el) cellRefs.current.set(cell, el)
+              else cellRefs.current.delete(cell)
+            }
 
-                return placed ? (
-                  <FilledCell
-                    key={cell}
-                    row={row}
-                    col={col}
-                    specimen={placed}
-                    isActive={isActive}
-                    onRemove={() => handleRemove(placed)}
-                    onFocus={() => setActiveCell({ row, col })}
-                    onKeyDown={(e) => handleCellKeyDown(e, row, col)}
-                    ref={(el) => {
-                      if (el) cellRefs.current.set(cell, el)
-                      else cellRefs.current.delete(cell)
-                    }}
-                  />
-                ) : (
-                  <EmptyCell
-                    key={cell}
-                    row={row}
-                    col={col}
-                    isActive={isActive}
-                    onClick={() => openPicker(row, col)}
-                    onFocus={() => setActiveCell({ row, col })}
-                    onKeyDown={(e) => handleCellKeyDown(e, row, col)}
-                    ref={(el) => {
-                      if (el) cellRefs.current.set(cell, el)
-                      else cellRefs.current.delete(cell)
-                    }}
-                  />
-                )
-              })}
-            </div>
-          ))}
-        </div>
+            return placed ? (
+              <FilledCell
+                key={cell}
+                row={row}
+                col={col}
+                specimen={placed}
+                isActive={isActive}
+                onRemove={() => handleRemove(placed)}
+                onFocus={() => setActiveCell({ row, col })}
+                onKeyDown={(e) => handleCellKeyDown(e, row, col)}
+                ref={setRef}
+              />
+            ) : (
+              <EmptyCell
+                key={cell}
+                row={row}
+                col={col}
+                isActive={isActive}
+                onClick={() => openPicker(row, col)}
+                onFocus={() => setActiveCell({ row, col })}
+                onKeyDown={(e) => handleCellKeyDown(e, row, col)}
+                ref={setRef}
+              />
+            )
+          }}
+        />
       </div>
 
       {/* Specimen picker sheet */}
@@ -269,91 +254,3 @@ export function GridEditor({
     </>
   )
 }
-
-// ── Cell sub-components ────────────────────────────────────────────────────────
-
-interface EmptyCellProps {
-  row: number
-  col: number
-  isActive: boolean
-  onClick: () => void
-  onFocus: () => void
-  onKeyDown: (e: React.KeyboardEvent) => void
-}
-
-const EmptyCell = forwardRef<HTMLButtonElement, EmptyCellProps>(function EmptyCell(
-  { row, col, isActive, onClick, onFocus, onKeyDown },
-  ref,
-) {
-  return (
-    <button
-      ref={ref}
-      type="button"
-      onClick={onClick}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
-      tabIndex={isActive ? 0 : -1}
-      className="flex min-h-[90px] w-full items-center justify-center rounded-lg border-2 border-dashed border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      aria-label={`Empty cell at row ${row + 1}, column ${col + 1}. Press Enter to place a specimen.`}
-      role="gridcell"
-      aria-rowindex={row + 1}
-      aria-colindex={col + 1}
-    >
-      <Plus className="h-5 w-5" aria-hidden="true" />
-    </button>
-  )
-})
-
-interface FilledCellProps {
-  row: number
-  col: number
-  specimen: PlacedSpecimen
-  isActive: boolean
-  onRemove: () => void
-  onFocus: () => void
-  onKeyDown: (e: React.KeyboardEvent) => void
-}
-
-const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function FilledCell(
-  { row, col, specimen, isActive, onRemove, onFocus, onKeyDown },
-  ref,
-) {
-  return (
-    <div
-      ref={ref}
-      tabIndex={isActive ? 0 : -1}
-      className="group relative flex min-h-[90px] flex-col rounded-lg p-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      style={{ backgroundColor: 'color-mix(in srgb, #DCE5D3 80%, transparent)' }}
-      role="gridcell"
-      aria-rowindex={row + 1}
-      aria-colindex={col + 1}
-      aria-label={`${specimen.commonName} at row ${row + 1}, column ${col + 1}`}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
-    >
-      <button
-        type="button"
-        onClick={onRemove}
-        className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
-        aria-label={`Remove ${specimen.commonName} from this cell`}
-        tabIndex={-1}
-      >
-        <X className="h-3 w-3" aria-hidden="true" />
-      </button>
-      <div className="relative -mx-2 -mt-2 mb-1.5 h-14 overflow-hidden rounded-t-lg bg-muted">
-        <SpecimenImage imageUrl={specimen.thumbnailUrl} alt="" fill sizes="120px" className="object-cover" />
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-xs font-medium leading-tight">{specimen.commonName}</p>
-        <ScientificName className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground">
-          {specimen.scientificName}
-        </ScientificName>
-        {specimen.accessionNumber && (
-          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-            #{specimen.accessionNumber}
-          </p>
-        )}
-      </div>
-    </div>
-  )
-})
