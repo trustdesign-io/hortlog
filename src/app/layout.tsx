@@ -27,6 +27,7 @@ export const metadata: Metadata = {
     template: '%s | hortlog',
   },
   description: 'A living record for botanical collections.',
+  manifest: '/manifest.webmanifest',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

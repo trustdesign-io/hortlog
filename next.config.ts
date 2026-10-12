@@ -6,6 +6,18 @@ const supabaseHostname = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? 'https:
 const nextConfig: NextConfig = {
   // Uploads are resized in the browser; this leaves room for a full 2 MB image
   experimental: { serverActions: { bodySizeLimit: '3mb' } },
+  async headers() {
+    return [
+      {
+        // Allow the SW to control the full origin
+        source: '/sw.js',
+        headers: [
+          { key: 'Service-Worker-Allowed', value: '/' },
+          { key: 'Cache-Control', value: 'no-cache' },
+        ],
+      },
+    ]
+  },
   // Views were renamed to Scenes; keep old links working
   async redirects() {
     return [
