@@ -96,6 +96,9 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
           <Link
             key={item.href}
             href={item.href}
+            // Every page here is dynamic; prefetching them all at once on each load
+            // fired a burst of server calls that crowded out form submissions.
+            prefetch={false}
             onClick={onNavigate}
             className={cn(
               'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
@@ -178,6 +181,7 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
               <li key={org.id} role="option" aria-selected={org.slug === currentSlug}>
                 <Link
                   href={`/${org.slug}`}
+                  prefetch={false}
                   onClick={() => setOpen(false)}
                   className={cn(
                     'flex items-center justify-between gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors',

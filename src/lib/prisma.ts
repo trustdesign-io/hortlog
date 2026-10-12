@@ -6,7 +6,9 @@ function makePrismaClient(): PrismaClient {
   if (!connectionString) {
     throw new Error('Missing required environment variable: DATABASE_URL')
   }
-  const adapter = new PrismaPg({ connectionString })
+  // Each serverless instance keeps its own pool; keep it small so a burst of
+  // instances doesn't exhaust the Supabase pooler.
+  const adapter = new PrismaPg({ connectionString, max: 3, idleTimeoutMillis: 10_000 })
   return new PrismaClient({ adapter })
 }
 
