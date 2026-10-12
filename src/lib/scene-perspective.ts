@@ -1,4 +1,4 @@
-import { hexFrame } from './hex-grid'
+import { HEX_HEIGHT_RATIO, hexFrame } from './hex-grid'
 
 export const SCENE_PERSPECTIVES = ['BED', 'WALL'] as const
 
@@ -39,4 +39,20 @@ export function sceneTilt(
 ): number {
   if (perspective === 'WALL' || isFlat) return 0
   return bedTilt(rows, cellWidthPx)
+}
+
+/** Bed cells are drawn at most this much wider than flat ones. */
+export const MAX_BED_CELL_SCALE = 1.25
+
+/**
+ * How much wider to draw a tilted grid's cells so a bed's middle row covers
+ * about as much screen as the flat grid would. Lying back shrinks every cell
+ * (narrower further back, and much shorter), so without this a bed looks
+ * smaller than the same grid as a wall. Capped so wide beds still fit.
+ */
+export function sceneCellScale(rows: number, tiltDeg: number): number {
+  if (tiltDeg === 0) return 1
+  const middle = hexFrame(Math.floor((rows - 1) / 2), 0, rows, 1, tiltDeg)
+  const areaRatio = (middle.width * middle.height) / HEX_HEIGHT_RATIO
+  return Math.min(MAX_BED_CELL_SCALE, 1 / Math.sqrt(areaRatio))
 }

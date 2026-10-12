@@ -3,7 +3,6 @@ import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { GridEditor } from './grid-editor'
 import { SceneHeader } from '../scene-header'
-import { GridSizeControls } from './grid-size-controls'
 
 interface SceneEditPageProps {
   params: Promise<{ org: string; id: string }>
@@ -66,7 +65,6 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         collectionName={scene.primaryCollection?.name ?? null}
         active="layout"
       />
-      <GridSizeControls orgSlug={orgSlug} sceneId={scene.id} rows={scene.gridRows} cols={scene.gridCols} perspective={scene.perspective} />
       <GridEditor
         orgSlug={orgSlug}
         sceneId={scene.id}

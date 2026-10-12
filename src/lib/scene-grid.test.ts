@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cellsOutside, parseCell, planGridResize, withinLimits } from './scene-grid'
+import { cellsOutside, parseCell, planGridOps, planGridResize, withinLimits } from './scene-grid'
 import { hexOffset } from './hex-grid'
 
 describe('parseCell', () => {
@@ -84,5 +84,26 @@ describe('planGridResize', () => {
   it('stays within the grid size limits', () => {
     expect(planGridResize({ rows: 1, cols: 1, rowShift: 0 }, 'left', -1, [])).toEqual({ ok: false, reason: 'limits' })
     expect(planGridResize({ rows: 20, cols: 1, rowShift: 0 }, 'top', 1, [])).toEqual({ ok: false, reason: 'limits' })
+  })
+})
+
+describe('planGridOps', () => {
+  const shape = { rows: 3, cols: 3, rowShift: 0 }
+
+  it('combines several clicks into one plan', () => {
+    const plan = planGridOps(shape, [{ side: 'top', delta: 1 }, { side: 'top', delta: 1 }, { side: 'left', delta: 1 }], ['0,0'])
+    expect(plan.ok && plan.shape).toEqual({ rows: 5, cols: 4, rowShift: 0 })
+    expect(plan.ok && plan.moveCell('0,0')).toBe('2,1')
+  })
+
+  it('drops cells in a removed row, e.g. a task target', () => {
+    const plan = planGridOps(shape, [{ side: 'bottom', delta: -1 }], ['0,0'])
+    expect(plan.ok && plan.moveCell('2,1')).toBeNull()
+    expect(plan.ok && plan.moveCell('1,1')).toBe('1,1')
+  })
+
+  it('checks each step against where plants have moved to', () => {
+    const plan = planGridOps(shape, [{ side: 'top', delta: 1 }, { side: 'bottom', delta: -1 }], ['2,0'])
+    expect(plan).toEqual({ ok: false, reason: 'occupied', side: 'bottom', blocked: ['3,0'] })
   })
 })

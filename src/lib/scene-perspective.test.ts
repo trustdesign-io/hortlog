@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HEX_HEIGHT_RATIO, hexFrame, hexGridExtent, hexOffset } from './hex-grid'
-import {
-  bedTilt,
-  MAX_BED_TILT,
-  MIN_TARGET_PX,
-  parsePerspective,
-  sceneTilt,
-} from './scene-perspective'
+import { MAX_BED_CELL_SCALE, MAX_BED_TILT, MIN_TARGET_PX, bedTilt, parsePerspective, sceneCellScale, sceneTilt } from './scene-perspective'
 
 describe('parsePerspective', () => {
   it('accepts BED and WALL', () => {
@@ -103,5 +97,17 @@ describe('sceneTilt', () => {
 
   it('is flat for a bed in flat view', () => {
     expect(sceneTilt('BED', 4, 120, true)).toBe(0)
+  })
+})
+
+describe('sceneCellScale', () => {
+  it('leaves flat grids alone', () => expect(sceneCellScale(6, 0)).toBe(1))
+
+  it('enlarges bed cells to make up for lying back, within the cap', () => {
+    for (const [rows, tilt] of [[2, 50], [6, 41], [10, 30]]) {
+      const k = sceneCellScale(rows, tilt)
+      expect(k).toBeGreaterThan(1)
+      expect(k).toBeLessThanOrEqual(MAX_BED_CELL_SCALE)
+    }
   })
 })
