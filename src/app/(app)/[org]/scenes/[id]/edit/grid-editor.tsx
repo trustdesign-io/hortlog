@@ -1,7 +1,7 @@
 'use client'
 
-import { useOptimistic, useTransition, useState, useCallback, useRef } from 'react'
-import { placeSpecimen, removeSpecimenFromCell } from '@/lib/actions/scene'
+import { useOptimistic, useTransition, useState, useCallback, useRef, useEffect } from 'react'
+import { placeSpecimen, removeSpecimenFromCell, resizeSceneGrid } from '@/lib/actions/scene'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Input } from '@/components/ui/input'
 import {
@@ -15,13 +15,17 @@ import { Search } from 'lucide-react'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { HexGrid } from '@/components/hex-grid'
 import { moveHexCell, type HexDirection } from '@/lib/hex-grid'
-import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { gridResizeError, planGridOps, type GridOp, type GridShape, type GridSide } from '@/lib/scene-grid'
 import { Button } from '@/components/ui/button'
 import { RotatePrompt } from './rotate-prompt'
 import { EmptyCell, FilledCell, type PlacedSpecimen } from './grid-cells'
+import { GridSizeControls } from './grid-size-controls'
 
 const CELL_WIDTH_REM = 7.5
 const PX_PER_REM = 16
+/** Clicks on the resize buttons within this long are saved together. */
+const RESIZE_SAVE_DELAY_MS = 700
 
 const ARROW_DIRECTIONS: Record<string, HexDirection> = {
   ArrowLeft: 'left',
@@ -39,6 +43,12 @@ interface AvailableSpecimen {
 }
 
 type GridState = Record<string, PlacedSpecimen>
+
+/** Grid as changed locally by resize clicks that haven't come back from the server yet. */
+interface LocalLayout {
+  shape: GridShape
+  grid: GridState
+}
 
 type OptimisticAction =
   | { type: 'place'; cell: string; specimen: PlacedSpecimen }
@@ -73,8 +83,16 @@ export function GridEditor({
   availableSpecimens,
 }: GridEditorProps) {
   const [, startTransition] = useTransition()
+  const [layout, setLayout] = useState<LocalLayout | null>(null)
+  const [resizeError, setResizeError] = useState<string | null>(null)
+  const queuedOps = useRef<GridOp[]>([])
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const inFlight = useRef<Promise<void> | null>(null)
+
+  const shape: GridShape = layout?.shape ?? { rows: gridRows, cols: gridCols, rowShift }
+  const { rows, cols } = shape
   const [optimisticGrid, dispatch] = useOptimistic<GridState, OptimisticAction>(
-    buildInitialGrid(placedSpecimens),
+    layout?.grid ?? buildInitialGrid(placedSpecimens),
     (state, action) => {
       if (action.type === 'place') {
         const next: GridState = {}
@@ -94,17 +112,83 @@ export function GridEditor({
   const [pickerCell, setPickerCell] = useState<{ row: number; col: number } | null>(null)
   const [search, setSearch] = useState('')
   const [isFlat, setIsFlat] = useState(false)
-  const tilt = sceneTilt(perspective, gridRows, CELL_WIDTH_REM * PX_PER_REM, isFlat)
+  const tilt = sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM, isFlat)
+  const cellWidthRem = CELL_WIDTH_REM * sceneCellScale(rows, tilt)
 
   // Roving tabindex: track which cell currently owns the tab stop
-  const [activeCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 })
+  const [focusCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 })
+  const activeCell = { row: Math.min(focusCell.row, rows - 1), col: Math.min(focusCell.col, cols - 1) }
+
+  /** Sends queued resize clicks as one save; resolves once nothing is queued or saving. */
+  const savePending = useCallback(async (): Promise<void> => {
+    if (saveTimer.current) {
+      clearTimeout(saveTimer.current)
+      saveTimer.current = null
+    }
+    while (inFlight.current || queuedOps.current.length > 0) {
+      if (inFlight.current) {
+        await inFlight.current
+        continue
+      }
+      const ops = queuedOps.current
+      queuedOps.current = []
+      inFlight.current = (async () => {
+        const result = await resizeSceneGrid(orgSlug, sceneId, ops)
+        if (!result.success) {
+          // Nothing later can apply on top of a failed change; show the saved grid again.
+          queuedOps.current = []
+          setLayout(null)
+          setResizeError(result.error ?? 'Could not resize the grid.')
+        }
+      })()
+      await inFlight.current
+      inFlight.current = null
+    }
+  }, [orgSlug, sceneId])
+
+  /** The saved grid has arrived as props; hand back to them unless more clicks are waiting. */
+  function releaseLayout() {
+    if (queuedOps.current.length === 0 && !saveTimer.current && !inFlight.current) setLayout(null)
+  }
+
+  function scheduleSave() {
+    if (saveTimer.current) clearTimeout(saveTimer.current)
+    saveTimer.current = setTimeout(() => {
+      saveTimer.current = null
+      startTransition(async () => {
+        await savePending()
+        releaseLayout()
+      })
+    }, RESIZE_SAVE_DELAY_MS)
+  }
+
+  // Save anything still queued if the editor is left before the delay runs out.
+  useEffect(() => () => void savePending(), [savePending])
+
+  function handleResize(side: GridSide, delta: 1 | -1) {
+    const plan = planGridOps(shape, [{ side, delta }], Object.keys(optimisticGrid))
+    if (!plan.ok) {
+      setResizeError(gridResizeError(plan))
+      return
+    }
+    setResizeError(null)
+    const grid: GridState = {}
+    for (const [cell, specimen] of Object.entries(optimisticGrid)) {
+      const moved = plan.moveCell(cell)
+      if (moved) grid[moved] = { ...specimen, gridCell: moved }
+    }
+    setLayout({ shape: plan.shape, grid })
+    queuedOps.current.push({ side, delta })
+    scheduleSave()
+  }
+
   const cellRefs = useRef<Map<string, HTMLElement>>(new Map())
 
   function handleCellKeyDown(e: React.KeyboardEvent, row: number, col: number) {
     const direction = ARROW_DIRECTIONS[e.key]
     if (!direction) return
     e.preventDefault()
-    const next = moveHexCell({ row, col }, direction, gridRows, gridCols)
+    const next = moveHexCell({ row, col }, direction, rows, cols)
     setActiveCell(next)
     cellRefs.current.get(`${next.row},${next.col}`)?.focus()
   }
@@ -136,23 +220,38 @@ export function GridEditor({
       setPickerOpen(false)
       startTransition(async () => {
         dispatch({ type: 'place', cell, specimen: optimisticSpecimen })
+        await savePending()
         await placeSpecimen(orgSlug, sceneId, specimen.id, row, col)
+        releaseLayout()
       })
     },
-    [pickerCell, orgSlug, sceneId, dispatch],
+    [pickerCell, orgSlug, sceneId, dispatch, savePending],
   )
 
   function handleRemove(specimen: PlacedSpecimen) {
     const cell = specimen.gridCell
     startTransition(async () => {
       dispatch({ type: 'remove', cell })
+      await savePending()
       await removeSpecimenFromCell(orgSlug, sceneId, specimen.id)
+      releaseLayout()
     })
   }
 
   return (
     <>
       <RotatePrompt />
+      <div className="mb-4">
+        <GridSizeControls
+          orgSlug={orgSlug}
+          sceneId={sceneId}
+          rows={rows}
+          cols={cols}
+          perspective={perspective}
+          onResize={handleResize}
+          resizeError={resizeError}
+        />
+      </div>
       {perspective === 'BED' && (
         <div className="mb-3 flex justify-end">
           <Button
@@ -172,13 +271,13 @@ export function GridEditor({
           role="grid"
           className="mx-auto"
           aria-label="Specimen placement grid"
-          aria-rowcount={gridRows}
-          aria-colcount={gridCols}
-          rows={gridRows}
-          cols={gridCols}
-          cellWidth={`${CELL_WIDTH_REM}rem`}
+          aria-rowcount={rows}
+          aria-colcount={cols}
+          rows={rows}
+          cols={cols}
+          cellWidth={`${cellWidthRem}rem`}
           tiltDeg={tilt}
-          rowShift={rowShift}
+          rowShift={shape.rowShift}
           rowProps={(row) => ({ role: 'row', 'aria-rowindex': row + 1 })}
           renderCell={(row, col, style) => {
             const cell = `${row},${col}`

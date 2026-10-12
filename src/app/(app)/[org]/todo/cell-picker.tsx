@@ -3,7 +3,7 @@
 import { Check } from 'lucide-react'
 import { HexGrid, HexOutline, HexPlantLabel } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
-import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 import { cn } from '@/lib/utils'
 
 const CELL_WIDTH_REM = 5
@@ -38,6 +38,8 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
     onChange(chosen.has(cell) ? selected.filter((c) => c !== cell) : [...selected, cell])
   }
 
+  const tilt = sceneTilt(scene.perspective, scene.gridRows, CELL_WIDTH_REM * PX_PER_REM)
+
   const summary = selected.length
     ? `${selected.length} of ${scene.plants.length} plants`
     : `Whole scene: ${scene.plants.length} plant${scene.plants.length === 1 ? '' : 's'}`
@@ -64,8 +66,8 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
           aria-label={`${scene.name} grid`}
           rows={scene.gridRows}
           cols={scene.gridCols}
-          cellWidth={`${CELL_WIDTH_REM}rem`}
-          tiltDeg={sceneTilt(scene.perspective, scene.gridRows, CELL_WIDTH_REM * PX_PER_REM)}
+          cellWidth={`${CELL_WIDTH_REM * sceneCellScale(scene.gridRows, tilt)}rem`}
+          tiltDeg={tilt}
           rowShift={scene.rowShift}
           renderCell={(row, col, style) => {
             const cell = `${row},${col}`

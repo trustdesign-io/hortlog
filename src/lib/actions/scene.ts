@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
-import { GRID_SIDES, MAX_GRID, MIN_GRID, parseCell, planGridResize, type GridSide } from '@/lib/scene-grid'
+import { GRID_SIDES, gridResizeError, MAX_GRID_OPS, planGridOps, type GridOp } from '@/lib/scene-grid'
 import { DEFAULT_PERSPECTIVE, parsePerspective } from '@/lib/scene-perspective'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -227,26 +227,22 @@ export async function removeSpecimenFromCell(
   return { success: true }
 }
 
-const SIDE_NAMES: Record<GridSide, string> = {
-  top: 'top row',
-  bottom: 'bottom row',
-  left: 'left column',
-  right: 'right column',
-}
-
 /**
- * Adds or removes a row or column on one side of a scene's grid. Plants and
- * task targets are renumbered so everything stays where it was on the ground.
+ * Adds or removes rows and columns on any side, in order, as one save. Plants
+ * and task targets are renumbered so everything stays where it was on the ground.
  */
 export async function resizeSceneGrid(
   orgSlug: string,
   sceneId: string,
-  side: GridSide,
-  delta: 1 | -1,
+  ops: GridOp[],
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_edit_scene')
-  if (!GRID_SIDES.includes(side)) return { success: false, error: 'Invalid change.' }
-  if (delta !== 1 && delta !== -1) return { success: false, error: 'Invalid change.' }
+  const valid =
+    Array.isArray(ops) &&
+    ops.length > 0 &&
+    ops.length <= MAX_GRID_OPS &&
+    ops.every((op) => GRID_SIDES.includes(op?.side) && (op.delta === 1 || op.delta === -1))
+  if (!valid) return { success: false, error: 'Invalid change.' }
 
   const scene = await prisma.scene.findFirst({
     where: { id: sceneId, organisation: { slug: orgSlug } },
@@ -261,42 +257,30 @@ export async function resizeSceneGrid(
   })
   if (!scene) return { success: false, error: 'Scene not found.' }
 
-  const plan = planGridResize(
+  const plan = planGridOps(
     { rows: scene.gridRows, cols: scene.gridCols, rowShift: scene.rowShift },
-    side,
-    delta,
+    ops,
     scene.specimens.map((s) => s.gridCell),
   )
-  if (!plan.ok && plan.reason === 'limits') {
-    return { success: false, error: `Grids can have ${MIN_GRID} to ${MAX_GRID} rows and columns.` }
-  }
-  if (!plan.ok) {
-    const n = plan.blocked.length
-    return { success: false, error: `Move or remove the ${n} plant${n === 1 ? '' : 's'} in the ${SIDE_NAMES[side]} first.` }
-  }
+  if (!plan.ok) return { success: false, error: gridResizeError(plan) }
 
   const { rows, cols, rowShift } = plan.shape
-  const renumbers = side === 'top' || side === 'left'
-  // A removed row or column has no plants, but a task may still point at its cells.
-  const keep = (cell: string): boolean => {
-    const rc = parseCell(cell)
-    if (!rc) return false
-    const [r, c] = plan.moveCell(cell).split(',').map(Number)
-    return r >= 0 && c >= 0 && r < rows && c < cols
-  }
+  const moved = scene.specimens
+    .map((s) => ({ id: s.id, before: s.gridCell as string, after: plan.moveCell(s.gridCell as string) }))
+    .filter((s) => s.after !== s.before)
+  const tasks = scene.tasks
+    .map((t) => ({
+      id: t.id,
+      before: t.cells,
+      after: t.cells.map(plan.moveCell).filter((c): c is string => c !== null),
+    }))
+    .filter((t) => t.after.join('|') !== t.before.join('|'))
 
   try {
     await prisma.$transaction([
       prisma.scene.update({ where: { id: scene.id }, data: { gridRows: rows, gridCols: cols, rowShift } }),
-      ...(renumbers
-        ? scene.specimens.map((s) =>
-            prisma.specimen.update({ where: { id: s.id }, data: { gridCell: plan.moveCell(s.gridCell as string) } }),
-          )
-        : []),
-      ...scene.tasks
-        .map((t) => ({ id: t.id, before: t.cells, after: t.cells.filter(keep).map(plan.moveCell) }))
-        .filter((t) => t.after.join('|') !== t.before.join('|'))
-        .map((t) => prisma.task.update({ where: { id: t.id }, data: { cells: t.after } })),
+      ...moved.map((s) => prisma.specimen.update({ where: { id: s.id }, data: { gridCell: s.after } })),
+      ...tasks.map((t) => prisma.task.update({ where: { id: t.id }, data: { cells: t.after } })),
     ])
   } catch (err) {
     console.error('[resizeSceneGrid] error:', err)

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { HexGrid, HexOutline, HexPlantLabel } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
-import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 
 const CELL_WIDTH_REM = 6
 const PX_PER_REM = 16
@@ -46,6 +46,8 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
     cellMap[s.gridCell] = s
   }
 
+  const tilt = sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)
+
   return (
     <div
       className="overflow-x-auto pb-4"
@@ -56,8 +58,8 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
         className="mx-auto"
         rows={rows}
         cols={cols}
-        cellWidth={`${CELL_WIDTH_REM}rem`}
-        tiltDeg={sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)}
+        cellWidth={`${CELL_WIDTH_REM * sceneCellScale(rows, tilt)}rem`}
+        tiltDeg={tilt}
         rowShift={rowShift}
         renderCell={(row, col, style) => {
           const cell = `${row},${col}`

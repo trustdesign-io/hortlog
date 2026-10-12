@@ -74,3 +74,56 @@ export function planGridResize(
   }
   return { ok: true, shape: { rows, cols, rowShift }, moveCell }
 }
+
+export interface GridOp {
+  side: GridSide
+  delta: 1 | -1
+}
+
+export const MAX_GRID_OPS = 40
+
+export type GridOpsPlan =
+  | { ok: true; shape: GridShape; moveCell: (cell: string) => string | null }
+  | { ok: false; reason: 'limits'; side: GridSide }
+  | { ok: false; reason: 'occupied'; side: GridSide; blocked: string[] }
+
+/**
+ * Several resizes in a row, as one plan. `moveCell` follows a cell through
+ * every step and returns null for a cell whose row or column was removed.
+ */
+export function planGridOps(shape: GridShape, ops: GridOp[], cells: Array<string | null>): GridOpsPlan {
+  let current = shape
+  let occupied = cells.filter((c): c is string => parseCell(c) !== null)
+  const steps: Array<{ shape: GridShape; moveCell: (cell: string) => string }> = []
+  for (const op of ops) {
+    const plan = planGridResize(current, op.side, op.delta, occupied)
+    if (!plan.ok) return { ...plan, side: op.side }
+    steps.push(plan)
+    occupied = occupied.map(plan.moveCell)
+    current = plan.shape
+  }
+  const moveCell = (cell: string): string | null => {
+    let at = cell
+    for (const step of steps) {
+      at = step.moveCell(at)
+      const rc = parseCell(at)
+      if (!rc || rc[0] < 0 || rc[1] < 0 || rc[0] >= step.shape.rows || rc[1] >= step.shape.cols) return null
+    }
+    return at
+  }
+  return { ok: true, shape: current, moveCell }
+}
+
+const SIDE_NAMES: Record<GridSide, string> = {
+  top: 'top row',
+  bottom: 'bottom row',
+  left: 'left column',
+  right: 'right column',
+}
+
+/** User-facing reason a resize can't be done. */
+export function gridResizeError(plan: Extract<GridOpsPlan, { ok: false }>): string {
+  if (plan.reason === 'limits') return `Grids can have ${MIN_GRID} to ${MAX_GRID} rows and columns.`
+  const n = plan.blocked.length
+  return `Move or remove the ${n} plant${n === 1 ? '' : 's'} in the ${SIDE_NAMES[plan.side]} first.`
+}

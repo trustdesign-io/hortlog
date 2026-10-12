@@ -3,7 +3,7 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { Minus, Plus } from 'lucide-react'
-import { resizeSceneGrid, setScenePerspective } from '@/lib/actions/scene'
+import { setScenePerspective } from '@/lib/actions/scene'
 import { Button } from '@/components/ui/button'
 import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
@@ -16,6 +16,9 @@ interface GridSizeControlsProps {
   rows: number
   cols: number
   perspective: ScenePerspective
+  /** Applied on screen straight away; the editor saves clicks in batches. */
+  onResize: (side: GridSide, delta: 1 | -1) => void
+  resizeError: string | null
 }
 
 const SIDE_LABELS: Record<GridSide, string> = { top: 'Top', bottom: 'Bottom', left: 'Left', right: 'Right' }
@@ -24,22 +27,21 @@ const SIDE_LABELS: Record<GridSide, string> = { top: 'Top', bottom: 'Bottom', le
  * Grid shape: perspective, and a row or column added on a chosen side or
  * removed from it if it's empty.
  */
-export function GridSizeControls({ orgSlug, sceneId, rows, cols, perspective }: GridSizeControlsProps) {
+export function GridSizeControls({
+  orgSlug,
+  sceneId,
+  rows,
+  cols,
+  perspective,
+  onResize,
+  resizeError,
+}: GridSizeControlsProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
   const [rowSide, setRowSide] = useState<GridSide>('bottom')
   const [colSide, setColSide] = useState<GridSide>('right')
   const [view, setView] = useState<string>(perspective)
-
-  function change(side: GridSide, delta: 1 | -1) {
-    setError(null)
-    startTransition(async () => {
-      const result = await resizeSceneGrid(orgSlug, sceneId, side, delta)
-      if (result.success) router.refresh()
-      else setError(result.error ?? 'Could not resize the grid.')
-    })
-  }
 
   function changePerspective(value: string) {
     setView(value)
@@ -87,8 +89,8 @@ export function GridSizeControls({ orgSlug, sceneId, rows, cols, perspective }: 
             type="button"
             variant="outline"
             size="icon"
-            onClick={() => change(side, -1)}
-            disabled={isPending || value <= MIN_GRID}
+            onClick={() => onResize(side, -1)}
+            disabled={value <= MIN_GRID}
             aria-label={`Remove the ${noun} ${where}`}
           >
             <Minus className="h-4 w-4" aria-hidden="true" />
@@ -100,8 +102,8 @@ export function GridSizeControls({ orgSlug, sceneId, rows, cols, perspective }: 
             type="button"
             variant="outline"
             size="icon"
-            onClick={() => change(side, 1)}
-            disabled={isPending || value >= MAX_GRID}
+            onClick={() => onResize(side, 1)}
+            disabled={value >= MAX_GRID}
             aria-label={`Add a ${noun} ${where}`}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
@@ -132,9 +134,9 @@ export function GridSizeControls({ orgSlug, sceneId, rows, cols, perspective }: 
         {stepper('Rows', 'row', rows, ['top', 'bottom'], rowSide, setRowSide)}
         {stepper('Columns', 'column', cols, ['left', 'right'], colSide, setColSide)}
       </div>
-      {error && (
+      {(resizeError ?? error) && (
         <p className="text-sm text-destructive" role="alert">
-          {error}
+          {resizeError ?? error}
         </p>
       )}
     </div>
