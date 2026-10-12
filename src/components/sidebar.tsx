@@ -232,13 +232,6 @@ function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: 
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b px-4">
         <Logo href="/records" />
-        {/* Desktop: show theme toggle + tour button. Mobile drawer: top bar has them instead. */}
-        {!onNavigate && (
-          <div className="flex items-center gap-1">
-            <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} />
-            <ThemeToggle />
-          </div>
-        )}
       </div>
 
       {/* Org context — only when inside an org */}
@@ -279,8 +272,12 @@ function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: 
         )}
       </div>
 
-      {/* User footer */}
+      {/* Footer: tour, theme, then the signed-in user */}
       <div className="border-t">
+        <div className="flex flex-wrap items-center gap-1 px-2 pt-2">
+          <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} showLabel />
+          <ThemeToggle showLabel />
+        </div>
         <UserMenu user={user} />
       </div>
     </div>
@@ -303,8 +300,6 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
       <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
         <Logo href="/records" />
         <div className="flex items-center gap-1">
-          <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} />
-          <ThemeToggle />
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
               render={
