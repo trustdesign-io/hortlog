@@ -67,11 +67,9 @@ function canManageOrg(user: UserWithMemberships, orgSlug: string): boolean {
   return user.memberships.some((m) => m.organisation.slug === orgSlug && isLeader(m.role))
 }
 
-const myRecordNav: NavItem[] = [
+/** Everything about the signed-in person, grouped at the foot of the sidebar. */
+const youNav: NavItem[] = [
   { href: '/records', label: 'My record', icon: ClipboardList, tourId: 'my-record' },
-]
-
-const accountNav: NavItem[] = [
   { href: '/settings', label: 'Account', icon: Settings, tourId: 'account-settings' },
 ]
 
@@ -234,36 +232,17 @@ function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: 
         <Logo href="/records" />
       </div>
 
-      {/* Org context — only when inside an org */}
-      {orgSlug !== null && (
-        <div className="border-b py-2">
-          <OrgSwitcher user={user} currentSlug={orgSlug} allOrgs={allOrgs} />
-        </div>
-      )}
-
-      {/* Nav */}
-      <div className="flex-1 overflow-y-auto py-3 flex flex-col gap-4">
-        {/* My record — always first */}
-        <NavLinks items={myRecordNav} onNavigate={onNavigate} label="Personal navigation" />
-
-        {orgNav.length > 0 && (
+      {/* Organisation: the switcher heads the section, its pages sit under it */}
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto pb-3">
+        {orgSlug !== null && (
           <div>
-            <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-              Organisation
-            </p>
+            <OrgSwitcher user={user} currentSlug={orgSlug} allOrgs={allOrgs} />
             <NavLinks items={orgNav} onNavigate={onNavigate} label="Organisation navigation" />
           </div>
         )}
 
-        <div>
-          <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-            Settings
-          </p>
-          <NavLinks items={accountNav} onNavigate={onNavigate} label="Account navigation" />
-        </div>
-
         {user.isAdmin && (
-          <div data-tour="admin">
+          <div data-tour="admin" className={orgSlug === null ? 'pt-3' : undefined}>
             <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
               Admin
             </p>
@@ -272,8 +251,12 @@ function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: 
         )}
       </div>
 
-      {/* Footer: tour, theme, then the signed-in user */}
-      <div className="border-t">
+      {/* You: your record and account, tour and theme, then who's signed in */}
+      <div className="border-t pt-3">
+        <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+          You
+        </p>
+        <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
         <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5">
           <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} showLabel />
           <ThemeToggle showLabel />
