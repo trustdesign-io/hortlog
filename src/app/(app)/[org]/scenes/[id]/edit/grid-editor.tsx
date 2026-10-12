@@ -147,6 +147,7 @@ export function GridEditor({
       <div className="overflow-x-auto pb-4">
         <HexGrid
           role="grid"
+          className="mx-auto"
           aria-label="Specimen placement grid"
           aria-rowcount={gridRows}
           aria-colcount={gridCols}
@@ -172,7 +173,14 @@ export function GridEditor({
                 isActive={isActive}
                 onRemove={() => handleRemove(placed)}
                 onFocus={() => setActiveCell({ row, col })}
-                onKeyDown={(e) => handleCellKeyDown(e, row, col)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Delete' || e.key === 'Backspace') {
+                    e.preventDefault()
+                    handleRemove(placed)
+                    return
+                  }
+                  handleCellKeyDown(e, row, col)
+                }}
                 ref={setRef}
               />
             ) : (

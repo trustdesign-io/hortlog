@@ -4,7 +4,7 @@ import { HexGrid, HexOutline } from '@/components/hex-grid'
 import { hexCellStyle } from '@/lib/hex-grid'
 import { cn } from '@/lib/utils'
 
-const CELL_WIDTH = '4.5rem'
+const CELL_WIDTH = '5rem'
 
 export interface PickerScene {
   id: string
@@ -55,6 +55,7 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
       <div className="overflow-x-auto pb-1">
         <HexGrid
           role="group"
+          className="mx-auto"
           aria-label={`${scene.name} grid`}
           rows={scene.gridRows}
           cols={scene.gridCols}
@@ -85,7 +86,7 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
               >
                 <span
                   className={cn(
-                    'hex-shape flex items-center justify-center px-3 text-center text-[11px] leading-tight transition-colors',
+                    'hex-shape flex items-center justify-center px-2 text-center text-[11px] leading-tight transition-colors',
                     isOn
                       ? 'bg-primary text-primary-foreground'
                       : selected.length === 0

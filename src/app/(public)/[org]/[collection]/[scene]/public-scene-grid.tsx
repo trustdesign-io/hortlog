@@ -50,6 +50,7 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath }: PublicScene
       aria-label="Specimen grid"
     >
       <HexGrid
+        className="mx-auto"
         rows={rows}
         cols={cols}
         cellWidth={CELL_WIDTH}

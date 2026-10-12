@@ -80,7 +80,7 @@ export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function F
           imageUrl={specimen.thumbnailUrl}
           alt=""
           fill
-          sizes="144px"
+          sizes="120px"
           className="object-cover"
         />
         <span className="absolute inset-x-0 bottom-[22%] block truncate bg-black/65 px-4 py-0.5 text-center text-[11px] font-medium leading-tight text-white">
@@ -89,11 +89,13 @@ export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function F
         <button
           type="button"
           onClick={onRemove}
-          className="absolute right-[20%] top-[22%] z-10 flex h-7 w-7 items-center justify-center rounded-full bg-background/90 text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+          className="group/remove absolute right-[14%] top-[18%] z-10 flex h-11 w-11 items-center justify-center text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
           aria-label={`Remove ${specimen.commonName} from this cell`}
           tabIndex={-1}
         >
-          <X className="h-4 w-4" aria-hidden="true" />
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/90 group-focus-visible/remove:ring-2 group-focus-visible/remove:ring-ring">
+            <X className="h-4 w-4" aria-hidden="true" />
+          </span>
         </button>
       </span>
     </div>

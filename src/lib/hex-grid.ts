@@ -70,9 +70,9 @@ export function hexCellStyle(row: number, col: number): CSSProperties {
 const clamp = (n: number, max: number): number => Math.max(0, Math.min(max - 1, n))
 
 /**
- * Keyboard neighbour. Up and down keep the column index: the shift is half a
- * cell either way, so the index is the nearest hex without drifting sideways
- * over repeated presses. Moves off an edge stay on the current cell.
+ * Keyboard neighbour. Both hexes in the adjacent row are exactly half a cell
+ * away, so up and down break the tie by keeping the column index. That is
+ * reversible and does not drift sideways over repeated presses. Moves off an edge stay on the current cell.
  */
 export function moveHexCell(
   from: HexCoord,
