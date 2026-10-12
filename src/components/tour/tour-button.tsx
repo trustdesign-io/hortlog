@@ -3,7 +3,7 @@
 import { useCallback, useRef } from 'react'
 import { GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { TOUR_STEPS } from './tour-steps'
+import { TOUR_STEPS, type TourPanel } from './tour-steps'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 import { isLeader } from '@/lib/roles'
 
@@ -11,14 +11,25 @@ import { isLeader } from '@/lib/roles'
 import 'driver.js/dist/driver.css'
 
 // Matches the Sheet slide-in animation duration
-const DRAWER_OPEN_DELAY_MS = 300
+const PANEL_OPEN_DELAY_MS = 300
 
 interface TourButtonProps {
   user: UserWithMemberships
-  openDrawer?: () => void
-  closeDrawer?: () => void
+  /** Mobile only: show one slide-out panel (closing the other), or close both with null. */
+  showPanel?: (panel: TourPanel | null) => void
   showLabel?: boolean
 }
+
+/**
+ * The same `data-tour` element can exist twice (desktop sidebar, hidden on
+ * mobile, and a mobile panel), so highlight the one that's actually on screen.
+ */
+function visibleTourElement(tourId: string): Element {
+  const matches = Array.from(document.querySelectorAll(`[data-tour="${tourId}"]`))
+  return matches.find((el) => el.getClientRects().length > 0) ?? matches[0]
+}
+
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
 function userRole(user: UserWithMemberships): 'admin' | 'manager' | 'member' {
   if (user.isAdmin) return 'admin'
@@ -28,7 +39,7 @@ function userRole(user: UserWithMemberships): 'admin' | 'manager' | 'member' {
 
 const ROLE_ORDER = { member: 0, manager: 1, admin: 2 } as const
 
-export function TourButton({ user, openDrawer, closeDrawer, showLabel = false }: TourButtonProps) {
+export function TourButton({ user, showPanel, showLabel = false }: TourButtonProps) {
   const role = userRole(user)
   const running = useRef(false)
 
@@ -51,6 +62,17 @@ export function TourButton({ user, openDrawer, closeDrawer, showLabel = false }:
 
       const isMobile = window.matchMedia('(max-width: 767px)').matches
       const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+      let openPanel: TourPanel | null = null
+
+      /** On mobile, slide out the panel a step's element lives in before it's highlighted. */
+      async function preparePanel(index: number) {
+        if (!isMobile) return
+        const wanted = present[index]?.panel ?? null
+        if (wanted === openPanel) return
+        showPanel?.(wanted)
+        openPanel = wanted
+        if (wanted) await wait(PANEL_OPEN_DELAY_MS)
+      }
 
       const driverObj = driver({
         showProgress: true,
@@ -61,38 +83,35 @@ export function TourButton({ user, openDrawer, closeDrawer, showLabel = false }:
         prevBtnText: '← Back',
         doneBtnText: 'Done',
         steps: present.map((s) => ({
-          element: `[data-tour="${s.tourId}"]`,
+          element: () => visibleTourElement(s.tourId),
           popover: { title: s.title, description: s.description },
         })),
-        onHighlightStarted: (_el, _step, { state }) => {
-          if (!isMobile) return
-          const stepDef = present[state.activeIndex ?? 0]
-          if (stepDef?.requiresDrawer) {
-            openDrawer?.()
-          } else {
-            closeDrawer?.()
-          }
+        onNextClick: (_el, _step, { driver: tour }) => {
+          const next = (tour.getActiveIndex() ?? 0) + 1
+          // Past the last step moveNext() ends the tour through onDestroyStarted
+          if (next >= present.length) return tour.moveNext()
+          void preparePanel(next).then(() => tour.moveNext())
+        },
+        onPrevClick: (_el, _step, { driver: tour }) => {
+          const prev = (tour.getActiveIndex() ?? 0) - 1
+          if (prev < 0) return
+          void preparePanel(prev).then(() => tour.movePrevious())
         },
         // Providing this hook stops driver.js closing on its own: Done, ✕ and Esc
         // all land here, so we must call destroy() ourselves
         onDestroyStarted: (_el, _step, { driver: tour }) => {
-          if (isMobile) closeDrawer?.()
+          if (isMobile) showPanel?.(null)
           running.current = false
           tour.destroy()
         },
       })
 
-      // Open the drawer before starting if the first step needs it
-      if (isMobile && present[0]?.requiresDrawer) {
-        openDrawer?.()
-        await new Promise<void>((r) => setTimeout(r, DRAWER_OPEN_DELAY_MS))
-      }
-
+      await preparePanel(0)
       driverObj.drive()
     } catch {
       running.current = false
     }
-  }, [role, openDrawer, closeDrawer])
+  }, [role, showPanel])
 
   return (
     <Button

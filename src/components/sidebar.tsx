@@ -17,6 +17,7 @@ import {
   ChevronDown,
   CheckSquare,
   ClipboardList,
+  CircleUser,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getActiveHref, resolveOrgSlug } from '@/lib/nav-utils'
@@ -27,6 +28,7 @@ import { UserMenu } from '@/components/user-menu'
 import { Logo } from '@/components/layout/logo'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { TourButton } from '@/components/tour/tour-button'
+import type { TourPanel } from '@/components/tour/tour-steps'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 
 type OrgOption = { id: string; slug: string; name: string }
@@ -209,8 +211,9 @@ interface SidebarContentProps {
   user: UserWithMemberships
   onNavigate?: () => void
   allOrgs?: OrgOption[]
-  openDrawer?: () => void
-  closeDrawer?: () => void
+  showPanel?: (panel: TourPanel | null) => void
+  /** Mobile splits the You section into its own panel. */
+  includeYou?: boolean
 }
 
 function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefined): string[] {
@@ -219,7 +222,7 @@ function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefin
     : user.memberships.map(m => m.organisation.slug)
 }
 
-function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: SidebarContentProps) {
+function SidebarContent({ user, onNavigate, allOrgs, showPanel, includeYou = true }: SidebarContentProps) {
   const pathname = usePathname()
   const knownSlugs = getKnownSlugs(user, allOrgs)
   const orgSlug = resolveOrgSlug(pathname, knownSlugs, user.memberships.map((m) => m.organisation.slug))
@@ -251,58 +254,80 @@ function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: 
         )}
       </div>
 
-      {/* You: your record and account, tour and theme, then who's signed in */}
-      <div className="border-t pt-3">
-        <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
-          You
-        </p>
-        <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
-        <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5">
-          <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} showLabel />
-          <ThemeToggle showLabel />
+      {includeYou && (
+        <div className="border-t pt-3">
+          <YouSection user={user} onNavigate={onNavigate} showPanel={showPanel} />
         </div>
-        <UserMenu user={user} />
-      </div>
+      )}
     </div>
   )
 }
 
+interface YouSectionProps {
+  user: UserWithMemberships
+  onNavigate?: () => void
+  showPanel?: (panel: TourPanel | null) => void
+}
+
+/** Your record and account, tour and theme, then who's signed in. */
+function YouSection({ user, onNavigate, showPanel }: YouSectionProps) {
+  return (
+    <>
+      <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
+        You
+      </p>
+      <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
+      <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5">
+        <TourButton user={user} showPanel={showPanel} showLabel />
+        <ThemeToggle showLabel />
+      </div>
+      <UserMenu user={user} />
+    </>
+  )
+}
+
 export function Sidebar({ user, allOrgs }: SidebarProps) {
-  const [open, setOpen] = useState(false)
-  const openDrawer = () => setOpen(true)
-  const closeDrawer = () => setOpen(false)
+  // Mobile has two slide-out panels: the menu (left) and You (right). At most one is open.
+  const [panel, setPanel] = useState<TourPanel | null>(null)
+  const close = () => setPanel(null)
+  const panelProps = (which: TourPanel) => ({
+    open: panel === which,
+    onOpenChange: (open: boolean) => setPanel(open ? which : null),
+  })
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r md:flex md:flex-col">
-        <SidebarContent user={user} allOrgs={allOrgs} openDrawer={openDrawer} closeDrawer={closeDrawer} />
+        <SidebarContent user={user} allOrgs={allOrgs} />
       </aside>
 
       {/* Mobile top bar */}
       <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
         <Logo href="/records" />
         <div className="flex items-center gap-1">
-          <Sheet open={open} onOpenChange={setOpen}>
-            <SheetTrigger
-              render={
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  aria-label="Open navigation"
-                />
-              }
-            >
-              <Menu className="h-5 w-5" />
+          <Sheet {...panelProps('you')}>
+            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Open your menu" />}>
+              <CircleUser className="h-5 w-5" aria-hidden="true" />
+            </SheetTrigger>
+            <SheetContent side="right" className="w-72 p-0">
+              <SheetTitle className="sr-only">You</SheetTitle>
+              <div className="pt-14">
+                <YouSection user={user} onNavigate={close} showPanel={setPanel} />
+              </div>
+            </SheetContent>
+          </Sheet>
+          <Sheet {...panelProps('nav')}>
+            <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Open navigation" />}>
+              <Menu className="h-5 w-5" aria-hidden="true" />
             </SheetTrigger>
             <SheetContent side="left" className="w-60 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
-              <SidebarContent user={user} onNavigate={closeDrawer} allOrgs={allOrgs} openDrawer={openDrawer} closeDrawer={closeDrawer} />
+              <SidebarContent user={user} onNavigate={close} allOrgs={allOrgs} includeYou={false} />
             </SheetContent>
           </Sheet>
         </div>
       </div>
-
     </>
   )
 }
