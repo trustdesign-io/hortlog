@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { DEFAULT_ROLE_LABELS, roleLabel } from '@/lib/roles'
+import type { Role } from '@/lib/roles'
 import { Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
@@ -102,7 +103,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
             <thead>
               <tr className="border-b bg-muted/50">
                 <th scope="col" className="px-4 py-3 text-left font-medium">User</th>
-                <th scope="col" className="px-4 py-3 text-left font-medium">Organisations</th>
+                <th scope="col" className="hidden px-4 py-3 text-left font-medium sm:table-cell">Organisations</th>
                 <th scope="col" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Joined</th>
                 <th scope="col" className="sr-only">Actions</th>
               </tr>
@@ -112,7 +113,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                 <tr key={u.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
                     <div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <p className="font-medium">
                           {u.name ?? (
                             <span className="text-muted-foreground italic">Add name</span>
@@ -125,28 +126,14 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                           <Badge variant="outline" className="text-xs">You</Badge>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">{u.email}</p>
+                      <p className="break-all text-xs text-muted-foreground">{u.email}</p>
+                      <div className="mt-2 sm:hidden">
+                        <OrgPills memberships={u.memberships} />
+                      </div>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
-                    {u.memberships.length === 0 ? (
-                      <span className="text-muted-foreground text-xs">—</span>
-                    ) : (
-                      <div className="flex flex-wrap gap-1">
-                        {u.memberships.map((m) => (
-                          <Link
-                            key={m.id}
-                            href={`/${m.organisation.slug}/team/members`}
-                            className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted transition-colors"
-                          >
-                            {m.organisation.name}
-                            <span className="text-muted-foreground">
-                              ({roleLabel(m.role, DEFAULT_ROLE_LABELS)})
-                            </span>
-                          </Link>
-                        ))}
-                      </div>
-                    )}
+                  <td className="hidden px-4 py-3 sm:table-cell">
+                    <OrgPills memberships={u.memberships} />
                   </td>
                   <td className="hidden px-4 py-3 text-right text-muted-foreground text-xs sm:table-cell">
                     {u.createdAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
@@ -200,5 +187,35 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
         </nav>
       )}
     </div>
+  )
+}
+
+interface OrgPillsProps {
+  memberships: Array<{ id: string; role: Role; organisation: { slug: string; name: string } }>
+}
+
+/** A user's organisations, each with their role. */
+function OrgPills({ memberships }: OrgPillsProps) {
+  return (
+    <>
+      {memberships.length === 0 ? (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1">
+                        {memberships.map((m) => (
+                          <Link
+                            key={m.id}
+                            href={`/${m.organisation.slug}/team/members`}
+                            className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted transition-colors"
+                          >
+                            {m.organisation.name}
+                            <span className="text-muted-foreground">
+                              ({roleLabel(m.role, DEFAULT_ROLE_LABELS)})
+                            </span>
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+    </>
   )
 }
