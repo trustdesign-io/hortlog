@@ -165,3 +165,10 @@
     font-family: var(--font-heading);
   }
 }
+
+/* Rotate-to-landscape hint on the scene grid editor */
+@keyframes rotate-hint {
+  0%, 20% { transform: rotate(0deg); }
+  50%, 80% { transform: rotate(-90deg); }
+  100% { transform: rotate(0deg); }
+}
