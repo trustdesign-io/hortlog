@@ -26,6 +26,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/s
 import { UserMenu } from '@/components/user-menu'
 import { Logo } from '@/components/layout/logo'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { TourButton } from '@/components/tour/tour-button'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 
 type OrgOption = { id: string; slug: string; name: string }
@@ -39,20 +40,22 @@ interface NavItem {
   href: string
   label: string
   icon: React.ComponentType<{ className?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>
+  tourId?: string
 }
 
 function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
   return [
-    { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
-    { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
+    { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard, tourId: 'org-overview' },
+    { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare, tourId: 'org-todo' },
+    // Specimens has no tour step — it's a data-dense list page, not a concept to introduce
     { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
-    { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3 },
-    { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen },
-    { href: `/${orgSlug}/team`, label: 'Team', icon: UsersRound },
+    { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3, tourId: 'org-scenes' },
+    { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen, tourId: 'org-collections' },
+    { href: `/${orgSlug}/team`, label: 'Team', icon: UsersRound, tourId: 'org-team' },
     // Manager-only pages: members would only hit the no-access page
     ...(canManage
       ? [
-          { href: `/${orgSlug}/settings`, label: 'Org Settings', icon: Settings },
+          { href: `/${orgSlug}/settings`, label: 'Org Settings', icon: Settings, tourId: 'org-settings' },
         ]
       : []),
   ]
@@ -65,11 +68,11 @@ function canManageOrg(user: UserWithMemberships, orgSlug: string): boolean {
 }
 
 const myRecordNav: NavItem[] = [
-  { href: '/records', label: 'My record', icon: ClipboardList },
+  { href: '/records', label: 'My record', icon: ClipboardList, tourId: 'my-record' },
 ]
 
 const accountNav: NavItem[] = [
-  { href: '/settings', label: 'Account', icon: Settings },
+  { href: '/settings', label: 'Account', icon: Settings, tourId: 'account-settings' },
 ]
 
 const adminNav: NavItem[] = [
@@ -100,6 +103,7 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
             // fired a burst of server calls that crowded out form submissions.
             prefetch={false}
             onClick={onNavigate}
+            {...(item.tourId ? { 'data-tour': item.tourId } : {})}
             className={cn(
               'flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors',
               isActive
@@ -158,6 +162,7 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
         aria-expanded={open}
         aria-haspopup="listbox"
         aria-controls="org-switcher-listbox"
+        data-tour="org-switcher"
       >
         <Building2 className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
         <span className="flex-1 truncate text-left">
@@ -206,6 +211,8 @@ interface SidebarContentProps {
   user: UserWithMemberships
   onNavigate?: () => void
   allOrgs?: OrgOption[]
+  openDrawer?: () => void
+  closeDrawer?: () => void
 }
 
 function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefined): string[] {
@@ -214,7 +221,7 @@ function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefin
     : user.memberships.map(m => m.organisation.slug)
 }
 
-function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
+function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: SidebarContentProps) {
   const pathname = usePathname()
   const knownSlugs = getKnownSlugs(user, allOrgs)
   const orgSlug = resolveOrgSlug(pathname, knownSlugs, user.memberships.map((m) => m.organisation.slug))
@@ -225,8 +232,13 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b px-4">
         <Logo href="/records" />
-        {/* In the mobile drawer the close button sits here; the toggle is in the top bar */}
-        {!onNavigate && <ThemeToggle />}
+        {/* Desktop: show theme toggle + tour button. Mobile drawer: top bar has them instead. */}
+        {!onNavigate && (
+          <div className="flex items-center gap-1">
+            <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} />
+            <ThemeToggle />
+          </div>
+        )}
       </div>
 
       {/* Org context — only when inside an org */}
@@ -258,7 +270,7 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
         </div>
 
         {user.isAdmin && (
-          <div>
+          <div data-tour="admin">
             <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
               Admin
             </p>
@@ -277,18 +289,21 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
 
 export function Sidebar({ user, allOrgs }: SidebarProps) {
   const [open, setOpen] = useState(false)
+  const openDrawer = () => setOpen(true)
+  const closeDrawer = () => setOpen(false)
 
   return (
     <>
       {/* Desktop sidebar */}
       <aside className="hidden w-60 shrink-0 border-r md:flex md:flex-col">
-        <SidebarContent user={user} allOrgs={allOrgs} />
+        <SidebarContent user={user} allOrgs={allOrgs} openDrawer={openDrawer} closeDrawer={closeDrawer} />
       </aside>
 
       {/* Mobile top bar */}
       <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
         <Logo href="/records" />
         <div className="flex items-center gap-1">
+          <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} />
           <ThemeToggle />
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger
@@ -304,7 +319,7 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
             </SheetTrigger>
             <SheetContent side="left" className="w-60 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
-              <SidebarContent user={user} onNavigate={() => setOpen(false)} allOrgs={allOrgs} />
+              <SidebarContent user={user} onNavigate={closeDrawer} allOrgs={allOrgs} openDrawer={openDrawer} closeDrawer={closeDrawer} />
             </SheetContent>
           </Sheet>
         </div>
