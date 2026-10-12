@@ -20,9 +20,10 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import Link from 'next/link'
+import { CellPicker, type PickerScene } from './cell-picker'
 import { MemberPicker, getMemberInitials } from '@/components/member-picker'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
-import { X, Plus, Pencil, Trash2, CheckCircle2, Circle, Sprout } from 'lucide-react'
+import { X, Plus, Pencil, Trash2, CheckCircle2, Circle, Sprout, LayoutGrid } from 'lucide-react'
 import type { WorkAction } from '@prisma/client'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -43,6 +44,8 @@ interface Task {
   assignees: Assignee[]
   careAction: WorkAction | null
   specimen: { id: string; slug: string; name: string } | null
+  scene: { id: string; name: string; plantCount: number } | null
+  cells: string[]
 }
 
 interface PlantOption {
@@ -64,6 +67,7 @@ interface TaskListProps {
   tasks: Task[]
   orgMembers: OrgMember[]
   plants: PlantOption[]
+  scenes: PickerScene[]
 }
 
 function formatDate(iso: string | null): string | null {
@@ -189,14 +193,17 @@ interface TaskFormProps {
   orgSlug: string
   orgMembers: OrgMember[]
   plants: PlantOption[]
+  scenes: PickerScene[]
   task?: Task
   onClose: () => void
 }
 
+type Target = 'none' | 'plant' | 'scene'
+
 const selectClass =
   'flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
 
-function TaskForm({ orgSlug, orgMembers, plants, task, onClose }: TaskFormProps) {
+function TaskForm({ orgSlug, orgMembers, plants, scenes, task, onClose }: TaskFormProps) {
   const router = useRouter()
   const isEdit = !!task
 
@@ -209,8 +216,13 @@ function TaskForm({ orgSlug, orgMembers, plants, task, onClose }: TaskFormProps)
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
     task?.assignees.map((a) => a.id) ?? [],
   )
+  const [target, setTarget] = useState<Target>(task?.scene ? 'scene' : task?.specimen ? 'plant' : 'none')
   const [plantId, setPlantId] = useState(task?.specimen?.id ?? '')
+  const [sceneId, setSceneId] = useState(task?.scene?.id ?? scenes[0]?.id ?? '')
+  const [cells, setCells] = useState<string[]>(task?.cells ?? [])
   const [careAction, setCareAction] = useState<string>(task?.careAction ?? '')
+  const scene = scenes.find((sc) => sc.id === sceneId)
+  const hasTarget = (target === 'plant' && plantId) || (target === 'scene' && scene)
 
   useEffect(() => {
     if (state?.success) {
@@ -265,27 +277,83 @@ function TaskForm({ orgSlug, orgMembers, plants, task, onClose }: TaskFormProps)
         />
       </div>
 
-      {plants.length > 0 && (
-        <div className="flex flex-col gap-3 rounded-lg border p-3">
-          <div className="flex flex-col gap-1.5">
-            <Label htmlFor="task-plant">Plant</Label>
-            <select
-              id="task-plant"
-              name="specimenId"
-              value={plantId}
-              onChange={(e) => setPlantId(e.target.value)}
-              disabled={isPending}
-              className={selectClass}
-            >
-              <option value="">None</option>
-              {plants.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.label} ({p.scientificName})
-                </option>
-              ))}
-            </select>
+      {(plants.length > 0 || scenes.length > 0) && (
+        <fieldset className="flex flex-col gap-3 rounded-lg border p-3">
+          <legend className="px-1 text-sm font-medium">Where</legend>
+          <input type="hidden" name="target" value={target} />
+          <div className="flex flex-wrap gap-1" role="radiogroup" aria-label="Task applies to">
+            {(
+              [
+                ['none', 'Nowhere specific'],
+                ['plant', 'One plant'],
+                ...(scenes.length ? [['scene', 'A scene']] : []),
+              ] as Array<[Target, string]>
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                role="radio"
+                aria-checked={target === value}
+                onClick={() => setTarget(value)}
+                disabled={isPending}
+                className={
+                  target === value
+                    ? 'rounded-full border border-primary bg-primary px-3 py-1 text-xs text-primary-foreground'
+                    : 'rounded-full border px-3 py-1 text-xs hover:bg-muted'
+                }
+              >
+                {label}
+              </button>
+            ))}
           </div>
-          {plantId && (
+
+          {target === 'plant' && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="task-plant">Plant</Label>
+              <select
+                id="task-plant"
+                name="specimenId"
+                value={plantId}
+                onChange={(e) => setPlantId(e.target.value)}
+                disabled={isPending}
+                required
+                className={selectClass}
+              >
+                <option value="">Choose a plant…</option>
+                {plants.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.label} ({p.scientificName})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {target === 'scene' && (
+            <>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="task-scene">Scene</Label>
+                <select
+                  id="task-scene"
+                  name="sceneId"
+                  value={sceneId}
+                  onChange={(e) => {
+                    setSceneId(e.target.value)
+                    setCells([])
+                  }}
+                  disabled={isPending}
+                  className={selectClass}
+                >
+                  {scenes.map((sc) => (
+                    <option key={sc.id} value={sc.id}>{sc.name}</option>
+                  ))}
+                </select>
+              </div>
+              {scene && <CellPicker scene={scene} selected={cells} onChange={setCells} disabled={isPending} />}
+            </>
+          )}
+
+          {hasTarget && (
             <div className="flex flex-col gap-1.5">
               <Label htmlFor="task-care-action">Care to log when done</Label>
               <select
@@ -304,13 +372,13 @@ function TaskForm({ orgSlug, orgMembers, plants, task, onClose }: TaskFormProps)
               {careAction && (
                 <p className="text-xs text-muted-foreground">
                   {assigneeIds.length > 0
-                    ? 'Ticking this off logs it on the plant for each assignee.'
+                    ? `Ticking this off logs it on ${target === 'scene' ? 'each plant' : 'the plant'} for each assignee.`
                     : 'Add assignees: care is logged for the people who did it.'}
                 </p>
               )}
             </div>
           )}
-        </div>
+        </fieldset>
       )}
 
       {state && !state.success && state.error && (
@@ -331,7 +399,7 @@ function TaskForm({ orgSlug, orgMembers, plants, task, onClose }: TaskFormProps)
 
 // ─── Create task dialog ───────────────────────────────────────────────────────
 
-function CreateTaskDialog({ orgSlug, orgMembers, plants }: { orgSlug: string; orgMembers: OrgMember[]; plants: PlantOption[] }) {
+function CreateTaskDialog({ orgSlug, orgMembers, plants, scenes }: { orgSlug: string; orgMembers: OrgMember[]; plants: PlantOption[]; scenes: PickerScene[] }) {
   const [open, setOpen] = useState(false)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -344,7 +412,7 @@ function CreateTaskDialog({ orgSlug, orgMembers, plants }: { orgSlug: string; or
           <DialogTitle>Add task</DialogTitle>
           <DialogDescription>Create a new task for your organisation.</DialogDescription>
         </DialogHeader>
-        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} onClose={() => setOpen(false)} />
+        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} scenes={scenes} onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )
@@ -352,7 +420,7 @@ function CreateTaskDialog({ orgSlug, orgMembers, plants }: { orgSlug: string; or
 
 // ─── Edit task dialog ─────────────────────────────────────────────────────────
 
-function EditTaskDialog({ orgSlug, orgMembers, plants, task }: { orgSlug: string; orgMembers: OrgMember[]; plants: PlantOption[]; task: Task }) {
+function EditTaskDialog({ orgSlug, orgMembers, plants, scenes, task }: { orgSlug: string; orgMembers: OrgMember[]; plants: PlantOption[]; scenes: PickerScene[]; task: Task }) {
   const [open, setOpen] = useState(false)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -373,7 +441,7 @@ function EditTaskDialog({ orgSlug, orgMembers, plants, task }: { orgSlug: string
           <DialogTitle>Edit task</DialogTitle>
           <DialogDescription>Update the details for this task.</DialogDescription>
         </DialogHeader>
-        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} task={task} onClose={() => setOpen(false)} />
+        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} scenes={scenes} task={task} onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )
@@ -477,7 +545,7 @@ function ToggleStatusButton({ orgSlug, task }: { orgSlug: string; task: Task }) 
 
 // ─── TaskList ─────────────────────────────────────────────────────────────────
 
-export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants }: TaskListProps) {
+export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants, scenes }: TaskListProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -488,7 +556,7 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants }: Task
           </p>
         </div>
         {canManage && (
-          <CreateTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} />
+          <CreateTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} scenes={scenes} />
         )}
       </div>
 
@@ -540,6 +608,19 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants }: Task
                           )}
                         </Link>
                       )}
+                      {task.scene && (
+                        <Link
+                          href={canManage ? `/${orgSlug}/scenes/${task.scene.id}/edit` : `/${orgSlug}/scenes`}
+                          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted"
+                        >
+                          <LayoutGrid className="h-3 w-3" aria-hidden="true" />
+                          {task.scene.name}
+                          <span className="text-muted-foreground">
+                            · {task.cells.length ? `${task.scene.plantCount} plant${task.scene.plantCount === 1 ? '' : 's'}` : 'whole scene'}
+                            {task.careAction && ` · ${WORK_ACTION_LABELS[task.careAction]}`}
+                          </span>
+                        </Link>
+                      )}
                       <AssigneeAvatars assignees={task.assignees} />
                       {dueDateFormatted && (
                         <Badge variant="outline" className="text-xs font-normal">
@@ -554,7 +635,7 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants }: Task
 
                   {canManage && (
                     <div className="flex shrink-0 items-center gap-1">
-                      <EditTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} task={task} />
+                      <EditTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} scenes={scenes} task={task} />
                       <DeleteTaskDialog orgSlug={orgSlug} task={task} />
                     </div>
                   )}

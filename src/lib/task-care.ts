@@ -1,13 +1,32 @@
 import type { Prisma, WorkAction } from '@prisma/client'
 import { ensureWorkRecord, WORK_RECORD_SPECIMEN_SELECT } from '@/lib/work-record-db'
 
+/** What a task points at: one plant, a whole scene, or some of a scene's cells. */
+export interface TaskTarget {
+  specimenId: string | null
+  sceneId: string | null
+  /** "row,col" keys; empty means the whole scene. */
+  cells: string[]
+}
+
+export function sameTarget(a: TaskTarget, b: TaskTarget): boolean {
+  const cells = (t: TaskTarget) => [...t.cells].sort().join('|')
+  return a.specimenId === b.specimenId && a.sceneId === b.sceneId && cells(a) === cells(b)
+}
+
+/** Whether a plant placed at `gridCell` is covered by a task's cell selection. */
+export function inCells(cells: string[], gridCell: string | null): boolean {
+  return cells.length === 0 || (gridCell !== null && cells.includes(gridCell))
+}
+
 export interface TaskCareState {
   status: 'OPEN' | 'DONE'
   completedAt: Date | null
-  specimenId: string | null
   careAction: WorkAction | null
   title: string
   assigneeIds: string[]
+  /** The plants the care applies to, fixed when the task was ticked off. */
+  specimenIds: string[]
 }
 
 /** A care entry already logged from the task. */
@@ -18,11 +37,11 @@ export interface TaskCareEntry {
 }
 
 export interface TaskCarePlan {
-  /** What each assignee's entry should say; null when the task logs nothing. */
+  /** What each entry should say; null when the task logs nothing. */
   entry: { date: Date; action: WorkAction; actionNote: string | null } | null
   update: string[]
   remove: string[]
-  create: string[]
+  create: Array<{ userId: string; specimenId: string }>
 }
 
 /** Care entries are calendar dates, stored at midnight UTC. */
@@ -31,25 +50,32 @@ export function toCareDate(d: Date): Date {
 }
 
 /**
- * A done task with a plant and a care action logs that care once for each
- * assignee. Anything else logs nothing, so reopening a task removes its entries.
+ * A done task with plants and a care action logs that care once per plant for
+ * each assignee. Anything else logs nothing, so reopening a task removes its entries.
  */
 export function planTaskCare(task: TaskCareState, existing: TaskCareEntry[]): TaskCarePlan {
-  const logs = task.status === 'DONE' && task.specimenId && task.careAction && task.assigneeIds.length > 0
+  const logs =
+    task.status === 'DONE' && task.careAction && task.assigneeIds.length > 0 && task.specimenIds.length > 0
   if (!logs) return { entry: null, update: [], remove: existing.map((e) => e.id), create: [] }
 
-  const wanted = new Set(task.assigneeIds)
+  const key = (userId: string, specimenId: string) => `${userId} ${specimenId}`
+  const wanted = new Set(task.assigneeIds.flatMap((u) => task.specimenIds.map((s) => key(u, s))))
+  const covered = new Set<string>()
   const update: string[] = []
   const remove: string[] = []
-  const covered = new Set<string>()
   for (const e of existing) {
-    if (e.specimenId === task.specimenId && wanted.has(e.userId) && !covered.has(e.userId)) {
+    const k = key(e.userId, e.specimenId)
+    if (wanted.has(k) && !covered.has(k)) {
       update.push(e.id)
-      covered.add(e.userId)
+      covered.add(k)
     } else {
       remove.push(e.id)
     }
   }
+
+  const create = task.assigneeIds.flatMap((userId) =>
+    task.specimenIds.filter((specimenId) => !covered.has(key(userId, specimenId))).map((specimenId) => ({ userId, specimenId })),
+  )
 
   return {
     entry: {
@@ -60,12 +86,31 @@ export function planTaskCare(task: TaskCareState, existing: TaskCareEntry[]): Ta
     },
     update,
     remove,
-    create: task.assigneeIds.filter((id) => !covered.has(id)),
+    create,
   }
 }
 
-/** Brings the care entries logged from a task in line with the task. */
-export async function syncTaskCare(tx: Prisma.TransactionClient, taskId: string): Promise<void> {
+async function resolveTargets(tx: Prisma.TransactionClient, target: TaskTarget): Promise<string[]> {
+  if (target.specimenId) return [target.specimenId]
+  if (!target.sceneId) return []
+  const placed = await tx.specimen.findMany({
+    where: { sceneId: target.sceneId },
+    select: { id: true, gridCell: true },
+    orderBy: { gridCell: 'asc' },
+  })
+  return placed.filter((p) => inCells(target.cells, p.gridCell)).map((p) => p.id)
+}
+
+/**
+ * Brings the care entries logged from a task in line with the task. The plants
+ * are worked out when it's ticked off (or its target changes while done) and
+ * kept, so moving plants around later doesn't rewrite what was done.
+ */
+export async function syncTaskCare(
+  tx: Prisma.TransactionClient,
+  taskId: string,
+  { refreshTargets }: { refreshTargets: boolean },
+): Promise<void> {
   const task = await tx.task.findUniqueOrThrow({
     where: { id: taskId },
     select: {
@@ -73,6 +118,9 @@ export async function syncTaskCare(tx: Prisma.TransactionClient, taskId: string)
       status: true,
       completedAt: true,
       specimenId: true,
+      sceneId: true,
+      cells: true,
+      careSpecimenIds: true,
       careAction: true,
       title: true,
       assignees: { select: { userId: true } },
@@ -80,14 +128,19 @@ export async function syncTaskCare(tx: Prisma.TransactionClient, taskId: string)
     },
   })
 
-  const existing = task.careEntries.map((e) => ({
-    id: e.id,
-    userId: e.workRecord.userId,
-    specimenId: e.workRecord.specimenId,
-  }))
+  let specimenIds = task.careSpecimenIds
+  if (task.status === 'OPEN') {
+    specimenIds = []
+  } else if (refreshTargets || specimenIds.length === 0) {
+    specimenIds = await resolveTargets(tx, task)
+  }
+  if (specimenIds.join() !== task.careSpecimenIds.join()) {
+    await tx.task.update({ where: { id: task.id }, data: { careSpecimenIds: specimenIds } })
+  }
+
   const plan = planTaskCare(
-    { ...task, assigneeIds: task.assignees.map((a) => a.userId) },
-    existing,
+    { ...task, specimenIds, assigneeIds: task.assignees.map((a) => a.userId) },
+    task.careEntries.map((e) => ({ id: e.id, userId: e.workRecord.userId, specimenId: e.workRecord.specimenId })),
   )
 
   if (plan.remove.length) {
@@ -106,11 +159,14 @@ export async function syncTaskCare(tx: Prisma.TransactionClient, taskId: string)
   }
 
   if (plan.create.length) {
-    const specimen = await tx.specimen.findUniqueOrThrow({
-      where: { id: task.specimenId! },
+    const specimens = await tx.specimen.findMany({
+      where: { id: { in: [...new Set(plan.create.map((c) => c.specimenId))] } },
       select: WORK_RECORD_SPECIMEN_SELECT,
     })
-    for (const userId of plan.create) {
+    const byId = new Map(specimens.map((s) => [s.id, s]))
+    for (const { userId, specimenId } of plan.create) {
+      const specimen = byId.get(specimenId)
+      if (!specimen) continue // deleted since
       const record = await ensureWorkRecord(tx, userId, specimen, date)
       await tx.workLogEntry.create({
         data: { date, action, actionNote, workRecordId: record.id, taskId: task.id },

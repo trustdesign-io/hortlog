@@ -19,7 +19,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
 
   const canManage = canManageOrg(user, orgSlug)
 
-  const [tasks, orgMembers, specimens] = await Promise.all([
+  const [tasks, orgMembers, specimens, scenes] = await Promise.all([
     prisma.task.findMany({
       where: { organisationId: org.id },
       orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
@@ -31,7 +31,10 @@ export default async function TodoPage({ params }: TodoPageProps) {
         status: true,
         createdAt: true,
         careAction: true,
+        cells: true,
+        careSpecimenIds: true,
         specimen: { select: { id: true, slug: true, species: { select: { commonName: true } } } },
+        scene: { select: { id: true, name: true, _count: { select: { specimens: true } } } },
         assignees: {
           select: {
             user: { select: { id: true, name: true, email: true, avatarUrl: true } },
@@ -53,13 +56,30 @@ export default async function TodoPage({ params }: TodoPageProps) {
           orderBy: { species: { commonName: 'asc' } },
         })
       : Promise.resolve([]),
+    // Only scenes with plants placed can be a task's target
+    canManage
+      ? prisma.scene.findMany({
+          where: { organisationId: org.id, specimens: { some: { gridCell: { not: null } } } },
+          select: {
+            id: true,
+            name: true,
+            gridRows: true,
+            gridCols: true,
+            specimens: {
+              where: { gridCell: { not: null } },
+              select: { id: true, gridCell: true, species: { select: { commonName: true } } },
+            },
+          },
+          orderBy: { name: 'asc' },
+        })
+      : Promise.resolve([]),
   ])
 
   return (
     <TaskList
       orgSlug={orgSlug}
       canManage={canManage}
-      tasks={tasks.map((t) => ({
+      tasks={tasks.map(({ careSpecimenIds, ...t }) => ({
         ...t,
         dueDate: t.dueDate?.toISOString() ?? null,
         createdAt: t.createdAt.toISOString(),
@@ -67,6 +87,21 @@ export default async function TodoPage({ params }: TodoPageProps) {
         specimen: t.specimen
           ? { id: t.specimen.id, slug: t.specimen.slug, name: t.specimen.species.commonName }
           : null,
+        scene: t.scene
+          ? {
+              id: t.scene.id,
+              name: t.scene.name,
+              // Done tasks report the plants care was logged on; open ones what's there now
+              plantCount: t.status === 'DONE' && careSpecimenIds.length ? careSpecimenIds.length : t.cells.length || t.scene._count.specimens,
+            }
+          : null,
+      }))}
+      scenes={scenes.map((sc) => ({
+        id: sc.id,
+        name: sc.name,
+        gridRows: sc.gridRows,
+        gridCols: sc.gridCols,
+        plants: sc.specimens.map((sp) => ({ id: sp.id, cell: sp.gridCell!, name: sp.species.commonName })),
       }))}
       orgMembers={orgMembers.map((m) => m.user)}
       plants={specimens.map((sp) => ({

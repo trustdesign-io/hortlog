@@ -9,6 +9,7 @@ const {
   task,
   taskAssignee,
   membership,
+  scene,
   $transaction,
   syncTaskCare,
 } = vi.hoisted(() => {
@@ -27,6 +28,7 @@ const {
     },
     taskAssignee: { deleteMany: vi.fn() },
     membership: { findMany: vi.fn() },
+    scene: { findFirst: vi.fn() },
     $transaction,
   }
 })
@@ -34,9 +36,12 @@ const {
 vi.mock('next/cache', () => ({ revalidatePath }))
 vi.mock('@/lib/auth/permissions', () => ({ requireOrgAccess }))
 vi.mock('@/lib/prisma', () => ({
-  prisma: { organisation: org, task, taskAssignee, membership, $transaction },
+  prisma: { organisation: org, task, taskAssignee, membership, scene, $transaction },
 }))
-vi.mock('@/lib/task-care', () => ({ syncTaskCare }))
+vi.mock('@/lib/task-care', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/lib/task-care')>()),
+  syncTaskCare,
+}))
 
 import { createTask, updateTask, setTaskStatus, deleteTask } from './task'
 
@@ -44,7 +49,7 @@ import { createTask, updateTask, setTaskStatus, deleteTask } from './task'
 
 const MANAGER = { id: 'u-mgr', email: 'mgr@example.com', isAdmin: false, memberships: [] }
 const ORG = { id: 'org-1', slug: 'test-org' }
-const TASK = { id: 'task-1', organisationId: 'org-1', title: 'Fix the fence' }
+const TASK = { id: 'task-1', organisationId: 'org-1', title: 'Fix the fence', specimenId: null, sceneId: null, cells: [] }
 
 function fd(fields: Record<string, string | string[]>): FormData {
   const f = new FormData()
@@ -175,6 +180,12 @@ describe('createTask', () => {
 // ─── updateTask ───────────────────────────────────────────────────────────────
 
 describe('updateTask', () => {
+  it('rejects a scene from another organisation', async () => {
+    scene.findFirst.mockResolvedValue(null)
+    const result = await updateTask('test-org', 'task-1', null, fd({ title: 'Water', target: 'scene', sceneId: 'other' }))
+    expect(result).toEqual({ success: false, error: 'Selected scene not found.' })
+  })
+
   it('rejects without can_manage_members', async () => {
     requireOrgAccess.mockRejectedValue(new Error('NEXT_REDIRECT'))
     await expect(updateTask('test-org', 'task-1', null, fd({ title: 'New' }))).rejects.toThrow('NEXT_REDIRECT')
@@ -208,7 +219,8 @@ describe('updateTask', () => {
     expect(result).toEqual({ success: true })
     expect($transaction).toHaveBeenCalledOnce()
     expect(taskAssignee.deleteMany).toHaveBeenCalledWith({ where: { taskId: 'task-1' } })
-    expect(syncTaskCare).toHaveBeenCalledWith(expect.anything(), 'task-1')
+    // Same (empty) target as before: the plants aren't worked out again
+    expect(syncTaskCare).toHaveBeenCalledWith(expect.anything(), 'task-1', { refreshTargets: false })
     expect(revalidatePath).toHaveBeenCalledWith('/test-org/todo')
   })
 
@@ -247,7 +259,7 @@ describe('setTaskStatus', () => {
       where: { id: 'task-1', organisationId: ORG.id },
       data: { status: 'DONE', completedAt: expect.any(Date) },
     })
-    expect(syncTaskCare).toHaveBeenCalledWith(expect.anything(), 'task-1')
+    expect(syncTaskCare).toHaveBeenCalledWith(expect.anything(), 'task-1', { refreshTargets: true })
   })
 
   it('reopens task', async () => {
