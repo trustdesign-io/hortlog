@@ -331,7 +331,7 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
             <SheetTrigger render={<Button variant="ghost" size="icon" aria-label="Open navigation" />}>
               <Menu className="h-5 w-5" aria-hidden="true" />
             </SheetTrigger>
-            <SheetContent side="left" className="w-60 p-0">
+            <SheetContent side="right" className="w-72 p-0">
               <SheetTitle className="sr-only">Navigation</SheetTitle>
               <SidebarContent user={user} onNavigate={close} allOrgs={allOrgs} includeYou={false} />
             </SheetContent>
