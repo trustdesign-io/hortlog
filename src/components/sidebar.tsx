@@ -225,7 +225,8 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
       {/* Header */}
       <div className="flex h-14 items-center justify-between border-b px-4">
         <Logo href="/records" />
-        <ThemeToggle />
+        {/* In the mobile drawer the close button sits here; the toggle is in the top bar */}
+        {!onNavigate && <ThemeToggle />}
       </div>
 
       {/* Org context — only when inside an org */}
