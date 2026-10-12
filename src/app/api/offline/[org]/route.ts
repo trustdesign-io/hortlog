@@ -2,6 +2,13 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
+// This endpoint is intentionally public — it returns only the same data
+// already reachable by browsing the public scene pages (slugs, shortcodes,
+// and publicly-readable Supabase storage URLs). No member data, PII, care
+// history, or private fields are included. The Supabase storage bucket for
+// specimen images is configured as public read (no signed URLs). If that
+// policy ever changes, an auth gate will be needed here.
+//
 // Rough per-item size estimates (bytes) used for the pre-download warning
 const BYTES_PER_PAGE = 60_000
 const BYTES_PER_IMAGE = 150_000

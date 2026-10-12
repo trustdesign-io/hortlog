@@ -23,7 +23,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((keys) =>
       Promise.all(
         keys
-          .filter((k) => k.startsWith('hortlog-') && !k.endsWith(CACHE_VERSION))
+          .filter((k) => !k.startsWith(CACHE_PREFIX) && k !== STATIC_CACHE)
           .map((k) => caches.delete(k))
       )
     )
@@ -72,13 +72,14 @@ async function cacheOrg(orgSlug, urls, event) {
   }
 
   // Store metadata: timestamp and URL count
-  const meta = { cachedAt: Date.now(), count: done, urls }
+  const cachedAt = Date.now()
+  const meta = { cachedAt, count: done, urls }
   await cache.put(
     `/_meta/${orgSlug}`,
     new Response(JSON.stringify(meta), { headers: { 'Content-Type': 'application/json' } })
   )
 
-  event.source?.postMessage({ type: 'CACHE_DONE', orgSlug, count: done })
+  event.source?.postMessage({ type: 'CACHE_DONE', orgSlug, count: done, cachedAt })
 }
 
 async function clearOrg(orgSlug, event) {
