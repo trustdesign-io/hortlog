@@ -97,6 +97,8 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       <QRPanel
         orgSlug={orgSlug}
         sceneId={scene.id}
+        sceneName={scene.name}
+        sceneSlug={scene.slug}
         shortCode={scene.shortCode}
         siteUrl={siteUrl}
       />
