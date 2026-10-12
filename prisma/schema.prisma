@@ -182,6 +182,8 @@ model Task {
   description String?
   dueDate     DateTime?
   status      TaskStatus @default(OPEN)
+  // Set when ticked off; care logged from the task is dated to this
+  completedAt DateTime?
   createdAt   DateTime   @default(now())
   updatedAt   DateTime   @updatedAt
 
@@ -189,6 +191,12 @@ model Task {
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   assignees TaskAssignee[]
+
+  // Optional plant and care action: ticking the task off logs the care for each assignee
+  specimenId  String?
+  specimen    Specimen?      @relation(fields: [specimenId], references: [id], onDelete: SetNull)
+  careAction  WorkAction?
+  careEntries WorkLogEntry[]
 
   createdById String?
   createdBy   User?   @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: SetNull)
@@ -245,6 +253,7 @@ model Specimen {
 
   collections CollectionMembership[]
   workRecords WorkRecord[]
+  tasks       Task[]
 
   @@unique([slug, organisationId])
 }
@@ -363,6 +372,10 @@ model WorkLogEntry {
   workRecordId String
   workRecord   WorkRecord @relation(fields: [workRecordId], references: [id], onDelete: Cascade)
 
+  // Set when the entry was logged by ticking off a to-do
+  taskId String?
+  task   Task?   @relation(fields: [taskId], references: [id], onDelete: SetNull)
+
   editHistory WorkLogEntryEdit[]
 
   createdAt DateTime @default(now())
@@ -370,6 +383,7 @@ model WorkLogEntry {
 
   @@index([workRecordId, date])
   @@index([date])
+  @@index([taskId])
 }
 
 model WorkRecordEdit {

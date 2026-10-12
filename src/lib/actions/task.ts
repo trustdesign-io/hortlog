@@ -2,7 +2,9 @@
 
 import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
+import { WorkAction } from '@prisma/client'
 import { requireOrgAccess } from '@/lib/auth/permissions'
+import { syncTaskCare } from '@/lib/task-care'
 import type { ActionResult } from '@/lib/shared/types'
 
 async function getOrg(orgSlug: string) {
@@ -22,6 +24,34 @@ async function validateAssignees(
     return 'One or more assignees are not members of this organisation.'
   }
   return null
+}
+
+interface TaskCareFields {
+  specimenId: string | null
+  careAction: WorkAction | null
+}
+
+/** The optional plant and care action from the task form, checked against the org. */
+async function parseCareFields(
+  formData: FormData,
+  organisationId: string,
+): Promise<{ error: string } | { fields: TaskCareFields }> {
+  const specimenId = (formData.get('specimenId') as string | null)?.trim() || null
+  const actionRaw = (formData.get('careAction') as string | null)?.trim() || null
+  if (!specimenId) return { fields: { specimenId: null, careAction: null } }
+
+  const specimen = await prisma.specimen.findFirst({ where: { id: specimenId, organisationId }, select: { id: true } })
+  if (!specimen) return { error: 'Selected plant not found.' }
+  if (actionRaw && !(actionRaw in WorkAction)) return { error: 'Invalid care action.' }
+  return { fields: { specimenId, careAction: (actionRaw as WorkAction | null) ?? null } }
+}
+
+/** Care logged from tasks shows on plant pages. */
+function revalidateCare(orgSlug: string) {
+  revalidatePath(`/${orgSlug}/todo`)
+  revalidatePath('/[org]/specimens/[specimen]', 'page')
+  revalidatePath('/[org]/[collection]/[scene]/[specimen]', 'page')
+  revalidatePath('/records')
 }
 
 export async function createTask(
@@ -47,12 +77,16 @@ export async function createTask(
   const assigneeError = await validateAssignees(assigneeIds, org.id)
   if (assigneeError) return { success: false, error: assigneeError }
 
+  const care = await parseCareFields(formData, org.id)
+  if ('error' in care) return { success: false, error: care.error }
+
   try {
     await prisma.task.create({
       data: {
         title,
         description,
         dueDate,
+        ...care.fields,
         organisationId: org.id,
         createdById: user.id,
         assignees: assigneeIds.length
@@ -104,33 +138,33 @@ export async function updateTask(
   const assigneeError = await validateAssignees(assigneeIds, org.id)
   if (assigneeError) return { success: false, error: assigneeError }
 
+  const care = await parseCareFields(formData, org.id)
+  if ('error' in care) return { success: false, error: care.error }
+
   try {
-    await prisma.$transaction([
-      // Replace all assignees atomically
-      prisma.taskAssignee.deleteMany({ where: { taskId } }),
-      prisma.task.update({
+    await prisma.$transaction(async (tx) => {
+      // Replace all assignees, then bring any care logged from the task in line
+      await tx.taskAssignee.deleteMany({ where: { taskId } })
+      await tx.task.update({
         where: { id: taskId, organisationId: org.id },
         data: {
           title,
           description,
           dueDate,
+          ...care.fields,
           assignees: assigneeIds.length
-            ? {
-                create: assigneeIds.map((userId) => ({
-                  userId,
-                  assignedById: user.id,
-                })),
-              }
+            ? { create: assigneeIds.map((userId) => ({ userId, assignedById: user.id })) }
             : undefined,
         },
-      }),
-    ])
+      })
+      await syncTaskCare(tx, taskId)
+    }, { isolationLevel: 'Serializable' })
   } catch (err) {
     console.error('[updateTask] Prisma error:', err)
     return { success: false, error: 'Failed to update task. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/todo`)
+  revalidateCare(orgSlug)
   return { success: true }
 }
 
@@ -155,16 +189,20 @@ export async function setTaskStatus(
   if (!task) return { success: false, error: 'Task not found.' }
 
   try {
-    await prisma.task.update({
-      where: { id: taskId, organisationId: org.id },
-      data: { status },
-    })
+    await prisma.$transaction(async (tx) => {
+      await tx.task.update({
+        where: { id: taskId, organisationId: org.id },
+        data: { status, completedAt: status === 'DONE' ? new Date() : null },
+      })
+      // Ticking off logs the task's care for each assignee; reopening removes it
+      await syncTaskCare(tx, taskId)
+    }, { isolationLevel: 'Serializable' })
   } catch (err) {
     console.error('[setTaskStatus] Prisma error:', err)
     return { success: false, error: 'Failed to update task status. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/todo`)
+  revalidateCare(orgSlug)
   return { success: true }
 }
 

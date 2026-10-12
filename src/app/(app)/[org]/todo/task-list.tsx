@@ -19,8 +19,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import Link from 'next/link'
 import { MemberPicker, getMemberInitials } from '@/components/member-picker'
-import { X, Plus, Pencil, Trash2, CheckCircle2, Circle } from 'lucide-react'
+import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
+import { X, Plus, Pencil, Trash2, CheckCircle2, Circle, Sprout } from 'lucide-react'
+import type { WorkAction } from '@prisma/client'
 import type { ActionResult } from '@/lib/shared/types'
 
 interface Assignee {
@@ -38,6 +41,14 @@ interface Task {
   status: 'OPEN' | 'DONE'
   createdAt: string
   assignees: Assignee[]
+  careAction: WorkAction | null
+  specimen: { id: string; slug: string; name: string } | null
+}
+
+interface PlantOption {
+  id: string
+  label: string
+  scientificName: string
 }
 
 interface OrgMember {
@@ -52,6 +63,7 @@ interface TaskListProps {
   canManage: boolean
   tasks: Task[]
   orgMembers: OrgMember[]
+  plants: PlantOption[]
 }
 
 function formatDate(iso: string | null): string | null {
@@ -176,11 +188,15 @@ function MultiAssigneePicker({ id, members, values, onChange, disabled }: MultiP
 interface TaskFormProps {
   orgSlug: string
   orgMembers: OrgMember[]
+  plants: PlantOption[]
   task?: Task
   onClose: () => void
 }
 
-function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
+const selectClass =
+  'flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
+
+function TaskForm({ orgSlug, orgMembers, plants, task, onClose }: TaskFormProps) {
   const router = useRouter()
   const isEdit = !!task
 
@@ -193,6 +209,8 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
     task?.assignees.map((a) => a.id) ?? [],
   )
+  const [plantId, setPlantId] = useState(task?.specimen?.id ?? '')
+  const [careAction, setCareAction] = useState<string>(task?.careAction ?? '')
 
   useEffect(() => {
     if (state?.success) {
@@ -247,6 +265,54 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
         />
       </div>
 
+      {plants.length > 0 && (
+        <div className="flex flex-col gap-3 rounded-lg border p-3">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="task-plant">Plant</Label>
+            <select
+              id="task-plant"
+              name="specimenId"
+              value={plantId}
+              onChange={(e) => setPlantId(e.target.value)}
+              disabled={isPending}
+              className={selectClass}
+            >
+              <option value="">None</option>
+              {plants.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label} ({p.scientificName})
+                </option>
+              ))}
+            </select>
+          </div>
+          {plantId && (
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="task-care-action">Care to log when done</Label>
+              <select
+                id="task-care-action"
+                name="careAction"
+                value={careAction}
+                onChange={(e) => setCareAction(e.target.value)}
+                disabled={isPending}
+                className={selectClass}
+              >
+                <option value="">Don&apos;t log anything</option>
+                {(Object.keys(WORK_ACTION_LABELS) as WorkAction[]).map((a) => (
+                  <option key={a} value={a}>{WORK_ACTION_LABELS[a]}</option>
+                ))}
+              </select>
+              {careAction && (
+                <p className="text-xs text-muted-foreground">
+                  {assigneeIds.length > 0
+                    ? 'Ticking this off logs it on the plant for each assignee.'
+                    : 'Add assignees: care is logged for the people who did it.'}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {state && !state.success && state.error && (
         <p className="text-sm text-destructive" role="alert">{state.error}</p>
       )}
@@ -265,7 +331,7 @@ function TaskForm({ orgSlug, orgMembers, task, onClose }: TaskFormProps) {
 
 // ─── Create task dialog ───────────────────────────────────────────────────────
 
-function CreateTaskDialog({ orgSlug, orgMembers }: { orgSlug: string; orgMembers: OrgMember[] }) {
+function CreateTaskDialog({ orgSlug, orgMembers, plants }: { orgSlug: string; orgMembers: OrgMember[]; plants: PlantOption[] }) {
   const [open, setOpen] = useState(false)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -278,7 +344,7 @@ function CreateTaskDialog({ orgSlug, orgMembers }: { orgSlug: string; orgMembers
           <DialogTitle>Add task</DialogTitle>
           <DialogDescription>Create a new task for your organisation.</DialogDescription>
         </DialogHeader>
-        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} onClose={() => setOpen(false)} />
+        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )
@@ -286,7 +352,7 @@ function CreateTaskDialog({ orgSlug, orgMembers }: { orgSlug: string; orgMembers
 
 // ─── Edit task dialog ─────────────────────────────────────────────────────────
 
-function EditTaskDialog({ orgSlug, orgMembers, task }: { orgSlug: string; orgMembers: OrgMember[]; task: Task }) {
+function EditTaskDialog({ orgSlug, orgMembers, plants, task }: { orgSlug: string; orgMembers: OrgMember[]; plants: PlantOption[]; task: Task }) {
   const [open, setOpen] = useState(false)
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -307,7 +373,7 @@ function EditTaskDialog({ orgSlug, orgMembers, task }: { orgSlug: string; orgMem
           <DialogTitle>Edit task</DialogTitle>
           <DialogDescription>Update the details for this task.</DialogDescription>
         </DialogHeader>
-        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} task={task} onClose={() => setOpen(false)} />
+        <TaskForm orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} task={task} onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
   )
@@ -411,7 +477,7 @@ function ToggleStatusButton({ orgSlug, task }: { orgSlug: string; task: Task }) 
 
 // ─── TaskList ─────────────────────────────────────────────────────────────────
 
-export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProps) {
+export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants }: TaskListProps) {
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
@@ -422,7 +488,7 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProp
           </p>
         </div>
         {canManage && (
-          <CreateTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} />
+          <CreateTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} />
         )}
       </div>
 
@@ -462,6 +528,18 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProp
                       </p>
                     )}
                     <div className="mt-1 flex flex-wrap items-center gap-2">
+                      {task.specimen && (
+                        <Link
+                          href={`/${orgSlug}/specimens/${task.specimen.slug}`}
+                          className="inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs hover:bg-muted"
+                        >
+                          <Sprout className="h-3 w-3" aria-hidden="true" />
+                          {task.specimen.name}
+                          {task.careAction && (
+                            <span className="text-muted-foreground">· {WORK_ACTION_LABELS[task.careAction]}</span>
+                          )}
+                        </Link>
+                      )}
                       <AssigneeAvatars assignees={task.assignees} />
                       {dueDateFormatted && (
                         <Badge variant="outline" className="text-xs font-normal">
@@ -476,7 +554,7 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers }: TaskListProp
 
                   {canManage && (
                     <div className="flex shrink-0 items-center gap-1">
-                      <EditTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} task={task} />
+                      <EditTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} task={task} />
                       <DeleteTaskDialog orgSlug={orgSlug} task={task} />
                     </div>
                   )}

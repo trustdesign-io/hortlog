@@ -10,9 +10,12 @@ const {
   taskAssignee,
   membership,
   $transaction,
+  syncTaskCare,
 } = vi.hoisted(() => {
-  const $transaction = vi.fn((ops: unknown[]) => Promise.all(ops))
+  // Interactive transactions get the same mocked client as `tx`
+  const $transaction = vi.fn()
   return {
+    syncTaskCare: vi.fn(),
     requireOrgAccess: vi.fn(),
     revalidatePath: vi.fn(),
     org: { findUnique: vi.fn() },
@@ -33,6 +36,7 @@ vi.mock('@/lib/auth/permissions', () => ({ requireOrgAccess }))
 vi.mock('@/lib/prisma', () => ({
   prisma: { organisation: org, task, taskAssignee, membership, $transaction },
 }))
+vi.mock('@/lib/task-care', () => ({ syncTaskCare }))
 
 import { createTask, updateTask, setTaskStatus, deleteTask } from './task'
 
@@ -56,6 +60,9 @@ function fd(fields: Record<string, string | string[]>): FormData {
 
 beforeEach(() => {
   vi.clearAllMocks()
+  $transaction.mockImplementation((fn: (tx: unknown) => Promise<unknown>) =>
+    fn({ organisation: org, task, taskAssignee, membership }),
+  )
   requireOrgAccess.mockResolvedValue({ user: MANAGER, orgSlug: 'test-org' })
   org.findUnique.mockResolvedValue(ORG)
   // Default: membership check returns all requested members (valid)
@@ -200,9 +207,8 @@ describe('updateTask', () => {
     const result = await updateTask('test-org', 'task-1', null, fd({ title: 'Updated title' }))
     expect(result).toEqual({ success: true })
     expect($transaction).toHaveBeenCalledOnce()
-    const [ops] = $transaction.mock.calls[0]
-    expect(ops).toHaveLength(2)
     expect(taskAssignee.deleteMany).toHaveBeenCalledWith({ where: { taskId: 'task-1' } })
+    expect(syncTaskCare).toHaveBeenCalledWith(expect.anything(), 'task-1')
     expect(revalidatePath).toHaveBeenCalledWith('/test-org/todo')
   })
 
@@ -239,8 +245,9 @@ describe('setTaskStatus', () => {
     expect(result).toEqual({ success: true })
     expect(task.update).toHaveBeenCalledWith({
       where: { id: 'task-1', organisationId: ORG.id },
-      data: { status: 'DONE' },
+      data: { status: 'DONE', completedAt: expect.any(Date) },
     })
+    expect(syncTaskCare).toHaveBeenCalledWith(expect.anything(), 'task-1')
   })
 
   it('reopens task', async () => {
@@ -251,7 +258,7 @@ describe('setTaskStatus', () => {
     expect(result).toEqual({ success: true })
     expect(task.update).toHaveBeenCalledWith({
       where: { id: 'task-1', organisationId: ORG.id },
-      data: { status: 'OPEN' },
+      data: { status: 'OPEN', completedAt: null },
     })
   })
 })
