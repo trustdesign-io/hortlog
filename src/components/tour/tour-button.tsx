@@ -16,7 +16,6 @@ const PANEL_OPEN_DELAY_MS = 300
 
 interface TourButtonProps {
   user: UserWithMemberships
-  showLabel?: boolean
 }
 
 /**
@@ -38,7 +37,7 @@ function userRole(user: UserWithMemberships): 'admin' | 'manager' | 'member' {
 
 const ROLE_ORDER = { member: 0, manager: 1, admin: 2 } as const
 
-export function TourButton({ user, showLabel = false }: TourButtonProps) {
+export function TourButton({ user }: TourButtonProps) {
   // Mobile: open one slide-out panel (closing the other), or close both with null
   const { setPanel: showPanel } = useMobilePanels()
   const role = userRole(user)
@@ -117,14 +116,12 @@ export function TourButton({ user, showLabel = false }: TourButtonProps) {
   return (
     <Button
       variant="ghost"
-      size={showLabel ? 'sm' : 'icon'}
-      className={showLabel ? 'min-h-9 justify-start gap-2 px-2 text-muted-foreground hover:text-foreground' : undefined}
-      aria-label={showLabel ? undefined : 'Take the tour'}
+      size="icon"
+      aria-label="Take the tour"
       data-tour="tour-button"
       onClick={() => void startTour()}
     >
       <GraduationCap className="h-4 w-4" aria-hidden="true" />
-      {showLabel && 'Take the tour'}
     </Button>
   )
 }
