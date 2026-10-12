@@ -66,17 +66,19 @@ async function parseCareFields(
     const zoneId = (formData.get('zoneId') as string | null)?.trim() || null
     const cells = [...new Set((formData.getAll('cell') as string[]).filter((c) => CELL_PATTERN.test(c)))]
     if (cells.length > 0) {
-      // Validate cells against zone dimensions when a zone is selected, else scene dimensions
-      const dims = zoneId
-        ? await prisma.sceneZone.findFirst({ where: { id: zoneId, sceneId, scene: { organisationId } }, select: { rows: true, cols: true } })
-        : { rows: scene.gridRows, cols: scene.gridCols }
-      if (dims) {
-        const outside = cells.some((c) => {
-          const [row, col] = c.split(',').map(Number)
-          return row >= dims.rows || col >= dims.cols
-        })
-        if (outside) return { error: 'Selected cells are outside the grid.' }
+      let dims: { rows: number; cols: number }
+      if (zoneId) {
+        const zone = await prisma.sceneZone.findFirst({ where: { id: zoneId, sceneId, scene: { organisationId } }, select: { rows: true, cols: true } })
+        if (!zone) return { error: 'Selected zone not found.' }
+        dims = zone
+      } else {
+        dims = { rows: scene.gridRows, cols: scene.gridCols }
       }
+      const outside = cells.some((c) => {
+        const [row, col] = c.split(',').map(Number)
+        return row >= dims.rows || col >= dims.cols
+      })
+      if (outside) return { error: 'Selected cells are outside the grid.' }
     }
     return { fields: { ...NO_CARE, sceneId, zoneId, cells: cells.sort(), careAction } }
   }
