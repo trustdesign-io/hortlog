@@ -193,7 +193,7 @@ export async function regenerateShortCode(
   }
 
   revalidatePath(`/${orgSlug}/scenes`)
-  revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}/qr`)
   return { success: true }
 }
 
