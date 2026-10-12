@@ -1,6 +1,10 @@
 'use client'
 
+import { HexGrid, HexOutline } from '@/components/hex-grid'
+import { hexCellStyle } from '@/lib/hex-grid'
 import { cn } from '@/lib/utils'
+
+const CELL_WIDTH = '5rem'
 
 export interface PickerScene {
   id: string
@@ -49,43 +53,53 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
         )}
       </div>
       <div className="overflow-x-auto pb-1">
-        <div
+        <HexGrid
           role="group"
+          className="mx-auto"
           aria-label={`${scene.name} grid`}
-          className="grid gap-1"
-          style={{ gridTemplateColumns: `repeat(${scene.gridCols}, minmax(3.5rem, 1fr))` }}
-        >
-          {Array.from({ length: scene.gridRows }, (_, row) =>
-            Array.from({ length: scene.gridCols }, (_, col) => {
-              const cell = `${row},${col}`
-              const plant = byCell.get(cell)
-              if (!plant) {
-                return <div key={cell} className="h-12 rounded border border-dashed border-border/60" aria-hidden="true" />
-              }
-              const isOn = chosen.has(cell)
+          rows={scene.gridRows}
+          cols={scene.gridCols}
+          cellWidth={CELL_WIDTH}
+          renderCell={(row, col) => {
+            const cell = `${row},${col}`
+            const plant = byCell.get(cell)
+            if (!plant) {
               return (
-                <button
-                  key={cell}
-                  type="button"
-                  onClick={() => toggle(cell)}
-                  disabled={disabled}
-                  aria-pressed={isOn}
-                  title={plant.name}
+                <div key={cell} className="hex-cell" style={hexCellStyle(row, col)} aria-hidden="true">
+                  <span className="hex-shape block">
+                    <HexOutline className="text-border/60" />
+                  </span>
+                </div>
+              )
+            }
+            const isOn = chosen.has(cell)
+            return (
+              <button
+                key={cell}
+                type="button"
+                onClick={() => toggle(cell)}
+                disabled={disabled}
+                aria-pressed={isOn}
+                title={plant.name}
+                className="hex-cell"
+                style={hexCellStyle(row, col)}
+              >
+                <span
                   className={cn(
-                    'h-12 rounded border px-1 text-[11px] leading-tight transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    'hex-shape flex items-center justify-center px-2 text-center text-[11px] leading-tight transition-colors',
                     isOn
-                      ? 'border-primary bg-primary text-primary-foreground'
+                      ? 'bg-primary text-primary-foreground'
                       : selected.length === 0
-                        ? 'border-primary/40 bg-primary/10'
-                        : 'border-border bg-muted/40 text-muted-foreground',
+                        ? 'bg-primary/15'
+                        : 'bg-muted text-muted-foreground',
                   )}
                 >
-                  <span className="line-clamp-2">{plant.name}</span>
-                </button>
-              )
-            }),
-          )}
-        </div>
+                  <span className="line-clamp-3">{plant.name}</span>
+                </span>
+              </button>
+            )
+          }}
+        />
       </div>
       {selected.map((c) => (
         <input key={c} type="hidden" name="cell" value={c} readOnly />

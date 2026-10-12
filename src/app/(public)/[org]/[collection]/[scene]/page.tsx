@@ -75,11 +75,13 @@ export default async function PublicScenePage({ params, searchParams }: PublicSc
       slug: true,
       accessionNumber: true,
       gridCell: true,
+      imageUrl: true,
       species: {
         select: {
           commonName: true,
           scientificName: true,
           description: true,
+          photoUrl: true,
         },
       },
     },
@@ -133,6 +135,7 @@ export default async function PublicScenePage({ params, searchParams }: PublicSc
                 gridCell: s.gridCell,
                 commonName: s.species.commonName,
                 scientificName: s.species.scientificName,
+                thumbnailUrl: s.imageUrl ?? s.species.photoUrl,
               }))}
             basePath={basePath}
           />
