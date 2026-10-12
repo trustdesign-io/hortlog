@@ -49,6 +49,7 @@ interface GridEditorProps {
   sceneId: string
   gridRows: number
   gridCols: number
+  rowShift: number
   perspective: ScenePerspective
   placedSpecimens: PlacedSpecimen[]
   availableSpecimens: AvailableSpecimen[]
@@ -66,6 +67,7 @@ export function GridEditor({
   sceneId,
   gridRows,
   gridCols,
+  rowShift,
   perspective,
   placedSpecimens,
   availableSpecimens,
@@ -157,6 +159,7 @@ export function GridEditor({
             type="button"
             variant="outline"
             size="sm"
+            className="min-h-9"
             aria-pressed={isFlat}
             onClick={() => setIsFlat((v) => !v)}
           >
@@ -175,6 +178,7 @@ export function GridEditor({
           cols={gridCols}
           cellWidth={`${CELL_WIDTH_REM}rem`}
           tiltDeg={tilt}
+          rowShift={rowShift}
           rowProps={(row) => ({ role: 'row', 'aria-rowindex': row + 1 })}
           renderCell={(row, col, style) => {
             const cell = `${row},${col}`

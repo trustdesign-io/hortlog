@@ -1,4 +1,5 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
+import { ScientificName } from '@/components/ui/scientific-name'
 import { hexCellStyle, hexGridStyle } from '@/lib/hex-grid'
 
 interface HexGridProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'style'> {
@@ -8,14 +9,16 @@ interface HexGridProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children' |
   cellWidth: string
   /** Bed tilt in degrees; 0 draws the grid flat, as a wall. */
   tiltDeg?: number
+  /** Flips which rows are offset; see `isShiftedRow`. */
+  rowShift?: number
   /** Each cell must apply the given style and the `hex-cell` class. */
   renderCell: (row: number, col: number, style: CSSProperties) => ReactNode
   rowProps?: (row: number) => HTMLAttributes<HTMLDivElement>
 }
 
 /**
- * Pointy-topped hexagonal grid in "odd-r" offset layout: odd rows are shifted
- * half a cell to the right. Rows are `display: contents` wrappers so they can
+ * Pointy-topped hexagonal grid in offset layout: alternate rows are shifted
+ * half a cell to the right (odd rows, unless `rowShift` flips it). Rows are `display: contents` wrappers so they can
  * carry ARIA row semantics without affecting the absolute positioning.
  */
 export function HexGrid({
@@ -23,6 +26,7 @@ export function HexGrid({
   cols,
   cellWidth,
   tiltDeg = 0,
+  rowShift = 0,
   renderCell,
   rowProps,
   ...containerProps
@@ -31,7 +35,7 @@ export function HexGrid({
     <div {...containerProps} style={hexGridStyle(rows, cols, cellWidth, tiltDeg)}>
       {Array.from({ length: rows }, (_, row) => (
         <div key={row} {...rowProps?.(row)} style={{ display: 'contents' }}>
-          {Array.from({ length: cols }, (_, col) => renderCell(row, col, hexCellStyle(row, col, rows, cols, tiltDeg)))}
+          {Array.from({ length: cols }, (_, col) => renderCell(row, col, hexCellStyle(row, col, rows, cols, tiltDeg, rowShift)))}
         </div>
       ))}
     </div>
@@ -56,5 +60,14 @@ export function HexOutline({ className }: { className?: string }) {
         vectorEffect="non-scaling-stroke"
       />
     </svg>
+  )
+}
+
+/** Botanical name across the lower part of a planted cell, over its thumbnail. */
+export function HexPlantLabel({ scientificName }: { scientificName: string }) {
+  return (
+    <span className="absolute inset-x-0 bottom-[20%] block bg-black/65 px-[14%] py-0.5 text-center text-[10px] leading-tight text-white">
+      <ScientificName className="line-clamp-2 break-words">{scientificName}</ScientificName>
+    </span>
   )
 }

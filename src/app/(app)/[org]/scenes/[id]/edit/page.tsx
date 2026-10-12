@@ -28,6 +28,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       perspective: true,
       gridRows: true,
       gridCols: true,
+      rowShift: true,
       primaryCollection: { select: { name: true } },
     },
   })
@@ -65,12 +66,13 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         collectionName={scene.primaryCollection?.name ?? null}
         active="layout"
       />
-      <GridSizeControls orgSlug={orgSlug} sceneId={scene.id} rows={scene.gridRows} cols={scene.gridCols} />
+      <GridSizeControls orgSlug={orgSlug} sceneId={scene.id} rows={scene.gridRows} cols={scene.gridCols} perspective={scene.perspective} />
       <GridEditor
         orgSlug={orgSlug}
         sceneId={scene.id}
         gridRows={scene.gridRows}
         gridCols={scene.gridCols}
+        rowShift={scene.rowShift}
         perspective={scene.perspective}
         placedSpecimens={placedSpecimens.map((s) => ({
           id: s.id,

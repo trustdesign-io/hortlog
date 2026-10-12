@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { HexGrid, HexOutline } from '@/components/hex-grid'
+import { HexGrid, HexOutline, HexPlantLabel } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 
@@ -21,9 +21,10 @@ interface PublicSceneGridProps {
   specimens: GridSpecimen[]
   basePath: string
   perspective: ScenePerspective
+  rowShift: number
 }
 
-export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective }: PublicSceneGridProps) {
+export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, rowShift }: PublicSceneGridProps) {
   if (rows <= 0 || cols <= 0) {
     return (
       <p className="py-12 text-center text-sm text-muted-foreground">
@@ -57,6 +58,7 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective }
         cols={cols}
         cellWidth={`${CELL_WIDTH_REM}rem`}
         tiltDeg={sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)}
+        rowShift={rowShift}
         renderCell={(row, col, style) => {
           const cell = `${row},${col}`
           const specimen = cellMap[cell]
@@ -68,8 +70,7 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective }
                 href={`${basePath}/${specimen.slug}`}
                 className="hex-cell group"
                 style={style}
-                aria-label={`${specimen.commonName} — row ${row + 1}, column ${col + 1}`}
-                title={`${specimen.commonName} (${specimen.scientificName})`}
+                aria-label={`${specimen.scientificName}, row ${row + 1}, column ${col + 1}`}
               >
                 <span className="hex-shape block bg-muted group-hover:opacity-80">
                   <SpecimenImage
@@ -79,9 +80,7 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective }
                     sizes="120px"
                     className="object-cover"
                   />
-                  <span className="absolute inset-x-0 bottom-[22%] block truncate bg-black/65 px-3 py-0.5 text-center text-[10px] font-medium leading-tight text-white">
-                    {specimen.commonName}
-                  </span>
+                  <HexPlantLabel scientificName={specimen.scientificName} />
                 </span>
               </Link>
             )
