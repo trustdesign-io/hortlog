@@ -219,7 +219,6 @@ function TaskForm({ orgSlug, orgMembers, plants, scenes, task, onClose }: TaskFo
   const [target, setTarget] = useState<Target>(task?.scene ? 'scene' : task?.specimen ? 'plant' : 'none')
   const [plantId, setPlantId] = useState(task?.specimen?.id ?? '')
   const [sceneId, setSceneId] = useState(task?.scene?.id ?? scenes[0]?.id ?? '')
-  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
   const [cells, setCells] = useState<string[]>(task?.cells ?? [])
   const [careAction, setCareAction] = useState<string>(task?.careAction ?? '')
   const scene = scenes.find((sc) => sc.id === sceneId)
@@ -340,7 +339,6 @@ function TaskForm({ orgSlug, orgMembers, plants, scenes, task, onClose }: TaskFo
                   value={sceneId}
                   onChange={(e) => {
                     setSceneId(e.target.value)
-                    setSelectedZoneId(null)
                     setCells([])
                   }}
                   disabled={isPending}
@@ -351,16 +349,7 @@ function TaskForm({ orgSlug, orgMembers, plants, scenes, task, onClose }: TaskFo
                   ))}
                 </select>
               </div>
-              {scene && (
-                <CellPicker
-                  scene={scene}
-                  selectedZoneId={selectedZoneId}
-                  selected={cells}
-                  onZoneChange={setSelectedZoneId}
-                  onChange={setCells}
-                  disabled={isPending}
-                />
-              )}
+              {scene && <CellPicker scene={scene} selected={cells} onChange={setCells} disabled={isPending} />}
             </>
           )}
 

@@ -66,22 +66,8 @@ export default async function TodoPage({ params }: TodoPageProps) {
             gridRows: true,
             gridCols: true,
             specimens: {
-              where: { gridCell: { not: null }, zoneId: null },
+              where: { gridCell: { not: null } },
               select: { id: true, gridCell: true, species: { select: { commonName: true } } },
-            },
-            zones: {
-              orderBy: { position: 'asc' },
-              select: {
-                id: true,
-                name: true,
-                type: true,
-                rows: true,
-                cols: true,
-                specimens: {
-                  where: { gridCell: { not: null } },
-                  select: { id: true, gridCell: true, species: { select: { commonName: true } } },
-                },
-              },
             },
           },
           orderBy: { name: 'asc' },
@@ -116,14 +102,6 @@ export default async function TodoPage({ params }: TodoPageProps) {
         gridRows: sc.gridRows,
         gridCols: sc.gridCols,
         plants: sc.specimens.map((sp) => ({ id: sp.id, cell: sp.gridCell!, name: sp.species.commonName })),
-        zones: sc.zones.map((z) => ({
-          id: z.id,
-          name: z.name,
-          type: z.type,
-          rows: z.rows,
-          cols: z.cols,
-          plants: z.specimens.map((sp) => ({ id: sp.id, cell: sp.gridCell!, name: sp.species.commonName })),
-        })),
       }))}
       orgMembers={orgMembers.map((m) => m.user)}
       plants={specimens.map((sp) => ({

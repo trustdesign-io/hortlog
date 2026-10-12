@@ -1,8 +1,7 @@
 'use client'
 
 import { forwardRef, useOptimistic, useTransition, useState, useCallback, useRef } from 'react'
-import { placeSpecimenInZone } from '@/lib/actions/zone'
-import { removeSpecimenFromCell } from '@/lib/actions/scene'
+import { placeSpecimen, removeSpecimenFromCell } from '@/lib/actions/scene'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Input } from '@/components/ui/input'
 import {
@@ -42,7 +41,6 @@ type OptimisticAction =
 interface GridEditorProps {
   orgSlug: string
   sceneId: string
-  zoneId: string
   gridRows: number
   gridCols: number
   placedSpecimens: PlacedSpecimen[]
@@ -59,7 +57,6 @@ function buildInitialGrid(placed: PlacedSpecimen[]): GridState {
 export function GridEditor({
   orgSlug,
   sceneId,
-  zoneId,
   gridRows,
   gridCols,
   placedSpecimens,
@@ -134,10 +131,10 @@ export function GridEditor({
       setPickerOpen(false)
       startTransition(async () => {
         dispatch({ type: 'place', cell, specimen: optimisticSpecimen })
-        await placeSpecimenInZone(orgSlug, zoneId, specimen.id, row, col)
+        await placeSpecimen(orgSlug, sceneId, specimen.id, row, col)
       })
     },
-    [pickerCell, orgSlug, zoneId, dispatch],
+    [pickerCell, orgSlug, sceneId, dispatch],
   )
 
   function handleRemove(specimen: PlacedSpecimen) {
