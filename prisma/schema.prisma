@@ -113,8 +113,8 @@ model Species {
   statusCategory       String?    // Plain-English IUCN category e.g. "Endangered"
   statusSource         String?    // "Wikidata" | "JNCC" | "Manual"
   statusUpdatedAt      DateTime?
-  nativeRegions        String[]   // WGSRPD level-3 codes e.g. ["MAU"]
-  introducedRegions    String[]   // WGSRPD level-3 codes
+  nativeRegions        String[]   // Human-readable region names from POWO e.g. ["Mauritius"]
+  introducedRegions    String[]   // Human-readable region names from POWO
   lifeForm             String?    // e.g. "Shrub"
   climate              String?    // e.g. "Tropical"
   habitatExcerpt       String?    // Wikipedia excerpt

@@ -230,6 +230,7 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
       </dl>
 
       <InTheWild
+        speciesName={species.scientificName}
         statusCategory={species.statusCategory ?? null}
         statusSource={species.statusSource ?? null}
         statusUpdatedAt={species.statusUpdatedAt ?? null}

@@ -6,7 +6,7 @@ describe('buildHabitatLine', () => {
     const result = buildHabitatLine({
       lifeForm: 'Shrub',
       climate: 'Tropical',
-      nativeRegions: ['MAU'],
+      nativeRegions: ['Mauritius'],
       introducedRegions: [],
     })
     expect(result).toBe('A shrub of tropical regions, native to Mauritius.')
@@ -16,7 +16,7 @@ describe('buildHabitatLine', () => {
     const result = buildHabitatLine({
       lifeForm: 'Epiphyte',
       climate: null,
-      nativeRegions: ['GBR'],
+      nativeRegions: ['Great Britain'],
       introducedRegions: [],
     })
     expect(result).toMatch(/^An epiphyte/)
@@ -26,7 +26,7 @@ describe('buildHabitatLine', () => {
     const result = buildHabitatLine({
       lifeForm: 'Tree',
       climate: null,
-      nativeRegions: ['JPN'],
+      nativeRegions: ['Japan'],
       introducedRegions: [],
     })
     expect(result).toBe('A tree, native to Japan.')
@@ -36,7 +36,7 @@ describe('buildHabitatLine', () => {
     const result = buildHabitatLine({
       lifeForm: null,
       climate: 'Temperate',
-      nativeRegions: ['GBR'],
+      nativeRegions: ['Great Britain'],
       introducedRegions: [],
     })
     expect(result).toMatch(/temperate regions/)
@@ -56,7 +56,7 @@ describe('buildHabitatLine', () => {
     const result = buildHabitatLine({
       lifeForm: null,
       climate: null,
-      nativeRegions: ['MAU', 'GBR', 'FRA', 'SPA', 'ITA', 'GER'],
+      nativeRegions: ['Mauritius', 'Great Britain', 'France', 'Spain', 'Italy', 'Germany'],
       introducedRegions: [],
     })
     // Only first 5 should appear
@@ -69,7 +69,7 @@ describe('buildHabitatLine', () => {
     const result = buildHabitatLine({
       lifeForm: 'Tree',
       climate: 'Tropical',
-      nativeRegions: ['BRA'],
+      nativeRegions: ['Brazil'],
       introducedRegions: [],
     })
     expect(result).toMatch(/\.$/)

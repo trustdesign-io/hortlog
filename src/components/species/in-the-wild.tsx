@@ -1,8 +1,8 @@
 import { ExternalLink } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { wgsrpdName } from '@/lib/open-data/powo'
 
 interface InTheWildProps {
+  speciesName: string
   statusCategory: string | null
   statusSource: string | null
   statusUpdatedAt: Date | null
@@ -26,6 +26,7 @@ function conservationVariant(
 }
 
 export function InTheWild({
+  speciesName,
   statusCategory,
   statusSource,
   statusUpdatedAt,
@@ -91,7 +92,7 @@ export function InTheWild({
               Native range
             </dt>
             <dd className="mt-0.5 text-sm">
-              {nativeRegions.map(wgsrpdName).join(', ')}
+              {nativeRegions.join(', ')}
             </dd>
           </div>
         )}
@@ -102,7 +103,7 @@ export function InTheWild({
               Introduced to
             </dt>
             <dd className="mt-0.5 text-sm">
-              {introducedRegions.map(wgsrpdName).join(', ')}
+              {introducedRegions.join(', ')}
             </dd>
           </div>
         )}
@@ -149,7 +150,7 @@ export function InTheWild({
                   {/* eslint-disable-next-line @next/next/no-img-element -- GBIF tile API has no Next.js Image equivalent */}
                   <img
                     src={`https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?taxonKey=${gbifTaxonKey}&style=classic-noborder.poly&bin=square`}
-                    alt={`Global wild occurrence map from GBIF`}
+                    alt={`Wild occurrence map for ${speciesName} (GBIF)`}
                     className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
                     loading="lazy"
                   />

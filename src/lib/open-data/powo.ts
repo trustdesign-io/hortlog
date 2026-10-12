@@ -46,11 +46,11 @@ export async function fetchPowoData(ipniId: string): Promise<PowoResult | null> 
 
     const nativeRegions = (data.distribution?.natives ?? [])
       .filter((d) => d.tdwgLevel === 3)
-      .map((d) => d.tdwgCode)
+      .map((d) => d.region)
 
     const introducedRegions = (data.distribution?.introduced ?? [])
       .filter((d) => d.tdwgLevel === 3)
-      .map((d) => d.tdwgCode)
+      .map((d) => d.region)
 
     const lifeForm = data.characteristics?.lifeForm?.[0] ?? null
     const climate = data.characteristics?.climate?.[0] ?? null
@@ -119,7 +119,7 @@ export function buildHabitatLine(result: PowoResult): string | null {
     }
   }
 
-  const nativeNames = result.nativeRegions.slice(0, 5).map(wgsrpdName)
+  const nativeNames = result.nativeRegions.slice(0, 5)
   if (nativeNames.length) {
     const regionList = nativeNames.join(', ')
     if (parts.length) {
