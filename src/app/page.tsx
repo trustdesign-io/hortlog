@@ -11,6 +11,7 @@ import { HeroSection } from '@/components/landing/hero-section'
 import { PersonalRecordSection } from '@/components/landing/personal-record-section'
 import { CookieSettingsButton } from '@/components/cookie-banner'
 import { cn } from '@/lib/utils'
+import { Eye, Leaf, Shield, Languages, Accessibility, Sparkles, RefreshCw } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: { absolute: 'hortlog — horticultural tools for gardens and woodlands' },
@@ -186,6 +187,75 @@ export default async function HomePage() {
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Vantage benefits */}
+        <section className="px-6 py-20 bg-card border-t border-border">
+          <div className="max-w-5xl mx-auto">
+            <div className="text-center mb-16">
+              <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+                Vantage
+              </p>
+              <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-4">
+                A label that does more
+              </h2>
+              <p className="text-muted-foreground max-w-2xl mx-auto">
+                One code at the viewpoint opens a page for every plant in the scene, readable
+                from wherever you stand.
+              </p>
+            </div>
+            <ul role="list" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+              <li className="flex flex-col gap-2">
+                <Eye className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h3 className="font-heading font-medium text-sm sm:text-base">Every plant, within reach</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Read about plants far back in the bed or high in the canopy, without leaving the path.
+                </p>
+              </li>
+              <li className="flex flex-col gap-2">
+                <Leaf className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h3 className="font-heading font-medium text-sm sm:text-base">Never lost in the leaves</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  As planting grows and fills out, the information stays exactly where visitors can find it.
+                </p>
+              </li>
+              <li className="flex flex-col gap-2">
+                <Shield className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h3 className="font-heading font-medium text-sm sm:text-base">Built to last</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  One sturdy sign at the edge of the bed, clear of pruning, mulching and replanting.
+                </p>
+              </li>
+              <li className="flex flex-col gap-2">
+                <Languages className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h3 className="font-heading font-medium text-sm sm:text-base">In every language</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Plant pages translate on the visitor&apos;s own phone, so every story reaches every guest.
+                </p>
+              </li>
+              <li className="flex flex-col gap-2">
+                <Accessibility className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h3 className="font-heading font-medium text-sm sm:text-base">Open to everyone</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Works with screen readers, larger text and the accessibility tools visitors already use.
+                </p>
+              </li>
+              <li className="flex flex-col gap-2">
+                <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h3 className="font-heading font-medium text-sm sm:text-base">Alive with context</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Flowering now, recently repotted, newly arrived: what&apos;s happening to each plant, as it happens.
+                </p>
+              </li>
+              <li className="flex flex-col gap-2">
+                <RefreshCw className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                <h3 className="font-heading font-medium text-sm sm:text-base">Update once, everywhere</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                  Change a record and every page reflects it straight away.
+                </p>
+              </li>
+            </ul>
           </div>
         </section>
 
