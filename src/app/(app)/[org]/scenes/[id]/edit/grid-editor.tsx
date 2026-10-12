@@ -12,6 +12,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Search, X, Plus } from 'lucide-react'
+import { RotatePrompt } from './rotate-prompt'
 
 interface PlacedSpecimen {
   id: string
@@ -143,6 +144,7 @@ export function GridEditor({
 
   return (
     <>
+      <RotatePrompt />
       <div className="overflow-x-auto pb-4">
         {/* Outer div carries the CSS grid layout; ARIA grid is on the inner container */}
         <div
