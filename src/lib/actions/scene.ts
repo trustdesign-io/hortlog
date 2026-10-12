@@ -281,11 +281,14 @@ export async function updateScene(
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() || toSlug(name)
   const primaryCollectionId = (formData.get('primaryCollectionId') as string | null)?.trim() || null
-  const perspective = parsePerspective(formData.get('perspective') as string | null)
+  const perspectiveRaw = formData.get('perspective') as string | null
+  const perspective = perspectiveRaw === null ? undefined : parsePerspective(perspectiveRaw)
 
   if (!name) return { success: false, error: 'Name is required.' }
   if (name.length > 120) return { success: false, error: 'Name must be 120 characters or fewer.' }
-  if (!perspective) return { success: false, error: 'Perspective must be Bed or Wall.' }
+  if (perspectiveRaw !== null && !perspective) {
+    return { success: false, error: 'Perspective must be Bed or Wall.' }
+  }
   if (slug.length < 2 || slug.length > 48) return { success: false, error: 'Slug must be 2–48 characters.' }
   if (!SLUG_PATTERN.test(slug)) {
     return { success: false, error: 'Slug may only contain lowercase letters, numbers, and hyphens.' }
@@ -312,7 +315,7 @@ export async function updateScene(
   }
 
   try {
-    await prisma.scene.update({ where: { id: scene.id }, data: { name, slug, primaryCollectionId, perspective } })
+    await prisma.scene.update({ where: { id: scene.id }, data: { name, slug, primaryCollectionId, perspective: perspective ?? undefined } })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return { success: false, error: `The slug "${slug}" is already in use.` }

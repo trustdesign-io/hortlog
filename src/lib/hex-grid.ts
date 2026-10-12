@@ -55,27 +55,25 @@ function depthScale(depth: number, tiltDeg: number): number {
   return VIEW_DISTANCE / (VIEW_DISTANCE + depth * Math.sin(radians(tiltDeg)))
 }
 
-/** Height of a row's near edge above the front of the bed, as seen by the viewer. */
+/** Height above the front of the bed at which a point at `depth` appears. */
+function project(depth: number, tiltDeg: number): number {
+  return depth * Math.cos(radians(tiltDeg)) * depthScale(depth, tiltDeg)
+}
+
 function nearEdge(row: number, rows: number, tiltDeg: number): number {
-  const depth = rowDepth(row, rows)
-  const nearDepth = depth - HEX_HEIGHT_RATIO / 2
-  return nearDepth * Math.cos(radians(tiltDeg)) * depthScale(depth, tiltDeg)
+  return project(rowDepth(row, rows) - HEX_HEIGHT_RATIO / 2, tiltDeg)
 }
 
-/** A cell is foreshortened as well as shrunk, so rows keep tiling as they lie back. */
-function cellHeight(depth: number, tiltDeg: number): number {
-  return HEX_HEIGHT_RATIO * Math.cos(radians(tiltDeg)) * depthScale(depth, tiltDeg)
-}
-
-function projectedHeight(rows: number, tiltDeg: number): number {
-  return nearEdge(0, rows, tiltDeg) + cellHeight(rowDepth(0, rows), tiltDeg)
+/** Projected near-to-far extent of a row, so rows keep tiling as they lie back. */
+function cellHeight(row: number, rows: number, tiltDeg: number): number {
+  return project(rowDepth(row, rows) + HEX_HEIGHT_RATIO / 2, tiltDeg) - nearEdge(row, rows, tiltDeg)
 }
 
 /** Bounding box of the whole grid, in cell widths. A tilt lays it back as a bed. */
 export function hexGridExtent(rows: number, cols: number, tiltDeg = 0): HexExtent {
   return {
     width: cols + (rows > 1 ? 0.5 : 0),
-    height: tiltDeg === 0 ? (ROW_STEP * (rows - 1) + 1) * HEX_HEIGHT_RATIO : projectedHeight(rows, tiltDeg),
+    height: project(rowDepth(0, rows) + HEX_HEIGHT_RATIO / 2, tiltDeg),
   }
 }
 
@@ -94,7 +92,7 @@ export function hexFrame(
 ): HexFrame {
   const depth = rowDepth(row, rows)
   const scale = depthScale(depth, tiltDeg)
-  const height = cellHeight(depth, tiltDeg)
+  const height = cellHeight(row, rows, tiltDeg)
   const { width: gridWidth, height: gridHeight } = hexGridExtent(rows, cols, tiltDeg)
   const centreX = hexOffset(row, col).x + 0.5
   return {

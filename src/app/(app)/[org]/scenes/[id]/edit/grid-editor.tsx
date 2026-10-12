@@ -160,7 +160,7 @@ export function GridEditor({
             aria-pressed={isFlat}
             onClick={() => setIsFlat((v) => !v)}
           >
-            {isFlat ? 'Bed view' : 'Flat view'}
+            Flat view
           </Button>
         </div>
       )}

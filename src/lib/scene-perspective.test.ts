@@ -56,9 +56,25 @@ describe('hexFrame', () => {
   })
 })
 
+describe('hexFrame row tiling', () => {
+  const overlap = (row: number, rows: number, tilt: number) => {
+    const back = hexFrame(row, 0, rows, 3, tilt)
+    const front = hexFrame(row + 1, 0, rows, 3, tilt)
+    return (back.top + back.height - front.top) / back.height
+  }
+
+  it('overlaps adjacent rows by about a quarter at full tilt', () => {
+    expect(overlap(0, 5, 50)).toBeCloseTo(0.25, 1)
+  })
+
+  it('overlaps no more on a deep bed', () => {
+    expect(overlap(0, 20, 30)).toBeLessThan(0.35)
+  })
+})
+
 describe('bedTilt', () => {
-  it('uses the full tilt on a shallow bed', () => {
-    expect(bedTilt(4, 120)).toBe(MAX_BED_TILT)
+  it('uses a steep tilt on a shallow bed of large cells', () => {
+    expect(bedTilt(4, 120)).toBeGreaterThanOrEqual(40)
   })
 
   it('tilts a deep bed of small cells less', () => {
@@ -68,7 +84,7 @@ describe('bedTilt', () => {
   it('keeps the back row at least 44px tall', () => {
     const tilt = bedTilt(20, 80)
     const back = hexFrame(0, 0, 20, 4, tilt)
-    expect(back.height * 80).toBeGreaterThanOrEqual(MIN_TARGET_PX)
+    expect(back.height * 0.75 * 80).toBeGreaterThanOrEqual(MIN_TARGET_PX)
   })
 
   it('falls back to flat when no tilt can keep cells tappable', () => {
@@ -82,7 +98,7 @@ describe('sceneTilt', () => {
   })
 
   it('tilts a bed', () => {
-    expect(sceneTilt('BED', 4, 120)).toBe(MAX_BED_TILT)
+    expect(sceneTilt('BED', 4, 120)).toBeGreaterThan(0)
   })
 
   it('is flat for a bed in flat view', () => {

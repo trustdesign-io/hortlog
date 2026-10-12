@@ -1,3 +1,4 @@
+import { Check } from 'lucide-react'
 import type { ScenePerspective } from '@/lib/scene-perspective'
 import { cn } from '@/lib/utils'
 
@@ -47,7 +48,7 @@ export function PerspectiveField({ defaultValue, disabled }: PerspectiveFieldPro
           <label
             key={o.value}
             className={cn(
-              'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors',
+              'flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition-colors motion-reduce:transition-none',
               'has-[:checked]:border-primary has-[:checked]:bg-primary/5',
               'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring',
               disabled && 'cursor-not-allowed opacity-50',
@@ -58,13 +59,17 @@ export function PerspectiveField({ defaultValue, disabled }: PerspectiveFieldPro
               name="perspective"
               value={o.value}
               defaultChecked={o.value === defaultValue}
-              className="sr-only"
+              className="peer sr-only"
             />
             <Diagram perspective={o.value} />
             <span className="min-w-0">
               <span className="block text-sm font-medium">{o.label}</span>
               <span className="block text-xs text-muted-foreground">{o.hint}</span>
             </span>
+            <Check
+              className="ml-auto h-4 w-4 shrink-0 text-primary opacity-0 peer-checked:opacity-100"
+              aria-hidden="true"
+            />
           </label>
         ))}
       </div>

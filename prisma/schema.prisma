@@ -88,8 +88,8 @@ enum MembershipRole {
 // ─── Species (shared across all organisations) ────────────────────────────────
 
 model Species {
-  id                 String   @id @default(cuid())
-  slug               String   @unique
+  id                 String  @id @default(cuid())
+  slug               String  @unique
   commonName         String
   scientificName     String
   family             String?
@@ -99,9 +99,9 @@ model Species {
   conservationStatus String?
   powoUrl            String?
   // Identity in the botanical name sources, so the same taxon can't be added twice
-  colId              String?  @unique
-  ipniId             String?  @unique
-  nameKey            String?  @unique
+  colId              String? @unique
+  ipniId             String? @unique
+  nameKey            String? @unique
   authority          String?
   photoUrl           String?
   photoAttribution   String?
@@ -110,25 +110,25 @@ model Species {
   inatTaxonId        Int?
 
   // British Ellenberg indicator values (Hill et al., PLANTATT, BRC/UKCEH, OGL v3)
-  ellenbergL      Int?    // Light: 1 (deep shade) to 9 (full sun)
-  ellenbergF      Int?    // Moisture: 1 (very dry) to 12 (submerged)
-  ellenbergR      Int?    // Soil reaction (pH): 1 (very acid) to 9 (strongly basic)
-  ellenbergN      Int?    // Nitrogen: 1 (very infertile) to 9 (very fertile)
-  ellenbergS      Int?    // Salt: 0 (none) to 9 (highly saline)
+  ellenbergL      Int? // Light: 1 (deep shade) to 9 (full sun)
+  ellenbergF      Int? // Moisture: 1 (very dry) to 12 (submerged)
+  ellenbergR      Int? // Soil reaction (pH): 1 (very acid) to 9 (strongly basic)
+  ellenbergN      Int? // Nitrogen: 1 (very infertile) to 9 (very fertile)
+  ellenbergS      Int? // Salt: 0 (none) to 9 (highly saline)
   ellenbergSource String? // e.g. "PLANTATT (Hill et al., 2004)"
 
   // Open-data fields — populated automatically from Wikidata / POWO / GBIF / Wikipedia
-  statusCategory       String?    // Plain-English IUCN category e.g. "Endangered"
-  statusSource         String?    // "Wikidata" | "JNCC" | "Manual"
+  statusCategory       String? // Plain-English IUCN category e.g. "Endangered"
+  statusSource         String? // "Wikidata" | "JNCC" | "Manual"
   statusUpdatedAt      DateTime?
-  nativeRegions        String[]   // Human-readable region names from POWO e.g. ["Mauritius"]
-  introducedRegions    String[]   // Human-readable region names from POWO
-  lifeForm             String?    // e.g. "Shrub"
-  climate              String?    // e.g. "Tropical"
-  habitatExcerpt       String?    // Wikipedia excerpt
-  habitatExcerptSource String?    // Wikipedia article URL
-  gbifTaxonKey         Int?       // GBIF backbone key, for occurrence maps
-  openDataUpdatedAt    DateTime?  // When this species' open-data was last refreshed
+  nativeRegions        String[] // Human-readable region names from POWO e.g. ["Mauritius"]
+  introducedRegions    String[] // Human-readable region names from POWO
+  lifeForm             String? // e.g. "Shrub"
+  climate              String? // e.g. "Tropical"
+  habitatExcerpt       String? // Wikipedia excerpt
+  habitatExcerptSource String? // Wikipedia article URL
+  gbifTaxonKey         Int? // GBIF backbone key, for occurrence maps
+  openDataUpdatedAt    DateTime? // When this species' open-data was last refreshed
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -169,9 +169,9 @@ model Scene {
   perspective ScenePerspective @default(BED)
   gridRows    Int              @default(4)
   gridCols    Int              @default(4)
-  shortCode String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  shortCode   String           @unique
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
