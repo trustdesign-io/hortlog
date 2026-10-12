@@ -6,6 +6,7 @@ import { GaEvent } from '@/components/ga-event'
 import { truncateDescription } from '@/lib/seo'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { SpecimenWorkHistory } from '@/components/specimen-work-history'
+import { SpecimenCare } from '@/components/specimen-care'
 
 interface PublicSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -108,6 +109,7 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
         breadcrumbs={breadcrumbs}
         backHref={`/${orgSlug}`}
       >
+        <SpecimenCare specimenId={specimen.id} audience={isMember ? 'members' : 'public'} />
         {isMember && currentUser && (
           <SpecimenWorkHistory
             orgSlug={orgSlug}

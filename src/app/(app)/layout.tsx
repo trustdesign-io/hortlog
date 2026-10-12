@@ -43,6 +43,7 @@ export default async function AppLayout({
     username: null,
     recordPublic: false,
     recordShowNotes: false,
+    creditOnPlants: false,
     createdAt: now,
     updatedAt: now,
   }

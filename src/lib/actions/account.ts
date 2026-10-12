@@ -121,3 +121,19 @@ export async function updatePublicRecord(
   if (username) revalidatePath(`/u/${username}`, 'layout')
   return { success: true }
 }
+
+export async function updatePlantCredit(
+  _prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  const user = await requireAuth()
+  const creditOnPlants = formData.get('creditOnPlants') === 'on'
+  try {
+    await prisma.user.update({ where: { id: user.id }, data: { creditOnPlants } })
+  } catch (err) {
+    console.error('[updatePlantCredit] error:', err)
+    return { success: false, error: 'Failed to save. Please try again.' }
+  }
+  revalidatePath('/settings')
+  return { success: true }
+}
