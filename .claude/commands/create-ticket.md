@@ -8,7 +8,7 @@ Create a GitHub issue in the current repository and automatically add it to the
 **Mission Control** project board for trustdesign-io.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 

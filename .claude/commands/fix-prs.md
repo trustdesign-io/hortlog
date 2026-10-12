@@ -9,7 +9,7 @@ build failures, and force-push. This command runs autonomously — no user
 input needed between PRs.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 
@@ -60,7 +60,7 @@ npm run lint
 If any step fails:
 1. Read the error output carefully
 2. Fix the issue on the branch
-3. `git add -A && git commit --author="trustdesign-bot <bot@trustdesign.io>" -m "fix: resolve build failure after rebase"`
+3. `git add -A && git commit -m "fix: resolve build failure after rebase"`
 4. Re-run the failing step to confirm it passes
 5. If the fix is non-trivial or unclear, skip this PR, leave a comment
    explaining the failure, and move to the next one

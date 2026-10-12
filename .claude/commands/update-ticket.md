@@ -7,7 +7,7 @@ description: Update any field on a Mission Control ticket — priority, size, ca
 Update one or more fields on a GitHub issue in the Mission Control project board.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 

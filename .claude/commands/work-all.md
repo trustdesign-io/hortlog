@@ -10,7 +10,7 @@ then start the next ticket from a clean main. This prevents merge conflicts
 and ensures each task builds on the previous one.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 
@@ -301,7 +301,7 @@ This PR was created by Claude Code via /work-all." \
 ### 1i — Self-review via sub-agent
 
 Same as `/take-task` Step 9 — spawn a sub-agent to review the PR using the
-bot token. If NEEDS CHANGES, fix and re-review. Repeat until APPROVED.
+usual `gh` login. If NEEDS CHANGES, fix and re-review. Repeat until APPROVED.
 
 ### 1j — Merge the PR
 
