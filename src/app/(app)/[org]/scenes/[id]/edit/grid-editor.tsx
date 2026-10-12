@@ -12,6 +12,7 @@ import {
   SheetDescription,
 } from '@/components/ui/sheet'
 import { Search, X, Plus } from 'lucide-react'
+import { SpecimenImage } from '@/components/ui/specimen-image'
 import { RotatePrompt } from './rotate-prompt'
 
 interface PlacedSpecimen {
@@ -20,6 +21,7 @@ interface PlacedSpecimen {
   accessionNumber: string | null
   commonName: string
   scientificName: string
+  thumbnailUrl: string | null
 }
 
 interface AvailableSpecimen {
@@ -27,6 +29,7 @@ interface AvailableSpecimen {
   accessionNumber: string | null
   commonName: string
   scientificName: string
+  thumbnailUrl: string | null
 }
 
 type GridState = Record<string, PlacedSpecimen>
@@ -205,7 +208,7 @@ export function GridEditor({
 
       {/* Specimen picker sheet */}
       <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
-        <SheetContent side="bottom" className="max-h-[80dvh] overflow-y-auto">
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
           <SheetHeader>
             <SheetTitle>Place specimen</SheetTitle>
             <SheetDescription>
@@ -214,7 +217,7 @@ export function GridEditor({
                 : ''}
             </SheetDescription>
           </SheetHeader>
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4 px-4 pb-6">
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -241,8 +244,11 @@ export function GridEditor({
                     <button
                       type="button"
                       onClick={() => handlePlace(s)}
-                      className="flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+                      className="flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                     >
+                      <div className="relative h-10 w-10 shrink-0 overflow-hidden rounded-md bg-muted">
+                        <SpecimenImage imageUrl={s.thumbnailUrl} alt="" fill sizes="40px" className="object-cover" />
+                      </div>
                       <div className="min-w-0">
                         <p className="text-sm font-medium">{s.commonName}</p>
                         <ScientificName className="text-xs text-muted-foreground">
@@ -328,13 +334,16 @@ const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function FilledCe
       <button
         type="button"
         onClick={onRemove}
-        className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-background/70 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
+        className="absolute right-1 top-1 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-background/80 text-muted-foreground opacity-0 transition-opacity hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring group-hover:opacity-100"
         aria-label={`Remove ${specimen.commonName} from this cell`}
         tabIndex={-1}
       >
         <X className="h-3 w-3" aria-hidden="true" />
       </button>
-      <div className="mt-3 min-w-0 flex-1">
+      <div className="relative -mx-2 -mt-2 mb-1.5 h-14 overflow-hidden rounded-t-lg bg-muted">
+        <SpecimenImage imageUrl={specimen.thumbnailUrl} alt="" fill sizes="120px" className="object-cover" />
+      </div>
+      <div className="min-w-0 flex-1">
         <p className="truncate text-xs font-medium leading-tight">{specimen.commonName}</p>
         <ScientificName className="mt-0.5 truncate text-[10px] leading-tight text-muted-foreground">
           {specimen.scientificName}

@@ -43,7 +43,8 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         id: true,
         gridCell: true,
         accessionNumber: true,
-        species: { select: { commonName: true, scientificName: true } },
+        imageUrl: true,
+        species: { select: { commonName: true, scientificName: true, photoUrl: true } },
       },
     }),
     prisma.specimen.findMany({
@@ -51,7 +52,8 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       select: {
         id: true,
         accessionNumber: true,
-        species: { select: { commonName: true, scientificName: true } },
+        imageUrl: true,
+        species: { select: { commonName: true, scientificName: true, photoUrl: true } },
       },
       orderBy: { species: { commonName: 'asc' } },
     }),
@@ -86,12 +88,14 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
           accessionNumber: s.accessionNumber,
           commonName: s.species.commonName,
           scientificName: s.species.scientificName,
+          thumbnailUrl: s.imageUrl ?? s.species.photoUrl,
         }))}
         availableSpecimens={availableSpecimens.map((s) => ({
           id: s.id,
           accessionNumber: s.accessionNumber,
           commonName: s.species.commonName,
           scientificName: s.species.scientificName,
+          thumbnailUrl: s.imageUrl ?? s.species.photoUrl,
         }))}
       />
       <QRPanel
