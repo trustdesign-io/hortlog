@@ -19,7 +19,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
 
   const canManage = canManageOrg(user, orgSlug)
 
-  const [tasks, orgMembers] = await Promise.all([
+  const [tasks, orgMembers, specimens] = await Promise.all([
     prisma.task.findMany({
       where: { organisationId: org.id },
       orderBy: [{ status: 'asc' }, { createdAt: 'asc' }],
@@ -30,6 +30,8 @@ export default async function TodoPage({ params }: TodoPageProps) {
         dueDate: true,
         status: true,
         createdAt: true,
+        careAction: true,
+        specimen: { select: { id: true, slug: true, species: { select: { commonName: true } } } },
         assignees: {
           select: {
             user: { select: { id: true, name: true, email: true, avatarUrl: true } },
@@ -44,6 +46,13 @@ export default async function TodoPage({ params }: TodoPageProps) {
           orderBy: { user: { name: 'asc' } },
         })
       : Promise.resolve([]),
+    canManage
+      ? prisma.specimen.findMany({
+          where: { organisationId: org.id },
+          select: { id: true, accessionNumber: true, species: { select: { commonName: true, scientificName: true } } },
+          orderBy: { species: { commonName: 'asc' } },
+        })
+      : Promise.resolve([]),
   ])
 
   return (
@@ -55,8 +64,16 @@ export default async function TodoPage({ params }: TodoPageProps) {
         dueDate: t.dueDate?.toISOString() ?? null,
         createdAt: t.createdAt.toISOString(),
         assignees: t.assignees.map((a) => a.user),
+        specimen: t.specimen
+          ? { id: t.specimen.id, slug: t.specimen.slug, name: t.specimen.species.commonName }
+          : null,
       }))}
       orgMembers={orgMembers.map((m) => m.user)}
+      plants={specimens.map((sp) => ({
+        id: sp.id,
+        label: [sp.species.commonName, sp.accessionNumber].filter(Boolean).join(' · '),
+        scientificName: sp.species.scientificName,
+      }))}
     />
   )
 }

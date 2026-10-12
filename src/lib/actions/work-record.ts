@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { WorkAction } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
+import { ensureWorkRecord, WORK_RECORD_SPECIMEN_SELECT } from '@/lib/work-record-db'
 import type { ActionResult } from '@/lib/shared/types'
 
 // ─── Record work (create record or append log entry) ─────────────────────────
@@ -34,68 +35,14 @@ export async function recordWork(
 
   const specimen = await prisma.specimen.findFirst({
     where: { id: specimenId, organisation: { slug: orgSlug } },
-    select: {
-      id: true,
-      slug: true,
-      cultivar: true,
-      organisationId: true,
-      organisation: { select: { name: true } },
-      species: {
-        select: {
-          scientificName: true,
-          family: true,
-          authority: true,
-          commonName: true,
-          origin: true,
-          powoUrl: true,
-        },
-      },
-    },
+    select: WORK_RECORD_SPECIMEN_SELECT,
   })
   if (!specimen) return { success: false, error: 'Specimen not found.' }
 
   try {
-    // Check for existing record and create or append atomically
+    // Create the record on first work, then append the entry, atomically
     await prisma.$transaction(async (tx) => {
-      let workRecord = await tx.workRecord.findUnique({
-        where: { userId_specimenId: { userId: user.id, specimenId } },
-        select: { id: true },
-      })
-
-      if (!workRecord) {
-        // First work on this specimen: allocate next record number for this user
-        const agg = await tx.workRecord.aggregate({
-          where: { userId: user.id },
-          _max: { recordNumber: true },
-        })
-        const nextNumber = (agg._max.recordNumber ?? 0) + 1
-
-        workRecord = await tx.workRecord.create({
-          data: {
-            recordNumber: nextNumber,
-            firstWorkedDate: date,
-            scientificName: specimen.species.scientificName,
-            // Botanical name in italics, authority upright, then the cultivar
-            nameHtml: [
-              `<i>${specimen.species.scientificName}</i>`,
-              specimen.species.authority,
-              specimen.cultivar ? `‘${specimen.cultivar}’` : null,
-            ]
-              .filter(Boolean)
-              .join(' '),
-            family: specimen.species.family,
-            authority: specimen.species.authority,
-            commonNames: specimen.species.commonName,
-            nativeRange: specimen.species.origin,
-            powoUrl: specimen.species.powoUrl,
-            site: specimen.organisation.name,
-            userId: user.id,
-            specimenId,
-            organisationId: specimen.organisationId,
-          },
-          select: { id: true },
-        })
-      }
+      const workRecord = await ensureWorkRecord(tx, user.id, specimen, date)
 
       await tx.workLogEntry.create({
         data: {
