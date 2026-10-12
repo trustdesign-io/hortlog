@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { Plus } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
+import { publicScenePath } from '@/lib/scene-urls'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { EmptyState } from '@/components/empty-state'
 import { Badge } from '@/components/ui/badge'
@@ -68,9 +69,7 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
                   href={
                     canManage
                       ? `/${orgSlug}/scenes/${v.id}/edit`
-                      : v.primaryCollection
-                        ? `/${orgSlug}/${v.primaryCollection.slug}/${v.slug}`
-                        : `/${orgSlug}/scenes`
+                      : publicScenePath(orgSlug, v.slug, v.primaryCollection?.slug ?? null)
                   }
                   className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
                 >

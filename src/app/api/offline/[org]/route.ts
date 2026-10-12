@@ -1,3 +1,4 @@
+import { publicScenePath } from '@/lib/scene-urls'
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { prisma } from '@/lib/prisma'
@@ -48,10 +49,7 @@ export async function GET(
   let specimenCount = 0
 
   for (const scene of scenes) {
-    const collectionSlug = scene.primaryCollection?.slug
-    if (!collectionSlug) continue
-
-    const sceneBase = `/${orgSlug}/${collectionSlug}/${scene.slug}`
+    const sceneBase = publicScenePath(orgSlug, scene.slug, scene.primaryCollection?.slug ?? null)
 
     // Scene page (list and grid tabs)
     urls.push(sceneBase)
