@@ -3,6 +3,7 @@ import { findReferencePhoto } from '@/lib/inaturalist'
 import { nameKey, resolveTaxon, suggestNames, type NameSuggestion } from '@/lib/taxonomy'
 import { toSlug } from '@/lib/utils/slug'
 import { fetchOpenData } from '@/lib/open-data'
+import { lookupEllenberg, ELLENBERG_SOURCE } from '@/lib/ellenberg'
 
 export interface ExistingSpecies {
   id: string
@@ -132,6 +133,7 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
     findReferencePhoto(taxon.scientificName),
     fetchOpenData({ scientificName: taxon.scientificName, ipniId: taxon.ipniId }),
   ])
+  const ellenberg = lookupEllenberg(taxon.scientificName)
   try {
     const species = await prisma.species.create({
       data: {
@@ -157,6 +159,16 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
         habitatExcerptSource: openData.habitatExcerptSource,
         gbifTaxonKey: openData.gbifTaxonKey,
         openDataUpdatedAt: openData.openDataUpdatedAt,
+        ...(ellenberg
+          ? {
+              ellenbergL: ellenberg.L,
+              ellenbergF: ellenberg.F,
+              ellenbergR: ellenberg.R,
+              ellenbergN: ellenberg.N,
+              ellenbergS: ellenberg.S,
+              ellenbergSource: ELLENBERG_SOURCE,
+            }
+          : {}),
       },
       select,
     })

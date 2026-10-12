@@ -13,6 +13,13 @@ import {
 } from '@/components/ui/sheet'
 import { Badge } from '@/components/ui/badge'
 import { ScientificName } from '@/components/ui/scientific-name'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import { ELLENBERG_SCALE_DESCRIPTIONS } from '@/lib/ellenberg'
 import type { Species } from '@prisma/client'
 
 interface SpeciesBrowserProps {
@@ -59,6 +66,48 @@ function SpeciesDetail({ species }: SpeciesDetailProps) {
           <div className="flex flex-col gap-2 py-3">
             <dt className="text-muted-foreground">Description</dt>
             <dd className="text-sm leading-relaxed">{species.description}</dd>
+          </div>
+        )}
+        {(species.ellenbergL != null ||
+          species.ellenbergF != null ||
+          species.ellenbergR != null ||
+          species.ellenbergN != null ||
+          species.ellenbergS != null) && (
+          <div className="flex gap-4 py-3">
+            <dt className="w-28 shrink-0 text-muted-foreground">Ellenberg</dt>
+            <dd>
+              <TooltipProvider delay={200}>
+                <span className="inline-flex flex-wrap gap-1.5 font-mono text-xs">
+                  {(
+                    [
+                      ['L', species.ellenbergL],
+                      ['F', species.ellenbergF],
+                      ['R', species.ellenbergR],
+                      ['N', species.ellenbergN],
+                      ['S', species.ellenbergS],
+                    ] as [string, number | null][]
+                  )
+                    .filter(([, v]) => v != null)
+                    .map(([key, v]) => (
+                      <Tooltip key={key}>
+                        <TooltipTrigger
+                          render={
+                            <span className="cursor-help rounded bg-secondary px-1.5 py-0.5 text-secondary-foreground" />
+                          }
+                        >
+                          {key}{v}
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{ELLENBERG_SCALE_DESCRIPTIONS[key]}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                </span>
+              </TooltipProvider>
+              {species.ellenbergSource && (
+                <p className="mt-1 text-xs text-muted-foreground">{species.ellenbergSource}</p>
+              )}
+            </dd>
           </div>
         )}
       </dl>
