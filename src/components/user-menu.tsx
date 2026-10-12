@@ -10,7 +10,13 @@ interface UserMenuProps {
   user: User
 }
 
-export function UserMenu({ user }: UserMenuProps) {
+interface SignOutButtonProps {
+  className?: string
+  size?: 'sm' | 'lg'
+  variant?: 'ghost' | 'outline'
+}
+
+export function SignOutButton({ className, size = 'sm', variant = 'ghost' }: SignOutButtonProps) {
   const [isPending, startTransition] = useTransition()
 
   function handleSignOut() {
@@ -20,6 +26,27 @@ export function UserMenu({ user }: UserMenuProps) {
   }
 
   return (
+    <Button variant={variant} size={size} onClick={handleSignOut} disabled={isPending} className={className}>
+      Sign out
+    </Button>
+  )
+}
+
+/** Avatar, name and email, centred: the head of the mobile You panel. */
+export function UserIdentity({ user }: UserMenuProps) {
+  return (
+    <div className="flex flex-col items-center gap-2 px-4 text-center">
+      <UserAvatar user={user} className="h-16 w-16" fallbackClassName="text-lg" />
+      <div className="min-w-0 max-w-full">
+        <p className="truncate font-medium">{user.name ?? user.email}</p>
+        {user.name && <p className="truncate text-sm text-muted-foreground">{user.email}</p>}
+      </div>
+    </div>
+  )
+}
+
+export function UserMenu({ user }: UserMenuProps) {
+  return (
     <div className="flex items-center gap-3 px-3 py-2">
       <UserAvatar user={user} />
       <div className="min-w-0 flex-1">
@@ -28,15 +55,7 @@ export function UserMenu({ user }: UserMenuProps) {
         </p>
         <p className="truncate text-xs text-muted-foreground">{user.email}</p>
       </div>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleSignOut}
-        disabled={isPending}
-        className="shrink-0 text-muted-foreground hover:text-foreground"
-      >
-        Sign out
-      </Button>
+      <SignOutButton className="shrink-0 text-muted-foreground hover:text-foreground" />
     </div>
   )
 }

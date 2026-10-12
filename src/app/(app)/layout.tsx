@@ -4,6 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { AuthProvider } from '@/components/auth-provider'
 import { Sidebar } from '@/components/sidebar'
+import { AppFooter } from '@/components/layout/app-footer'
+import { MobilePanelsProvider } from '@/components/layout/mobile-panels'
 import { getNameFromMetadata } from '@/lib/auth/name-utils'
 import type { User } from '@prisma/client'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
@@ -93,19 +95,24 @@ export default async function AppLayout({
 
   return (
     <AuthProvider initialUser={user}>
-      <div className="flex h-dvh overflow-hidden">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring focus:outline-none"
-        >
-          Skip to main content
-        </a>
-        <Sidebar user={user} allOrgs={allOrgs} />
-        {/* On phones the fixed top bar is 3.5rem tall: clear it, then the usual gutter */}
-        <main id="main-content" className="min-w-0 flex-1 overflow-y-auto px-4 pb-10 pt-[4.75rem] sm:px-6 md:p-6">
-          {children}
-        </main>
-      </div>
+      <MobilePanelsProvider>
+        <div className="flex h-dvh overflow-hidden">
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring focus:outline-none"
+          >
+            Skip to main content
+          </a>
+          <Sidebar user={user} allOrgs={allOrgs} />
+          {/* On phones the fixed top bar is 3.5rem tall: clear it, then the usual gutter */}
+          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-4 pb-6 pt-[4.75rem] sm:px-6 md:p-6">
+            <main id="main-content" className="flex-1">
+              {children}
+            </main>
+            <AppFooter user={user} />
+          </div>
+        </div>
+      </MobilePanelsProvider>
     </AuthProvider>
   )
 }
