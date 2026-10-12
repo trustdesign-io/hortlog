@@ -97,13 +97,13 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
           {search ? `No users match "${search}".` : 'No users yet.'}
         </p>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-card">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th scope="col" className="px-4 py-3 text-left font-medium">User</th>
                 <th scope="col" className="px-4 py-3 text-left font-medium">Organisations</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Joined</th>
+                <th scope="col" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Joined</th>
                 <th scope="col" className="sr-only">Actions</th>
               </tr>
             </thead>
@@ -148,7 +148,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                       </div>
                     )}
                   </td>
-                  <td className="px-4 py-3 text-right text-muted-foreground text-xs">
+                  <td className="hidden px-4 py-3 text-right text-muted-foreground text-xs sm:table-cell">
                     {u.createdAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3 text-right">

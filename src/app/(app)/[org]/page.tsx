@@ -51,8 +51,8 @@ export default async function OrgPage({ params }: OrgPageProps) {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex items-center gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 items-center gap-4">
           {org.logoUrl ? (
             <Image
               src={org.logoUrl}
@@ -66,14 +66,14 @@ export default async function OrgPage({ params }: OrgPageProps) {
               {org.name[0]?.toUpperCase()}
             </div>
           )}
-          <div>
+          <div className="min-w-0">
             <h1 className="font-heading text-2xl font-medium">{org.name}</h1>
             <Badge variant="outline" className="mt-1">{roleLabel}</Badge>
           </div>
         </div>
 
         {canManage && (
-        <div className="flex gap-2 shrink-0">
+        <div className="flex shrink-0 flex-wrap gap-2">
           <Link
             href={`/${orgSlug}/specimens/new`}
             className={buttonVariants({ variant: 'default', size: 'sm' })}
@@ -166,7 +166,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
                       href={canManage ? `/${orgSlug}/scenes/${scene.id}/edit` : `/${orgSlug}/scenes`}
                       className="flex items-center justify-between px-4 py-3 text-sm hover:bg-muted transition-colors"
                     >
-                      <span className="font-medium truncate">{scene.name}</span>
+                      <span className="min-w-0 truncate font-medium">{scene.name}</span>
                       <span className="ml-4 shrink-0 text-muted-foreground tabular-nums">
                         {scene._count.specimens} specimen{scene._count.specimens !== 1 ? 's' : ''}
                       </span>

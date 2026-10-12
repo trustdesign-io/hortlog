@@ -6,7 +6,6 @@ import { inviteMember, changeMemberRole, removeMember } from '@/lib/actions/memb
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
@@ -72,8 +71,8 @@ function RoleSelect({
   return (
     <div>
       <Select value={currentRole} onValueChange={handleChange} disabled={isPending}>
-        <SelectTrigger size="sm" className="w-36" aria-label="Change role">
-          <SelectValue />
+        <SelectTrigger size="sm" className="w-full sm:w-36" aria-label="Change role">
+          <SelectValue>{(value: string) => (isRole(value) ? roleLabel(value, labels) : value)}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {ROLES.map((role) => (
@@ -197,7 +196,7 @@ export function MemberList({ orgSlug, labels, members }: MemberListProps) {
               <Label htmlFor="invite-role">Role</Label>
               <Select name="role" defaultValue="MEMBER">
                 <SelectTrigger id="invite-role" className="w-48">
-                  <SelectValue />
+                  <SelectValue>{(value: string) => (isRole(value) ? roleLabel(value, labels) : value)}</SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {[...ROLES].reverse().map((role) => (
@@ -240,7 +239,7 @@ export function MemberList({ orgSlug, labels, members }: MemberListProps) {
                 year: 'numeric',
               })
               return (
-                <li key={member.id} className="flex items-center gap-3 px-4 py-3">
+                <li key={member.id} className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3">
                   {/* Avatar */}
                   <div
                     className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-medium text-muted-foreground"
@@ -258,25 +257,22 @@ export function MemberList({ orgSlug, labels, members }: MemberListProps) {
                     <p className="text-xs text-muted-foreground">Joined {joinedDate}</p>
                   </div>
 
-                  {/* Role badge (mobile) */}
-                  <Badge variant="outline" className="hidden sm:inline-flex">
-                    {roleLabel(member.role, labels)}
-                  </Badge>
-
-                  {/* Role change */}
-                  <RoleSelect
-                    orgSlug={orgSlug}
-                    membershipId={member.id}
-                    currentRole={member.role}
-                    labels={labels}
-                  />
-
-                  {/* Remove */}
-                  <RemoveMemberButton
-                    orgSlug={orgSlug}
-                    membershipId={member.id}
-                    memberName={displayName}
-                  />
+                  {/* Role and remove: under the name on phones, at the end of the row from sm */}
+                  <div className="flex w-full items-center gap-2 pl-11 sm:w-auto sm:pl-0">
+                    <div className="flex-1 sm:flex-none">
+                      <RoleSelect
+                        orgSlug={orgSlug}
+                        membershipId={member.id}
+                        currentRole={member.role}
+                        labels={labels}
+                      />
+                    </div>
+                    <RemoveMemberButton
+                      orgSlug={orgSlug}
+                      membershipId={member.id}
+                      memberName={displayName}
+                    />
+                  </div>
                 </li>
               )
             })}

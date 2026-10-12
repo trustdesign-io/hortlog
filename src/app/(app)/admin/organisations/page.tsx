@@ -92,15 +92,15 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
           {search ? `No organisations match "${search}".` : 'No organisations yet.'}
         </p>
       ) : (
-        <div className="overflow-hidden rounded-xl border bg-card">
+        <div className="overflow-x-auto rounded-xl border bg-card">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b bg-muted/50">
                 <th scope="col" className="px-4 py-3 text-left font-medium">Organisation</th>
                 <th scope="col" className="px-4 py-3 text-right font-medium">Members</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Specimens</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Scenes</th>
-                <th scope="col" className="px-4 py-3 text-right font-medium">Created</th>
+                <th scope="col" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Specimens</th>
+                <th scope="col" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Scenes</th>
+                <th scope="col" className="hidden px-4 py-3 text-right font-medium sm:table-cell">Created</th>
                 <th scope="col" className="sr-only">Actions</th>
               </tr>
             </thead>
@@ -118,13 +118,13 @@ export default async function AdminOrganisationsPage({ searchParams }: AdminOrgs
                   <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
                     {org._count.memberships}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                  <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell">
                     {org._count.specimens}
                   </td>
-                  <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+                  <td className="hidden px-4 py-3 text-right tabular-nums text-muted-foreground sm:table-cell">
                     {org._count.scenes}
                   </td>
-                  <td className="px-4 py-3 text-right text-muted-foreground text-xs">
+                  <td className="hidden px-4 py-3 text-right text-muted-foreground text-xs sm:table-cell">
                     {org.createdAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
                   </td>
                   <td className="px-4 py-3 text-right">

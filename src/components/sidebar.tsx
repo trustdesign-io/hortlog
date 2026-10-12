@@ -78,8 +78,6 @@ const adminNav: NavItem[] = [
   { href: '/admin/species', label: 'Species', icon: FlaskConical },
 ]
 
-const mobileNav: NavItem[] = [...myRecordNav, ...accountNav]
-
 interface NavLinksProps {
   items: NavItem[]
   onNavigate?: () => void
@@ -272,55 +270,6 @@ function SidebarContent({ user, onNavigate, allOrgs }: SidebarContentProps) {
   )
 }
 
-interface MobileBottomNavProps {
-  user: UserWithMemberships
-  allOrgs?: OrgOption[]
-}
-
-function MobileBottomNav({ user, allOrgs }: MobileBottomNavProps) {
-  const pathname = usePathname()
-  const knownSlugs = getKnownSlugs(user, allOrgs)
-  const orgSlug = resolveOrgSlug(pathname, knownSlugs, user.memberships.map((m) => m.organisation.slug))
-
-  // My record stays in reach everywhere; Account and the rest are in the menu.
-  const items: NavItem[] = orgSlug
-    ? [
-        ...myRecordNav,
-        { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard },
-        { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare },
-        { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
-        { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3 },
-      ]
-    : mobileNav
-
-  const activeHref = getActiveHref(items, pathname ?? '')
-
-  return (
-    <nav
-      aria-label="Mobile navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 flex border-t bg-background md:hidden"
-    >
-      {items.map((item) => {
-        const isActive = item.href === activeHref
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            className={cn(
-              'flex flex-1 flex-col items-center gap-1 py-3 text-xs font-medium transition-colors',
-              isActive ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-            )}
-            aria-current={isActive ? 'page' : undefined}
-          >
-            <item.icon className="h-5 w-5" aria-hidden={true} />
-            <span>{item.label}</span>
-          </Link>
-        )
-      })}
-    </nav>
-  )
-}
-
 export function Sidebar({ user, allOrgs }: SidebarProps) {
   const [open, setOpen] = useState(false)
 
@@ -356,8 +305,6 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
         </div>
       </div>
 
-      {/* Mobile bottom nav */}
-      <MobileBottomNav user={user} allOrgs={allOrgs} />
     </>
   )
 }
