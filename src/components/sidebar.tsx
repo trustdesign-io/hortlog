@@ -274,7 +274,7 @@ function SidebarContent({ user, onNavigate, allOrgs, openDrawer, closeDrawer }: 
 
       {/* Footer: tour, theme, then the signed-in user */}
       <div className="border-t">
-        <div className="flex flex-wrap items-center gap-1 px-2 pt-2">
+        <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5">
           <TourButton user={user} openDrawer={openDrawer} closeDrawer={closeDrawer} showLabel />
           <ThemeToggle showLabel />
         </div>
