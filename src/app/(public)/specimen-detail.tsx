@@ -7,6 +7,8 @@ import { SpecimenImage } from '@/components/ui/specimen-image'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
+import { InTheWild } from '@/components/species/in-the-wild'
+import { buildHabitatLine } from '@/lib/open-data/powo'
 
 interface BreadcrumbItem {
   label: string
@@ -26,6 +28,17 @@ interface SpecimenDetailProps {
     photoAttribution?: string | null
     photoLicence?: string | null
     photoSourceUrl?: string | null
+    // Open-data fields
+    statusCategory?: string | null
+    statusSource?: string | null
+    statusUpdatedAt?: Date | null
+    nativeRegions?: string[]
+    introducedRegions?: string[]
+    lifeForm?: string | null
+    climate?: string | null
+    habitatExcerpt?: string | null
+    habitatExcerptSource?: string | null
+    gbifTaxonKey?: number | null
   }
   specimen: {
     accessionNumber: string | null
@@ -60,9 +73,15 @@ function conservationBadgeVariant(
 }
 
 export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, children }: SpecimenDetailProps) {
-  const conservationLabel = species.conservationStatus
-    ? IUCN_DANGER[species.conservationStatus.toUpperCase()] ?? species.conservationStatus
-    : null
+  // Prefer the automatic statusCategory; fall back to the legacy manual code
+  const conservationLabel =
+    species.statusCategory ??
+    (species.conservationStatus
+      ? (IUCN_DANGER[species.conservationStatus.toUpperCase()] ?? species.conservationStatus)
+      : null)
+  const conservationBadgeStatus = species.statusCategory
+    ? null // badge rendered by InTheWild instead
+    : species.conservationStatus
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
@@ -160,9 +179,10 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
             #{specimen.accessionNumber}
           </p>
         )}
-        {conservationLabel && species.conservationStatus && (
+        {/* Legacy badge — only shown when there's no automatic statusCategory yet */}
+        {conservationLabel && conservationBadgeStatus && (
           <div className="mt-2">
-            <Badge variant={conservationBadgeVariant(species.conservationStatus)}>
+            <Badge variant={conservationBadgeVariant(conservationBadgeStatus)}>
               {conservationLabel}
             </Badge>
           </div>
@@ -208,6 +228,30 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
           </div>
         )}
       </dl>
+
+      <InTheWild
+        speciesName={species.scientificName}
+        statusCategory={species.statusCategory ?? null}
+        statusSource={species.statusSource ?? null}
+        statusUpdatedAt={species.statusUpdatedAt ?? null}
+        nativeRegions={species.nativeRegions ?? []}
+        introducedRegions={species.introducedRegions ?? []}
+        lifeForm={species.lifeForm ?? null}
+        climate={species.climate ?? null}
+        habitatLine={
+          species.lifeForm || species.climate || (species.nativeRegions ?? []).length
+            ? buildHabitatLine({
+                nativeRegions: species.nativeRegions ?? [],
+                introducedRegions: species.introducedRegions ?? [],
+                lifeForm: species.lifeForm ?? null,
+                climate: species.climate ?? null,
+              })
+            : null
+        }
+        habitatExcerpt={species.habitatExcerpt ?? null}
+        habitatExcerptSource={species.habitatExcerptSource ?? null}
+        gbifTaxonKey={species.gbifTaxonKey ?? null}
+      />
 
       {children}
     </div>

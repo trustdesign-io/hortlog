@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { findReferencePhoto } from '@/lib/inaturalist'
 import { nameKey, resolveTaxon, suggestNames, type NameSuggestion } from '@/lib/taxonomy'
 import { toSlug } from '@/lib/utils/slug'
+import { fetchOpenData } from '@/lib/open-data'
 
 export interface ExistingSpecies {
   id: string
@@ -127,7 +128,10 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
   let slug = base
   for (let n = 2; await prisma.species.findUnique({ where: { slug }, select: { id: true } }); n++) slug = `${base}-${n}`
 
-  const photo = await findReferencePhoto(taxon.scientificName)
+  const [photo, openData] = await Promise.all([
+    findReferencePhoto(taxon.scientificName),
+    fetchOpenData({ scientificName: taxon.scientificName, ipniId: taxon.ipniId }),
+  ])
   try {
     const species = await prisma.species.create({
       data: {
@@ -142,6 +146,17 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
         ipniId: taxon.ipniId,
         nameKey: key,
         ...photo,
+        statusCategory: openData.statusCategory,
+        statusSource: openData.statusSource,
+        statusUpdatedAt: openData.statusUpdatedAt,
+        nativeRegions: openData.nativeRegions,
+        introducedRegions: openData.introducedRegions,
+        lifeForm: openData.lifeForm,
+        climate: openData.climate,
+        habitatExcerpt: openData.habitatExcerpt,
+        habitatExcerptSource: openData.habitatExcerptSource,
+        gbifTaxonKey: openData.gbifTaxonKey,
+        openDataUpdatedAt: openData.openDataUpdatedAt,
       },
       select,
     })
