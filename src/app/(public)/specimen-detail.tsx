@@ -9,6 +9,7 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { InTheWild } from '@/components/species/in-the-wild'
 import { buildHabitatLine } from '@/lib/open-data/powo'
+import { buildEllenbergSentence } from '@/lib/ellenberg'
 
 interface BreadcrumbItem {
   label: string
@@ -39,6 +40,13 @@ interface SpecimenDetailProps {
     habitatExcerpt?: string | null
     habitatExcerptSource?: string | null
     gbifTaxonKey?: number | null
+    // Ellenberg indicator values
+    ellenbergL?: number | null
+    ellenbergF?: number | null
+    ellenbergR?: number | null
+    ellenbergN?: number | null
+    ellenbergS?: number | null
+    ellenbergSource?: string | null
   }
   specimen: {
     accessionNumber: string | null
@@ -217,6 +225,30 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
             </dd>
           </div>
         )}
+        {(() => {
+          const sentence = buildEllenbergSentence({
+            L: species.ellenbergL ?? undefined,
+            F: species.ellenbergF ?? undefined,
+            R: species.ellenbergR ?? undefined,
+            N: species.ellenbergN ?? undefined,
+            S: species.ellenbergS ?? undefined,
+          })
+          return sentence ? (
+            <div>
+              <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Growing conditions
+              </dt>
+              <dd className="mt-0.5 text-sm leading-relaxed text-foreground/80">
+                {sentence}
+                {species.ellenbergSource && (
+                  <span className="ml-1 text-xs text-muted-foreground">
+                    ({species.ellenbergSource})
+                  </span>
+                )}
+              </dd>
+            </div>
+          ) : null
+        })()}
         {specimen.notes && (
           <div>
             <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">

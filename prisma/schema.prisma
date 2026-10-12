@@ -109,6 +109,14 @@ model Species {
   photoSourceUrl     String?
   inatTaxonId        Int?
 
+  // British Ellenberg indicator values (Hill et al., PLANTATT, BRC/UKCEH, OGL v3)
+  ellenbergL      Int?    // Light: 1 (deep shade) to 9 (full sun)
+  ellenbergF      Int?    // Moisture: 1 (very dry) to 12 (submerged)
+  ellenbergR      Int?    // Soil reaction (pH): 1 (very acid) to 9 (strongly basic)
+  ellenbergN      Int?    // Nitrogen: 1 (very infertile) to 9 (very fertile)
+  ellenbergS      Int?    // Salt: 0 (none) to 9 (highly saline)
+  ellenbergSource String? // e.g. "PLANTATT (Hill et al., 2004)"
+
   // Open-data fields — populated automatically from Wikidata / POWO / GBIF / Wikipedia
   statusCategory       String?    // Plain-English IUCN category e.g. "Endangered"
   statusSource         String?    // "Wikidata" | "JNCC" | "Manual"

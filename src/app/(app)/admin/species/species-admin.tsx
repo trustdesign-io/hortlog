@@ -21,6 +21,7 @@ import { Field, FieldLabel } from '@/components/ui/field'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import type { ActionResult } from '@/lib/shared/types'
 import type { Species } from '@prisma/client'
+import { ellenbergCompact } from '@/lib/ellenberg'
 
 const CONSERVATION_OPTIONS = [
   { value: '', label: '— None —' },
@@ -288,6 +289,11 @@ export function SpeciesAdminList({ species }: SpeciesAdminListProps) {
             </ScientificName>
             {s.family && (
               <p className="text-xs text-muted-foreground">{s.family}</p>
+            )}
+            {s.ellenbergL != null && (
+              <p className="font-mono text-xs text-muted-foreground">
+                {ellenbergCompact({ L: s.ellenbergL, F: s.ellenbergF ?? undefined, R: s.ellenbergR ?? undefined, N: s.ellenbergN ?? undefined, S: s.ellenbergS ?? undefined })}
+              </p>
             )}
             {s._count.specimens > 0 && (
               <p className="text-xs text-muted-foreground sm:hidden">
