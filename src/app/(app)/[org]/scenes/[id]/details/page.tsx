@@ -18,6 +18,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
       id: true,
       name: true,
       slug: true,
+      perspective: true,
       organisationId: true,
       primaryCollectionId: true,
       primaryCollection: { select: { name: true } },
@@ -48,6 +49,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
           name: scene.name,
           slug: scene.slug,
           primaryCollectionId: scene.primaryCollectionId,
+          perspective: scene.perspective,
           plantCount: scene._count.specimens,
         }}
         collections={collections}

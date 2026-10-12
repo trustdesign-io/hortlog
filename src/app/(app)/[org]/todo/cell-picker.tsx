@@ -1,16 +1,18 @@
 'use client'
 
 import { HexGrid, HexOutline } from '@/components/hex-grid'
-import { hexCellStyle } from '@/lib/hex-grid'
+import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 import { cn } from '@/lib/utils'
 
-const CELL_WIDTH = '5rem'
+const CELL_WIDTH_REM = 5
+const PX_PER_REM = 16
 
 export interface PickerScene {
   id: string
   name: string
   gridRows: number
   gridCols: number
+  perspective: ScenePerspective
   plants: Array<{ id: string; cell: string; name: string }>
 }
 
@@ -59,13 +61,14 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
           aria-label={`${scene.name} grid`}
           rows={scene.gridRows}
           cols={scene.gridCols}
-          cellWidth={CELL_WIDTH}
-          renderCell={(row, col) => {
+          cellWidth={`${CELL_WIDTH_REM}rem`}
+          tiltDeg={sceneTilt(scene.perspective, scene.gridRows, CELL_WIDTH_REM * PX_PER_REM)}
+          renderCell={(row, col, style) => {
             const cell = `${row},${col}`
             const plant = byCell.get(cell)
             if (!plant) {
               return (
-                <div key={cell} className="hex-cell" style={hexCellStyle(row, col)} aria-hidden="true">
+                <div key={cell} className="hex-cell" style={style} aria-hidden="true">
                   <span className="hex-shape block">
                     <HexOutline className="text-border/60" />
                   </span>
@@ -82,7 +85,7 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
                 aria-pressed={isOn}
                 title={plant.name}
                 className="hex-cell"
-                style={hexCellStyle(row, col)}
+                style={style}
               >
                 <span
                   className={cn(

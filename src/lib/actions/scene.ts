@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
 import { cellsOutside, MAX_GRID, MIN_GRID, withinLimits, type GridEdge } from '@/lib/scene-grid'
+import { DEFAULT_PERSPECTIVE, parsePerspective } from '@/lib/scene-perspective'
 import type { ActionResult } from '@/lib/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
@@ -39,6 +40,7 @@ export async function createScene(
   const primaryCollectionId = (formData.get('primaryCollectionId') as string | null)?.trim() || null
   const gridRowsRaw = formData.get('gridRows') as string | null
   const gridColsRaw = formData.get('gridCols') as string | null
+  const perspectiveRaw = formData.get('perspective') as string | null
 
   const slug = slugRaw || toSlug(name)
 
@@ -49,6 +51,9 @@ export async function createScene(
   if (!SLUG_PATTERN.test(slug)) {
     return { success: false, error: 'Slug may only contain lowercase letters, numbers, and hyphens.' }
   }
+
+  const perspective = perspectiveRaw ? parsePerspective(perspectiveRaw) : DEFAULT_PERSPECTIVE
+  if (!perspective) return { success: false, error: 'Perspective must be Bed or Wall.' }
 
   const gridRows = gridRowsRaw ? parseInt(gridRowsRaw, 10) : 4
   const gridCols = gridColsRaw ? parseInt(gridColsRaw, 10) : 4
@@ -88,6 +93,7 @@ export async function createScene(
       data: {
         name,
         slug,
+        perspective,
         gridRows,
         gridCols,
         shortCode,
@@ -263,7 +269,7 @@ export async function resizeSceneGrid(
   return { success: true }
 }
 
-/** Renames a scene, changes its slug or primary collection. */
+/** Renames a scene, changes its slug, primary collection or perspective. */
 export async function updateScene(
   orgSlug: string,
   sceneId: string,
@@ -275,9 +281,11 @@ export async function updateScene(
   const name = (formData.get('name') as string | null)?.trim() ?? ''
   const slug = (formData.get('slug') as string | null)?.trim() || toSlug(name)
   const primaryCollectionId = (formData.get('primaryCollectionId') as string | null)?.trim() || null
+  const perspective = parsePerspective(formData.get('perspective') as string | null)
 
   if (!name) return { success: false, error: 'Name is required.' }
   if (name.length > 120) return { success: false, error: 'Name must be 120 characters or fewer.' }
+  if (!perspective) return { success: false, error: 'Perspective must be Bed or Wall.' }
   if (slug.length < 2 || slug.length > 48) return { success: false, error: 'Slug must be 2–48 characters.' }
   if (!SLUG_PATTERN.test(slug)) {
     return { success: false, error: 'Slug may only contain lowercase letters, numbers, and hyphens.' }
@@ -304,7 +312,7 @@ export async function updateScene(
   }
 
   try {
-    await prisma.scene.update({ where: { id: scene.id }, data: { name, slug, primaryCollectionId } })
+    await prisma.scene.update({ where: { id: scene.id }, data: { name, slug, primaryCollectionId, perspective } })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
       return { success: false, error: `The slug "${slug}" is already in use.` }

@@ -1,13 +1,15 @@
-import type { HTMLAttributes, ReactNode } from 'react'
-import { hexGridStyle } from '@/lib/hex-grid'
+import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
+import { hexCellStyle, hexGridStyle } from '@/lib/hex-grid'
 
 interface HexGridProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'style'> {
   rows: number
   cols: number
   /** CSS length for one cell's width; everything else scales from it. */
   cellWidth: string
-  /** Each cell must apply `hexCellStyle(row, col)` and the `hex-cell` class. */
-  renderCell: (row: number, col: number) => ReactNode
+  /** Bed tilt in degrees; 0 draws the grid flat, as a wall. */
+  tiltDeg?: number
+  /** Each cell must apply the given style and the `hex-cell` class. */
+  renderCell: (row: number, col: number, style: CSSProperties) => ReactNode
   rowProps?: (row: number) => HTMLAttributes<HTMLDivElement>
 }
 
@@ -20,15 +22,16 @@ export function HexGrid({
   rows,
   cols,
   cellWidth,
+  tiltDeg = 0,
   renderCell,
   rowProps,
   ...containerProps
 }: HexGridProps) {
   return (
-    <div {...containerProps} style={hexGridStyle(rows, cols, cellWidth)}>
+    <div {...containerProps} style={hexGridStyle(rows, cols, cellWidth, tiltDeg)}>
       {Array.from({ length: rows }, (_, row) => (
         <div key={row} {...rowProps?.(row)} style={{ display: 'contents' }}>
-          {Array.from({ length: cols }, (_, col) => renderCell(row, col))}
+          {Array.from({ length: cols }, (_, col) => renderCell(row, col, hexCellStyle(row, col, rows, cols, tiltDeg)))}
         </div>
       ))}
     </div>

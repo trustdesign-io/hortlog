@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { PerspectiveField } from '../perspective-field'
 import type { ActionResult } from '@/lib/shared/types'
 
 interface CollectionOption {
@@ -110,6 +111,18 @@ export function CreateSceneForm({ orgSlug, collections }: CreateSceneFormProps) 
               </p>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Perspective</CardTitle>
+          <CardDescription>
+            How visitors see the scene: a bed on the ground, or a wall in front of them.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PerspectiveField defaultValue="BED" disabled={isPending} />
         </CardContent>
       </Card>
 

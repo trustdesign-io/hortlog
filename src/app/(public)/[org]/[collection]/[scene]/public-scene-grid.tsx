@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { HexGrid, HexOutline } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
-import { hexCellStyle } from '@/lib/hex-grid'
+import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 
-const CELL_WIDTH = '6rem'
+const CELL_WIDTH_REM = 6
+const PX_PER_REM = 16
 
 interface GridSpecimen {
   id: string
@@ -19,9 +20,10 @@ interface PublicSceneGridProps {
   cols: number
   specimens: GridSpecimen[]
   basePath: string
+  perspective: ScenePerspective
 }
 
-export function PublicSceneGrid({ rows, cols, specimens, basePath }: PublicSceneGridProps) {
+export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective }: PublicSceneGridProps) {
   if (rows <= 0 || cols <= 0) {
     return (
       <p className="py-12 text-center text-sm text-muted-foreground">
@@ -53,8 +55,9 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath }: PublicScene
         className="mx-auto"
         rows={rows}
         cols={cols}
-        cellWidth={CELL_WIDTH}
-        renderCell={(row, col) => {
+        cellWidth={`${CELL_WIDTH_REM}rem`}
+        tiltDeg={sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)}
+        renderCell={(row, col, style) => {
           const cell = `${row},${col}`
           const specimen = cellMap[cell]
 
@@ -64,7 +67,7 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath }: PublicScene
                 key={cell}
                 href={`${basePath}/${specimen.slug}`}
                 className="hex-cell group"
-                style={hexCellStyle(row, col)}
+                style={style}
                 aria-label={`${specimen.commonName} — row ${row + 1}, column ${col + 1}`}
                 title={`${specimen.commonName} (${specimen.scientificName})`}
               >
@@ -88,7 +91,7 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath }: PublicScene
             <div
               key={cell}
               className="hex-cell"
-              style={hexCellStyle(row, col)}
+              style={style}
               aria-hidden="true"
             >
               <span className="hex-shape block bg-muted/50">

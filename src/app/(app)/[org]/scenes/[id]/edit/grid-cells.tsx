@@ -1,8 +1,7 @@
-import { forwardRef } from 'react'
+import { forwardRef, type CSSProperties } from 'react'
 import { Plus, X } from 'lucide-react'
 import { HexOutline } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
-import { hexCellStyle } from '@/lib/hex-grid'
 
 export interface PlacedSpecimen {
   id: string
@@ -16,6 +15,7 @@ export interface PlacedSpecimen {
 interface CellProps {
   row: number
   col: number
+  style: CSSProperties
   isActive: boolean
   onFocus: () => void
   onKeyDown: (e: React.KeyboardEvent) => void
@@ -26,7 +26,7 @@ interface EmptyCellProps extends CellProps {
 }
 
 export const EmptyCell = forwardRef<HTMLButtonElement, EmptyCellProps>(function EmptyCell(
-  { row, col, isActive, onClick, onFocus, onKeyDown },
+  { row, col, style, isActive, onClick, onFocus, onKeyDown },
   ref,
 ) {
   return (
@@ -38,7 +38,7 @@ export const EmptyCell = forwardRef<HTMLButtonElement, EmptyCellProps>(function 
       onKeyDown={onKeyDown}
       tabIndex={isActive ? 0 : -1}
       className="hex-cell group text-muted-foreground"
-      style={hexCellStyle(row, col)}
+      style={style}
       aria-label={`Empty cell at row ${row + 1}, column ${col + 1}. Press Enter to place a specimen.`}
       role="gridcell"
       aria-rowindex={row + 1}
@@ -58,7 +58,7 @@ interface FilledCellProps extends CellProps {
 }
 
 export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function FilledCell(
-  { row, col, specimen, isActive, onRemove, onFocus, onKeyDown },
+  { row, col, style, specimen, isActive, onRemove, onFocus, onKeyDown },
   ref,
 ) {
   return (
@@ -66,7 +66,7 @@ export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function F
       ref={ref}
       tabIndex={isActive ? 0 : -1}
       className="hex-cell group"
-      style={hexCellStyle(row, col)}
+      style={style}
       role="gridcell"
       aria-rowindex={row + 1}
       aria-colindex={col + 1}

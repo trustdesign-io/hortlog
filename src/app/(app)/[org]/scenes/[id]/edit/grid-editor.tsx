@@ -15,10 +15,13 @@ import { Search } from 'lucide-react'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { HexGrid } from '@/components/hex-grid'
 import { moveHexCell, type HexDirection } from '@/lib/hex-grid'
+import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { Button } from '@/components/ui/button'
 import { RotatePrompt } from './rotate-prompt'
 import { EmptyCell, FilledCell, type PlacedSpecimen } from './grid-cells'
 
-const CELL_WIDTH = '7.5rem'
+const CELL_WIDTH_REM = 7.5
+const PX_PER_REM = 16
 
 const ARROW_DIRECTIONS: Record<string, HexDirection> = {
   ArrowLeft: 'left',
@@ -46,6 +49,7 @@ interface GridEditorProps {
   sceneId: string
   gridRows: number
   gridCols: number
+  perspective: ScenePerspective
   placedSpecimens: PlacedSpecimen[]
   availableSpecimens: AvailableSpecimen[]
 }
@@ -62,6 +66,7 @@ export function GridEditor({
   sceneId,
   gridRows,
   gridCols,
+  perspective,
   placedSpecimens,
   availableSpecimens,
 }: GridEditorProps) {
@@ -86,6 +91,8 @@ export function GridEditor({
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerCell, setPickerCell] = useState<{ row: number; col: number } | null>(null)
   const [search, setSearch] = useState('')
+  const [isFlat, setIsFlat] = useState(false)
+  const tilt = sceneTilt(perspective, gridRows, CELL_WIDTH_REM * PX_PER_REM, isFlat)
 
   // Roving tabindex: track which cell currently owns the tab stop
   const [activeCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 })
@@ -144,6 +151,19 @@ export function GridEditor({
   return (
     <>
       <RotatePrompt />
+      {perspective === 'BED' && (
+        <div className="mb-3 flex justify-end">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-pressed={isFlat}
+            onClick={() => setIsFlat((v) => !v)}
+          >
+            {isFlat ? 'Bed view' : 'Flat view'}
+          </Button>
+        </div>
+      )}
       <div className="overflow-x-auto pb-4">
         <HexGrid
           role="grid"
@@ -153,9 +173,10 @@ export function GridEditor({
           aria-colcount={gridCols}
           rows={gridRows}
           cols={gridCols}
-          cellWidth={CELL_WIDTH}
+          cellWidth={`${CELL_WIDTH_REM}rem`}
+          tiltDeg={tilt}
           rowProps={(row) => ({ role: 'row', 'aria-rowindex': row + 1 })}
-          renderCell={(row, col) => {
+          renderCell={(row, col, style) => {
             const cell = `${row},${col}`
             const placed = optimisticGrid[cell]
             const isActive = activeCell.row === row && activeCell.col === col
@@ -169,6 +190,7 @@ export function GridEditor({
                 key={cell}
                 row={row}
                 col={col}
+                style={style}
                 specimen={placed}
                 isActive={isActive}
                 onRemove={() => handleRemove(placed)}
@@ -188,6 +210,7 @@ export function GridEditor({
                 key={cell}
                 row={row}
                 col={col}
+                style={style}
                 isActive={isActive}
                 onClick={() => openPicker(row, col)}
                 onFocus={() => setActiveCell({ row, col })}
