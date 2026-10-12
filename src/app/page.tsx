@@ -150,9 +150,9 @@ export default async function HomePage() {
                 How we can label plants better
               </h2>
               <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-16">
-                A label can only hold a few words, and the most remarkable plants are often
-                furthest from the path. One code at the viewpoint opens up every plant you can
-                see, with as much as there is to tell.
+                A label can only hold a few words, and the many remarkable plants are often
+                furthest from the path. One code at the vantage point opens up every plant you
+                can see, with as much as there is to tell.
               </p>
 
               <div className="grid sm:grid-cols-3 gap-8">
