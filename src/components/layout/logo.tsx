@@ -2,6 +2,8 @@ import Link from 'next/link'
 import { cn } from '@/lib/utils'
 
 export const DEFAULT_BRAND_NAME = 'hortlog'
+/** Who holds the copyright for hortlog, shown in footers. */
+export const COPYRIGHT_HOLDER = 'Trust Design'
 
 interface LogoProps {
   className?: string
