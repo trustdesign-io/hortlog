@@ -129,7 +129,13 @@ function CreateCollectionDialog({ orgSlug }: { orgSlug: string }) {
     null,
   )
 
-  if (state?.success && open) setOpen(false)
+  // Close once per successful save. Tracking the handled result (rather than
+  // checking `open`) lets the dialog be opened again afterwards.
+  const [handled, setHandled] = useState(state)
+  if (state !== handled) {
+    setHandled(state)
+    if (state?.success) setOpen(false)
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -179,7 +185,13 @@ function EditCollectionDialog({
     null,
   )
 
-  if (state?.success && open) setOpen(false)
+  // Close once per successful save. Tracking the handled result (rather than
+  // checking `open`) lets the dialog be opened again afterwards.
+  const [handled, setHandled] = useState(state)
+  if (state !== handled) {
+    setHandled(state)
+    if (state?.success) setOpen(false)
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
