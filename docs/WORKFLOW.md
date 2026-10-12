@@ -157,11 +157,10 @@ Invoke explicitly: `/bencium-innovative-ux-designer` (not installed by default).
 
 ---
 
-## Bot identity
+## GitHub identity
 
-> **Required:** `$TRUSTDESIGN_BOT_TOKEN` must be set in your shell before slash commands can post as the bot. If it is not set, actions fall back to your own authenticated token.
-
-Tickets and PR comments from Claude appear under the **trustdesign-bot** GitHub account when the token is present. Bot setup is handled at the org level in `trustdesign-setup`.
+Slash commands use your own `gh` login, so tickets, PRs, reviews and commits
+appear under your GitHub user. There is no bot account.
 
 ---
 

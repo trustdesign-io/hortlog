@@ -8,7 +8,7 @@ Review a pull request, post a structured code review as a GitHub comment, and
 report the verdict.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 
@@ -26,10 +26,6 @@ Parse `$ARGUMENTS`:
 
 ## Step 2 — Spawn a review sub-agent
 
-Resolve `$TRUSTDESIGN_BOT_TOKEN` from the environment now (before spawning),
-then substitute it literally into the prompt below so the sub-agent has the
-value without needing shell variable expansion.
-
 Use the Task tool to spawn a sub-agent with this prompt (substitute real values):
 
 ```
@@ -37,18 +33,10 @@ You are a senior code reviewer. Perform a thorough review of this pull request.
 
 Repo: {REPO}
 PR: {PR_NUMBER}
-Bot token: {TRUSTDESIGN_BOT_TOKEN}
-
-## CRITICAL — All gh commands must use the bot token
-Set this at the start and use it for every gh call:
-  export GH_TOKEN={TRUSTDESIGN_BOT_TOKEN}
-
-This ensures all comments and reviews appear as trustdesign-bot, not the
-personal GitHub account.
 
 Steps:
-1. Run: GH_TOKEN={TRUSTDESIGN_BOT_TOKEN} gh pr view {PR_NUMBER} --repo {REPO} --json number,title,body,files,additions,deletions,baseRefName,headRefName
-2. Run: GH_TOKEN={TRUSTDESIGN_BOT_TOKEN} gh pr diff {PR_NUMBER} --repo {REPO}
+1. Run: gh pr view {PR_NUMBER} --repo {REPO} --json number,title,body,files,additions,deletions,baseRefName,headRefName
+2. Run: gh pr diff {PR_NUMBER} --repo {REPO}
 3. Read CLAUDE.md for project conventions and patterns
 4. Read any files that were changed to understand full context
 
@@ -63,7 +51,7 @@ Review for:
 - Documentation: are relevant docs updated if behaviour changed?
 
 Post your review as a structured comment on the PR:
-GH_TOKEN={TRUSTDESIGN_BOT_TOKEN} gh pr review {PR_NUMBER} --repo {REPO} --comment --body "
+gh pr review {PR_NUMBER} --repo {REPO} --comment --body "
 ## Code Review
 
 ### Verdict: APPROVED / NEEDS CHANGES

@@ -7,7 +7,7 @@ description: Move a ticket to a different status column on Mission Control, and 
 Update a GitHub issue's fields on the **Mission Control** project board.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 

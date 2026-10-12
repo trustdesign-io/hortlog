@@ -7,7 +7,7 @@ description: Show the Mission Control board filtered to the current repo
 Display open tickets on the Mission Control project board.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 

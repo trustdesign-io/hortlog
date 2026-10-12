@@ -9,7 +9,7 @@ PR, self-review it via sub-agent, and move the ticket to In Review — ready for
 your final approval to merge.
 
 > **Read `.claude/SHARED_CONFIG.md` first** — it defines ORG, PROJECT_ID,
-> bot token usage, GraphQL quoting rules, and git workflow rules.
+> GitHub identity, GraphQL quoting rules, and git workflow rules.
 
 ---
 
@@ -254,9 +254,6 @@ gh issue comment "$ISSUE_NUMBER" --repo "$REPO" \
 
 ## Step 9 — Self-review via sub-agent
 
-Resolve `$TRUSTDESIGN_BOT_TOKEN` from the environment now, then substitute it
-literally into the prompt so the sub-agent has the value.
-
 Use the Task tool to spawn a sub-agent with this prompt (substitute real values):
 
 ```
@@ -265,14 +262,9 @@ as a GitHub PR comment.
 
 Repo: {REPO}
 PR: {PR_NUMBER}
-Bot token: {TRUSTDESIGN_BOT_TOKEN}
 
-## CRITICAL — All gh commands must use the bot token
-Prefix every gh command with GH_TOKEN={TRUSTDESIGN_BOT_TOKEN} so comments
-appear as trustdesign-bot, not the personal GitHub account.
-
-1. Run: GH_TOKEN={TRUSTDESIGN_BOT_TOKEN} gh pr diff {PR_NUMBER} --repo {REPO}
-2. Run: GH_TOKEN={TRUSTDESIGN_BOT_TOKEN} gh pr view {PR_NUMBER} --repo {REPO} --json title,body,files,additions,deletions
+1. Run: gh pr diff {PR_NUMBER} --repo {REPO}
+2. Run: gh pr view {PR_NUMBER} --repo {REPO} --json title,body,files,additions,deletions
 3. Read CLAUDE.md for project conventions
 4. Review for:
    - Does it fully address the issue?
@@ -282,7 +274,7 @@ appear as trustdesign-bot, not the personal GitHub account.
    - Missing tests where applicable
    - Typos or unclear naming
 5. Post review as a PR comment:
-   GH_TOKEN={TRUSTDESIGN_BOT_TOKEN} gh pr review {PR_NUMBER} --repo {REPO} --comment --body "{your structured review}"
+   gh pr review {PR_NUMBER} --repo {REPO} --comment --body "{your structured review}"
 6. Return: APPROVED or NEEDS CHANGES, followed by bullet points
 ```
 

@@ -22,6 +22,7 @@ PROJECTS=(
   "$HOME/Projects/trustdesign/cultlux/website/.claude/commands"
   "$HOME/Projects/trustdesign/starter-web/.claude/commands"
   "$HOME/Projects/trustdesign/starter-native/.claude/commands"
+  "$HOME/Projects/trustdesign/hortlog/.claude/commands"
 )
 ```
 
