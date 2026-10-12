@@ -58,8 +58,9 @@
 :root {
   /* Tour blue — deliberately different from the brand palette so tooltips
      cannot be confused with the normal interface. Passes WCAG AA (4.5:1). */
-  --tour: #2563EB;
-  --tour-foreground: #FFFFFF;
+  /* Onboarding tour: a muted petrol blue, distinct from the greens but in the same palette */
+  --tour: #2E5E7E;
+  --tour-foreground: #F5F5EC;
   --background: #EDEEE0;
   --foreground: #192419;
   --card: #F5F5EC;
@@ -120,7 +121,7 @@
   --ring: #2B5A32;
 }
 
-/* ── driver.js tour overrides — use --tour blue, not the brand green ─────── */
+/* ── driver.js tour overrides — use the --tour blue, not the brand green ─── */
 .hortlog-tour-popover,
 .driver-popover {
   background-color: var(--tour) !important;
@@ -164,8 +165,8 @@
 /* ── hortlog dark theme ─────────────────────────────────────────────────── */
 .dark {
   /* Tour blue slightly lightened for dark backgrounds — still passes WCAG AA */
-  --tour: #3B82F6;
-  --tour-foreground: #FFFFFF;
+  --tour: #3A6F94;
+  --tour-foreground: #F5F5EC;
   --background: #121A14;
   --foreground: #E8E9DC;
   --card: #1A251D;

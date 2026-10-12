@@ -72,10 +72,12 @@ export function TourButton({ user, openDrawer, closeDrawer }: TourButtonProps) {
             closeDrawer?.()
           }
         },
-        onDestroyStarted: () => {
-          // driver.js handles its own teardown — we only do side-effects here
+        // Providing this hook stops driver.js closing on its own: Done, ✕ and Esc
+        // all land here, so we must call destroy() ourselves
+        onDestroyStarted: (_el, _step, { driver: tour }) => {
           if (isMobile) closeDrawer?.()
           running.current = false
+          tour.destroy()
         },
       })
 
