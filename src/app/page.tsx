@@ -11,7 +11,7 @@ import { HeroSection } from '@/components/landing/hero-section'
 import { PersonalRecordSection } from '@/components/landing/personal-record-section'
 import { CookieSettingsButton } from '@/components/cookie-banner'
 import { cn } from '@/lib/utils'
-import { Eye, Leaf, Shield, Languages, Accessibility, Sparkles, RefreshCw } from 'lucide-react'
+import { Eye, Shield, Sparkles, RefreshCw } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: { absolute: 'hortlog — horticultural tools for gardens and woodlands' },
@@ -205,7 +205,7 @@ export default async function HomePage() {
                 from wherever you stand.
               </p>
             </div>
-            <ul role="list" className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6 sm:gap-8">
+            <ul role="list" className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
               <li className="flex flex-col gap-2">
                 <Eye className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 <h3 className="font-heading font-medium text-sm sm:text-base">Every plant, within reach</h3>
@@ -214,31 +214,10 @@ export default async function HomePage() {
                 </p>
               </li>
               <li className="flex flex-col gap-2">
-                <Leaf className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <h3 className="font-heading font-medium text-sm sm:text-base">Never lost in the leaves</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  As planting grows and fills out, the information stays exactly where visitors can find it.
-                </p>
-              </li>
-              <li className="flex flex-col gap-2">
                 <Shield className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 <h3 className="font-heading font-medium text-sm sm:text-base">Built to last</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   One sturdy sign at the edge of the bed, clear of pruning, mulching and replanting.
-                </p>
-              </li>
-              <li className="flex flex-col gap-2">
-                <Languages className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <h3 className="font-heading font-medium text-sm sm:text-base">In every language</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Plant pages translate on the visitor&apos;s own phone, so every story reaches every guest.
-                </p>
-              </li>
-              <li className="flex flex-col gap-2">
-                <Accessibility className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <h3 className="font-heading font-medium text-sm sm:text-base">Open to everyone</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Works with screen readers, larger text and the accessibility tools visitors already use.
                 </p>
               </li>
               <li className="flex flex-col gap-2">
