@@ -95,6 +95,7 @@ model Species {
   family             String?
   origin             String?
   description        String?
+  // Kept for backward-compat during transition; superseded by statusCategory below
   conservationStatus String?
   powoUrl            String?
   // Identity in the botanical name sources, so the same taxon can't be added twice
@@ -107,8 +108,22 @@ model Species {
   photoLicence       String?
   photoSourceUrl     String?
   inatTaxonId        Int?
-  createdAt          DateTime @default(now())
-  updatedAt          DateTime @updatedAt
+
+  // Open-data fields — populated automatically from Wikidata / POWO / GBIF / Wikipedia
+  statusCategory       String?    // Plain-English IUCN category e.g. "Endangered"
+  statusSource         String?    // "Wikidata" | "JNCC" | "Manual"
+  statusUpdatedAt      DateTime?
+  nativeRegions        String[]   // WGSRPD level-3 codes e.g. ["MAU"]
+  introducedRegions    String[]   // WGSRPD level-3 codes
+  lifeForm             String?    // e.g. "Shrub"
+  climate              String?    // e.g. "Tropical"
+  habitatExcerpt       String?    // Wikipedia excerpt
+  habitatExcerptSource String?    // Wikipedia article URL
+  gbifTaxonKey         Int?       // GBIF backbone key, for occurrence maps
+  openDataUpdatedAt    DateTime?  // When this species' open-data was last refreshed
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   specimens Specimen[]
 }
