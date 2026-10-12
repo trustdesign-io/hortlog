@@ -26,7 +26,8 @@ function moisturePhrase(f: number): string {
   if (f <= 4) return 'dry'
   if (f === 5) return 'moist'
   if (f <= 7) return 'wet'
-  return 'very wet'
+  if (f === 8) return 'very wet'
+  return 'aquatic or submerged'
 }
 
 function fertilityPhrase(n: number): string {

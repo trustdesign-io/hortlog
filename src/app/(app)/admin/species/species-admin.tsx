@@ -290,9 +290,9 @@ export function SpeciesAdminList({ species }: SpeciesAdminListProps) {
             {s.family && (
               <p className="text-xs text-muted-foreground">{s.family}</p>
             )}
-            {s.ellenbergL != null && (
+            {(s.ellenbergL != null || s.ellenbergF != null || s.ellenbergR != null || s.ellenbergN != null || s.ellenbergS != null) && (
               <p className="font-mono text-xs text-muted-foreground">
-                {ellenbergCompact({ L: s.ellenbergL, F: s.ellenbergF ?? undefined, R: s.ellenbergR ?? undefined, N: s.ellenbergN ?? undefined, S: s.ellenbergS ?? undefined })}
+                {ellenbergCompact({ L: s.ellenbergL ?? undefined, F: s.ellenbergF ?? undefined, R: s.ellenbergR ?? undefined, N: s.ellenbergN ?? undefined, S: s.ellenbergS ?? undefined })}
               </p>
             )}
             {s._count.specimens > 0 && (

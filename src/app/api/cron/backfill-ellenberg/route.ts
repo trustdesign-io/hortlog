@@ -24,32 +24,48 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const species = await prisma.species.findMany({
     where: force ? undefined : { ellenbergL: null },
     select: { id: true, scientificName: true },
+    take: 5000,
   })
 
-  let updated = 0
+  type Update = {
+    id: string
+    L: number
+    F: number
+    R: number
+    N: number
+    S: number
+  }
+
+  const updates: Update[] = []
   let skipped = 0
 
   for (const s of species) {
     const values = lookupEllenberg(s.scientificName)
     if (!values) { skipped++; continue }
+    updates.push({ id: s.id, ...values })
+  }
 
-    await prisma.species.update({
-      where: { id: s.id },
-      data: {
-        ellenbergL: values.L,
-        ellenbergF: values.F,
-        ellenbergR: values.R,
-        ellenbergN: values.N,
-        ellenbergS: values.S,
-        ellenbergSource: ELLENBERG_SOURCE,
-      },
-    })
-    updated++
+  if (updates.length > 0) {
+    await prisma.$transaction(
+      updates.map(({ id, L, F, R, N, S }) =>
+        prisma.species.update({
+          where: { id },
+          data: {
+            ellenbergL: L,
+            ellenbergF: F,
+            ellenbergR: R,
+            ellenbergN: N,
+            ellenbergS: S,
+            ellenbergSource: ELLENBERG_SOURCE,
+          },
+        }),
+      ),
+    )
   }
 
   return NextResponse.json({
     processed: species.length,
-    updated,
+    updated: updates.length,
     skipped,
   })
 }
