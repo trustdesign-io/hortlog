@@ -84,23 +84,17 @@ export async function createScene(
 
   let newId: string
   try {
-    const created = await prisma.$transaction(async (tx) => {
-      const scene = await tx.scene.create({
-        data: {
-          name,
-          slug,
-          gridRows,
-          gridCols,
-          shortCode,
-          organisationId: org.id,
-          primaryCollectionId,
-        },
-        select: { id: true },
-      })
-      await tx.sceneZone.create({
-        data: { name: 'Bed', type: 'BED', rows: gridRows, cols: gridCols, position: 0, sceneId: scene.id },
-      })
-      return scene
+    const created = await prisma.scene.create({
+      data: {
+        name,
+        slug,
+        gridRows,
+        gridCols,
+        shortCode,
+        organisationId: org.id,
+        primaryCollectionId,
+      },
+      select: { id: true },
     })
     newId = created.id
   } catch (err) {
@@ -216,7 +210,7 @@ export async function removeSpecimenFromCell(
   try {
     await prisma.specimen.update({
       where: { id: specimenId, organisationId: org.id, sceneId },
-      data: { sceneId: null, zoneId: null, gridCell: null },
+      data: { sceneId: null, gridCell: null },
     })
   } catch (err) {
     console.error('[removeSpecimenFromCell] error:', err)
@@ -336,7 +330,7 @@ export async function deleteScene(orgSlug: string, sceneId: string): Promise<Act
 
   try {
     await prisma.$transaction([
-      prisma.specimen.updateMany({ where: { sceneId: scene.id }, data: { sceneId: null, zoneId: null, gridCell: null } }),
+      prisma.specimen.updateMany({ where: { sceneId: scene.id }, data: { sceneId: null, gridCell: null } }),
       prisma.scene.delete({ where: { id: scene.id } }),
     ])
   } catch (err) {

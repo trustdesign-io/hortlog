@@ -29,12 +29,11 @@ async function validateAssignees(
 interface TaskCareFields {
   specimenId: string | null
   sceneId: string | null
-  zoneId: string | null
   cells: string[]
   careAction: WorkAction | null
 }
 
-const NO_CARE: TaskCareFields = { specimenId: null, sceneId: null, zoneId: null, cells: [], careAction: null }
+const NO_CARE: TaskCareFields = { specimenId: null, sceneId: null, cells: [], careAction: null }
 const CELL_PATTERN = /^\d{1,2},\d{1,2}$/
 
 /** The optional target (a plant, or a scene and some of its cells) and care action, checked against the org. */
@@ -63,24 +62,13 @@ async function parseCareFields(
       select: { id: true, gridRows: true, gridCols: true },
     })
     if (!scene) return { error: 'Selected scene not found.' }
-    const zoneId = (formData.get('zoneId') as string | null)?.trim() || null
     const cells = [...new Set((formData.getAll('cell') as string[]).filter((c) => CELL_PATTERN.test(c)))]
-    if (cells.length > 0) {
-      let dims: { rows: number; cols: number }
-      if (zoneId) {
-        const zone = await prisma.sceneZone.findFirst({ where: { id: zoneId, sceneId, scene: { organisationId } }, select: { rows: true, cols: true } })
-        if (!zone) return { error: 'Selected zone not found.' }
-        dims = zone
-      } else {
-        dims = { rows: scene.gridRows, cols: scene.gridCols }
-      }
-      const outside = cells.some((c) => {
-        const [row, col] = c.split(',').map(Number)
-        return row >= dims.rows || col >= dims.cols
-      })
-      if (outside) return { error: 'Selected cells are outside the grid.' }
-    }
-    return { fields: { ...NO_CARE, sceneId, zoneId, cells: cells.sort(), careAction } }
+    const outside = cells.some((c) => {
+      const [row, col] = c.split(',').map(Number)
+      return row >= scene.gridRows || col >= scene.gridCols
+    })
+    if (outside) return { error: 'Selected cells are outside the grid.' }
+    return { fields: { ...NO_CARE, sceneId, cells: cells.sort(), careAction } }
   }
 
   return { fields: NO_CARE }
