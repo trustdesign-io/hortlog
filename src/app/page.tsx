@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { getImageProps } from 'next/image'
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import { getLandingPath } from '@/lib/auth/landing'
@@ -16,6 +17,59 @@ export const metadata: Metadata = {
   description:
     'hortlog gives every specimen its own page — identification, provenance, conservation status — readable from a QR code at the vantage point.',
   alternates: { canonical: '/' },
+}
+
+/** Responsive image band — full-width strip with a phone crop below 640 px
+ *  and a wide crop above. Lazy-loaded since it is below the fold. */
+function LandingBand({
+  wideSrc,
+  phoneSrc,
+  alt,
+}: {
+  wideSrc: string
+  phoneSrc: string
+  alt: string
+}) {
+  const {
+    props: { srcSet: wideSrcSet },
+  } = getImageProps({
+    src: wideSrc,
+    alt,
+    width: 1680,
+    height: 720,
+    sizes: '100vw',
+    quality: 85,
+  })
+
+  const {
+    props: { srcSet: phoneSrcSet, src: phoneSrcFallback },
+  } = getImageProps({
+    src: phoneSrc,
+    alt,
+    width: 960,
+    height: 1200,
+    sizes: '100vw',
+    quality: 85,
+  })
+
+  return (
+    <div className="relative w-full h-56 sm:h-80 overflow-hidden" role="img" aria-label={alt}>
+      <picture>
+        {/* Wide crop on sm and above */}
+        <source media="(min-width: 640px)" srcSet={wideSrcSet} sizes="100vw" />
+        <img
+          src={phoneSrcFallback}
+          srcSet={phoneSrcSet}
+          alt=""
+          aria-hidden="true"
+          sizes="100vw"
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+      </picture>
+    </div>
+  )
 }
 
 export default async function HomePage() {
@@ -46,6 +100,17 @@ export default async function HomePage() {
       {/* Hero */}
       <main>
         <HeroSection
+          backgroundMedia={{
+            type: 'image',
+            src: '/images/landing/care-wide.png',
+            phoneSrc: '/images/landing/care-phone.png',
+            srcWidth: 1680,
+            srcHeight: 720,
+            phoneSrcWidth: 960,
+            phoneSrcHeight: 1200,
+            alt: 'A horticulturist repotting an orchid in a glasshouse',
+            sizes: '100vw',
+          }}
           heading={
             <h1 className="font-heading text-4xl sm:text-5xl font-medium leading-tight mb-6">
               A living record for botanical collections
@@ -71,47 +136,54 @@ export default async function HomePage() {
         />
 
         {/* How it works */}
-        <section className="bg-card border-t border-border px-6 py-20">
-          <div className="max-w-4xl mx-auto">
-            <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-4 text-center">
-              How we can label plants better
-            </h2>
-            <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-16">
-              A label can only hold a few words, and the most remarkable plants are often
-              furthest from the path. One code at the viewpoint opens up every plant you can
-              see, with as much as there is to tell.
-            </p>
+        <section className="bg-card border-t border-border">
+          <LandingBand
+            wideSrc="/images/landing/discovery-wide.png"
+            phoneSrc="/images/landing/discovery-phone.png"
+            alt="A visitor scanning a QR label at an orchid display"
+          />
+          <div className="px-6 py-20">
+            <div className="max-w-4xl mx-auto">
+              <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-4 text-center">
+                How we can label plants better
+              </h2>
+              <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-16">
+                A label can only hold a few words, and the most remarkable plants are often
+                furthest from the path. One code at the viewpoint opens up every plant you can
+                see, with as much as there is to tell.
+              </p>
 
-            <div className="grid sm:grid-cols-3 gap-8">
-              <div className="flex flex-col gap-3">
-                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
-                  1
+              <div className="grid sm:grid-cols-3 gap-8">
+                <div className="flex flex-col gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
+                    1
+                  </div>
+                  <h3 className="font-heading text-lg font-medium">Scan the code</h3>
+                  <p className="text-sm text-muted-foreground">
+                    One QR code at the vantage point covers every specimen visible
+                    from where you stand. No app to install.
+                  </p>
                 </div>
-                <h3 className="font-heading text-lg font-medium">Scan the code</h3>
-                <p className="text-sm text-muted-foreground">
-                  One QR code at the vantage point covers every specimen visible
-                  from where you stand. No app to install.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
-                  2
+                <div className="flex flex-col gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
+                    2
+                  </div>
+                  <h3 className="font-heading text-lg font-medium">See what&apos;s in the scene</h3>
+                  <p className="text-sm text-muted-foreground">
+                    A grid or list of every specimen placed in that scene,
+                    laid out the way the garden staff decided.
+                  </p>
                 </div>
-                <h3 className="font-heading text-lg font-medium">See what&apos;s in the scene</h3>
-                <p className="text-sm text-muted-foreground">
-                  A grid or list of every specimen placed in that scene,
-                  laid out the way the garden staff decided.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
-                  3
+                <div className="flex flex-col gap-3">
+                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
+                    3
+                  </div>
+                  <h3 className="font-heading text-lg font-medium">Read the full record</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Scientific name, family, origin, conservation status, planting notes —
+                    updated whenever the record changes.
+                  </p>
                 </div>
-                <h3 className="font-heading text-lg font-medium">Read the full record</h3>
-                <p className="text-sm text-muted-foreground">
-                  Scientific name, family, origin, conservation status, planting notes —
-                  updated whenever the record changes.
-                </p>
               </div>
             </div>
           </div>
@@ -135,6 +207,11 @@ export default async function HomePage() {
         </section>
 
         {/* Personal record */}
+        <LandingBand
+          wideSrc="/images/landing/team-wide.png"
+          phoneSrc="/images/landing/team-phone.png"
+          alt="Two staff members reviewing records on a tablet at an orchid wall"
+        />
         <PersonalRecordSection />
 
         {/* The story behind hortlog */}
