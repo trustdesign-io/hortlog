@@ -4,6 +4,9 @@ import { prisma } from '@/lib/prisma'
 import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
 import { GaEvent } from '@/components/ga-event'
 import { truncateDescription } from '@/lib/seo'
+import { getCurrentUser } from '@/lib/auth/current-user'
+import { SpecimenWorkHistory } from '@/components/specimen-work-history'
+import { SpecimenCare } from '@/components/specimen-care'
 
 interface PublicSpecimenInScenePageProps {
   params: Promise<{
@@ -98,10 +101,14 @@ export default async function PublicSpecimenInScenePage({
   const { org: orgSlug, collection: collectionSlug, scene: sceneSlug, specimen: specimenSlug } =
     await params
 
-  const data = await resolveData(orgSlug, collectionSlug, sceneSlug, specimenSlug)
+  const [data, currentUser] = await Promise.all([
+    resolveData(orgSlug, collectionSlug, sceneSlug, specimenSlug),
+    getCurrentUser(),
+  ])
   if (!data) return notFound()
 
   const { org, collection, scene, specimen } = data
+  const isMember = currentUser?.memberships.some((m) => m.organisation.slug === orgSlug) ?? false
   const scenePath = `/${orgSlug}/${collectionSlug}/${sceneSlug}`
 
   const breadcrumbs = [
@@ -133,7 +140,12 @@ export default async function PublicSpecimenInScenePage({
         }}
         breadcrumbs={breadcrumbs}
         backHref={scenePath}
-      />
+      >
+        <SpecimenCare specimenId={specimen.id} audience={isMember ? 'members' : 'public'} />
+        {isMember && currentUser && (
+          <SpecimenWorkHistory orgSlug={orgSlug} specimenId={specimen.id} userId={currentUser.id} />
+        )}
+      </SpecimenDetail>
     </>
   )
 }

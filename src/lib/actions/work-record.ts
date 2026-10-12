@@ -113,6 +113,7 @@ export async function recordWork(
   }
 
   revalidatePath(`/${orgSlug}/specimens/${specimen.slug}`)
+  revalidatePath('/[org]/[collection]/[scene]/[specimen]', 'page')
   revalidatePath(`/${orgSlug}`)
 
   return { success: true }

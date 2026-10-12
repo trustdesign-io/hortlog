@@ -21,6 +21,8 @@ model User {
   recordPublic    Boolean @default(false)
   // Note and Open questions are left out of the public record unless the member includes them
   recordShowNotes Boolean @default(false)
+  // Named on public plant pages for the care they log; off until the member opts in
+  creditOnPlants  Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

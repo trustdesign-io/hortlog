@@ -13,6 +13,7 @@ const baseUser: User = {
   username: null,
   recordPublic: false,
   recordShowNotes: false,
+  creditOnPlants: false,
   createdAt: new Date('2025-01-10'),
   updatedAt: new Date('2025-03-01'),
 }
