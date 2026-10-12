@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { GridEditor } from './grid-editor'
 import { QRPanel } from './qr-panel'
+import { GridSizeControls } from './grid-size-controls'
 
 interface SceneEditPageProps {
   params: Promise<{ org: string; id: string }>
@@ -72,11 +73,11 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
           Back to scenes
         </Link>
         <h1 className="font-heading text-2xl font-medium">{scene.name}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {scene.gridRows}×{scene.gridCols} grid
-          {scene.primaryCollection && ` · ${scene.primaryCollection.name}`}
-        </p>
+        {scene.primaryCollection && (
+          <p className="mt-1 text-sm text-muted-foreground">{scene.primaryCollection.name}</p>
+        )}
       </div>
+      <GridSizeControls orgSlug={orgSlug} sceneId={scene.id} rows={scene.gridRows} cols={scene.gridCols} />
       <GridEditor
         orgSlug={orgSlug}
         sceneId={scene.id}

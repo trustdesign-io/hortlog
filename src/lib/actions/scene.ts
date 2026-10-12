@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
+import { cellsOutside, MAX_GRID, MIN_GRID, withinLimits, type GridEdge } from '@/lib/scene-grid'
 import type { ActionResult } from '@/lib/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
@@ -122,9 +123,12 @@ export async function placeSpecimen(
 
   const scene = await prisma.scene.findUnique({
     where: { id: sceneId, organisationId: org.id },
-    select: { id: true },
+    select: { id: true, gridRows: true, gridCols: true },
   })
   if (!scene) return { success: false, error: 'Scene not found.' }
+  if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0 || row >= scene.gridRows || col >= scene.gridCols) {
+    return { success: false, error: 'That cell is outside the grid.' }
+  }
 
   const specimen = await prisma.specimen.findUnique({
     where: { id: specimenId, organisationId: org.id },
@@ -214,5 +218,47 @@ export async function removeSpecimenFromCell(
   }
 
   revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
+  return { success: true }
+}
+
+/** Adds or removes the last row or column. Removing only works when it's empty. */
+export async function resizeSceneGrid(
+  orgSlug: string,
+  sceneId: string,
+  edge: GridEdge,
+  delta: 1 | -1,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+  if (edge !== 'row' && edge !== 'col') return { success: false, error: 'Invalid change.' }
+  if (delta !== 1 && delta !== -1) return { success: false, error: 'Invalid change.' }
+
+  const scene = await prisma.scene.findFirst({
+    where: { id: sceneId, organisation: { slug: orgSlug } },
+    select: { id: true, gridRows: true, gridCols: true, specimens: { select: { gridCell: true } } },
+  })
+  if (!scene) return { success: false, error: 'Scene not found.' }
+
+  const rows = edge === 'row' ? scene.gridRows + delta : scene.gridRows
+  const cols = edge === 'col' ? scene.gridCols + delta : scene.gridCols
+  if (!withinLimits(rows) || !withinLimits(cols)) {
+    return { success: false, error: `Grids can have ${MIN_GRID} to ${MAX_GRID} rows and columns.` }
+  }
+
+  const blocked = cellsOutside(scene.specimens.map((s) => s.gridCell), rows, cols)
+  if (blocked.length > 0) {
+    const which = edge === 'row' ? `row ${scene.gridRows}` : `column ${scene.gridCols}`
+    const n = blocked.length
+    return { success: false, error: `Move or remove the ${n} plant${n === 1 ? '' : 's'} in ${which} first.` }
+  }
+
+  try {
+    await prisma.scene.update({ where: { id: scene.id }, data: { gridRows: rows, gridCols: cols } })
+  } catch (err) {
+    console.error('[resizeSceneGrid] error:', err)
+    return { success: false, error: 'Failed to resize the grid. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes`)
   return { success: true }
 }
