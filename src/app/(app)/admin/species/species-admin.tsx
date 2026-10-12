@@ -282,16 +282,21 @@ export function SpeciesAdminList({ species }: SpeciesAdminListProps) {
             <SpecimenImage imageUrl={s.photoUrl} alt="" fill sizes="48px" className="object-cover" />
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium">{s.commonName}</p>
+            <p className="truncate text-sm font-medium">{s.commonName}</p>
             <ScientificName className="text-xs text-muted-foreground">
               {s.scientificName}
             </ScientificName>
             {s.family && (
               <p className="text-xs text-muted-foreground">{s.family}</p>
             )}
+            {s._count.specimens > 0 && (
+              <p className="text-xs text-muted-foreground sm:hidden">
+                {s._count.specimens} specimen{s._count.specimens === 1 ? '' : 's'}
+              </p>
+            )}
           </div>
           {s._count.specimens > 0 && (
-            <span className="shrink-0 text-xs text-muted-foreground">
+            <span className="hidden shrink-0 text-xs text-muted-foreground sm:inline">
               {s._count.specimens} specimen{s._count.specimens === 1 ? '' : 's'}
             </span>
           )}

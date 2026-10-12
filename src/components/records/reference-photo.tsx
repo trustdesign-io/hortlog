@@ -31,7 +31,7 @@ export function ReferencePhoto({ species, name }: ReferencePhotoProps) {
         width={500}
         height={500}
         sizes="(min-width: 640px) 20rem, 100vw"
-        className="h-auto max-h-80 w-auto max-w-full rounded-md border border-border"
+        className="h-auto max-h-80 w-full max-w-sm rounded-md border border-border object-cover"
       />
       <figcaption className="text-xs leading-snug text-muted-foreground">
         <span className="block font-medium uppercase tracking-wide">Reference photo, not this plant</span>
