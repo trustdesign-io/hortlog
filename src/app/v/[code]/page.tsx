@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import { QrRedirect } from './qr-redirect'
+import { publicScenePath } from '@/lib/scene-urls'
 
 interface ShortLinkPageProps {
   params: Promise<{ code: string }>
@@ -24,9 +25,7 @@ export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
   const sceneSlug = scene.slug
   const collectionSlug = scene.primaryCollection?.slug
 
-  const destination = collectionSlug
-    ? `/${orgSlug}/${collectionSlug}/${sceneSlug}`
-    : `/${orgSlug}/scenes/${sceneSlug}`
+  const destination = publicScenePath(orgSlug, sceneSlug, collectionSlug ?? null)
 
   return <QrRedirect destination={destination} shortCode={code} />
 }
