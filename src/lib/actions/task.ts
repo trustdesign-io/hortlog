@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { WorkAction } from '@prisma/client'
 import { requireOrgAccess } from '@/lib/auth/permissions'
-import { syncTaskCare } from '@/lib/task-care'
+import { sameTarget, syncTaskCare } from '@/lib/task-care'
 import type { ActionResult } from '@/lib/shared/types'
 
 async function getOrg(orgSlug: string) {
@@ -28,22 +28,50 @@ async function validateAssignees(
 
 interface TaskCareFields {
   specimenId: string | null
+  sceneId: string | null
+  cells: string[]
   careAction: WorkAction | null
 }
 
-/** The optional plant and care action from the task form, checked against the org. */
+const NO_CARE: TaskCareFields = { specimenId: null, sceneId: null, cells: [], careAction: null }
+const CELL_PATTERN = /^\d{1,2},\d{1,2}$/
+
+/** The optional target (a plant, or a scene and some of its cells) and care action, checked against the org. */
 async function parseCareFields(
   formData: FormData,
   organisationId: string,
 ): Promise<{ error: string } | { fields: TaskCareFields }> {
-  const specimenId = (formData.get('specimenId') as string | null)?.trim() || null
+  const target = (formData.get('target') as string | null) ?? 'none'
   const actionRaw = (formData.get('careAction') as string | null)?.trim() || null
-  if (!specimenId) return { fields: { specimenId: null, careAction: null } }
-
-  const specimen = await prisma.specimen.findFirst({ where: { id: specimenId, organisationId }, select: { id: true } })
-  if (!specimen) return { error: 'Selected plant not found.' }
   if (actionRaw && !(actionRaw in WorkAction)) return { error: 'Invalid care action.' }
-  return { fields: { specimenId, careAction: (actionRaw as WorkAction | null) ?? null } }
+  const careAction = (actionRaw as WorkAction | null) ?? null
+
+  if (target === 'plant') {
+    const specimenId = (formData.get('specimenId') as string | null)?.trim() || null
+    if (!specimenId) return { error: 'Choose a plant.' }
+    const specimen = await prisma.specimen.findFirst({ where: { id: specimenId, organisationId }, select: { id: true } })
+    if (!specimen) return { error: 'Selected plant not found.' }
+    return { fields: { ...NO_CARE, specimenId, careAction } }
+  }
+
+  if (target === 'scene') {
+    const sceneId = (formData.get('sceneId') as string | null)?.trim() || null
+    if (!sceneId) return { error: 'Choose a scene.' }
+    const scene = await prisma.scene.findFirst({
+      where: { id: sceneId, organisationId },
+      select: { id: true, gridRows: true, gridCols: true },
+    })
+    if (!scene) return { error: 'Selected scene not found.' }
+    const cells = [...new Set((formData.getAll('cell') as string[]).filter((c) => CELL_PATTERN.test(c)))]
+    const outside = cells.some((c) => {
+      const [row, col] = c.split(',').map(Number)
+      return row >= scene.gridRows || col >= scene.gridCols
+    })
+    if (outside) return { error: 'Selected cells are outside the grid.' }
+    return { fields: { ...NO_CARE, sceneId, cells: cells.sort(), careAction } }
+  }
+
+  return { fields: NO_CARE }
 }
 
 /** Care logged from tasks shows on plant pages. */
@@ -131,7 +159,7 @@ export async function updateTask(
 
   const task = await prisma.task.findUnique({
     where: { id: taskId, organisationId: org.id },
-    select: { id: true },
+    select: { id: true, specimenId: true, sceneId: true, cells: true },
   })
   if (!task) return { success: false, error: 'Task not found.' }
 
@@ -157,7 +185,8 @@ export async function updateTask(
             : undefined,
         },
       })
-      await syncTaskCare(tx, taskId)
+      // A new target while done means working out the plants again
+      await syncTaskCare(tx, taskId, { refreshTargets: !sameTarget(task, care.fields) })
     }, { isolationLevel: 'Serializable' })
   } catch (err) {
     console.error('[updateTask] Prisma error:', err)
@@ -195,7 +224,7 @@ export async function setTaskStatus(
         data: { status, completedAt: status === 'DONE' ? new Date() : null },
       })
       // Ticking off logs the task's care for each assignee; reopening removes it
-      await syncTaskCare(tx, taskId)
+      await syncTaskCare(tx, taskId, { refreshTargets: status === 'DONE' })
     }, { isolationLevel: 'Serializable' })
   } catch (err) {
     console.error('[setTaskStatus] Prisma error:', err)

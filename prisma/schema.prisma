@@ -152,6 +152,7 @@ model Scene {
 
   specimens   Specimen[]
   assignments SceneAssignment[]
+  tasks       Task[]
 
   @@unique([slug, organisationId])
 }
@@ -192,11 +193,18 @@ model Task {
 
   assignees TaskAssignee[]
 
-  // Optional plant and care action: ticking the task off logs the care for each assignee
-  specimenId  String?
-  specimen    Specimen?      @relation(fields: [specimenId], references: [id], onDelete: SetNull)
-  careAction  WorkAction?
-  careEntries WorkLogEntry[]
+  // Optional target and care action: ticking the task off logs the care on each
+  // target plant for each assignee. The target is one plant, or a scene (all of
+  // it, or the cells listed as "row,col").
+  specimenId      String?
+  specimen        Specimen?      @relation(fields: [specimenId], references: [id], onDelete: SetNull)
+  sceneId         String?
+  scene           Scene?         @relation(fields: [sceneId], references: [id], onDelete: SetNull)
+  cells           String[]       @default([])
+  // The plants care was logged on, fixed when ticked off so later moves don't rewrite history
+  careSpecimenIds String[]       @default([])
+  careAction      WorkAction?
+  careEntries     WorkLogEntry[]
 
   createdById String?
   createdBy   User?   @relation("CreatedTasks", fields: [createdById], references: [id], onDelete: SetNull)
