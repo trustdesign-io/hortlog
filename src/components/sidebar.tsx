@@ -26,8 +26,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { SignOutButton, UserIdentity, UserMenu } from '@/components/user-menu'
 import { Logo } from '@/components/layout/logo'
-import { ThemeToggle } from '@/components/theme-toggle'
-import { TourButton } from '@/components/tour/tour-button'
+import { useMobilePanels } from '@/components/layout/mobile-panels'
 import type { TourPanel } from '@/components/tour/tour-steps'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 
@@ -211,7 +210,6 @@ interface SidebarContentProps {
   user: UserWithMemberships
   onNavigate?: () => void
   allOrgs?: OrgOption[]
-  showPanel?: (panel: TourPanel | null) => void
   /** Mobile splits the You section into its own panel. */
   includeYou?: boolean
 }
@@ -222,7 +220,7 @@ function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefin
     : user.memberships.map(m => m.organisation.slug)
 }
 
-function SidebarContent({ user, onNavigate, allOrgs, showPanel, includeYou = true }: SidebarContentProps) {
+function SidebarContent({ user, onNavigate, allOrgs, includeYou = true }: SidebarContentProps) {
   const pathname = usePathname()
   const knownSlugs = getKnownSlugs(user, allOrgs)
   const orgSlug = resolveOrgSlug(pathname, knownSlugs, user.memberships.map((m) => m.organisation.slug))
@@ -256,7 +254,7 @@ function SidebarContent({ user, onNavigate, allOrgs, showPanel, includeYou = tru
 
       {includeYou && (
         <div className="border-t pt-3">
-          <YouSection user={user} onNavigate={onNavigate} showPanel={showPanel} />
+          <YouSection user={user} onNavigate={onNavigate} />
         </div>
       )}
     </div>
@@ -266,28 +264,25 @@ function SidebarContent({ user, onNavigate, allOrgs, showPanel, includeYou = tru
 interface YouSectionProps {
   user: UserWithMemberships
   onNavigate?: () => void
-  showPanel?: (panel: TourPanel | null) => void
 }
 
-/** Your record and account, tour and theme, then who's signed in. */
-function YouSection({ user, onNavigate, showPanel }: YouSectionProps) {
+/** Your record and account, then who's signed in. */
+function YouSection({ user, onNavigate }: YouSectionProps) {
   return (
     <>
       <p className="px-6 pb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground/70">
         You
       </p>
       <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
-      <div className="flex flex-wrap items-center gap-1 border-b px-2 py-1.5">
-        <TourButton user={user} showPanel={showPanel} showLabel />
-        <ThemeToggle showLabel />
+      <div className="mt-2 border-t">
+        <UserMenu user={user} />
       </div>
-      <UserMenu user={user} />
     </>
   )
 }
 
 /** Mobile You panel: who you are at the top, your links in the middle, sign out at the foot. */
-function YouPanel({ user, onNavigate, showPanel }: YouSectionProps) {
+function YouPanel({ user, onNavigate }: YouSectionProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="border-b pb-5 pt-12">
@@ -295,10 +290,6 @@ function YouPanel({ user, onNavigate, showPanel }: YouSectionProps) {
       </div>
       <div className="flex-1 overflow-y-auto py-3">
         <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
-        <div className="mt-1 flex flex-col items-stretch gap-0.5 px-3">
-          <TourButton user={user} showPanel={showPanel} showLabel />
-          <ThemeToggle showLabel />
-        </div>
       </div>
       <div className="border-t p-3">
         <SignOutButton variant="outline" size="lg" className="w-full" />
@@ -309,7 +300,7 @@ function YouPanel({ user, onNavigate, showPanel }: YouSectionProps) {
 
 export function Sidebar({ user, allOrgs }: SidebarProps) {
   // Mobile has two slide-out panels: the menu (left) and You (right). At most one is open.
-  const [panel, setPanel] = useState<TourPanel | null>(null)
+  const { panel, setPanel } = useMobilePanels()
   const close = () => setPanel(null)
   const panelProps = (which: TourPanel) => ({
     open: panel === which,
@@ -333,7 +324,7 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
             </SheetTrigger>
             <SheetContent side="right" className="w-72 p-0">
               <SheetTitle className="sr-only">You</SheetTitle>
-              <YouPanel user={user} onNavigate={close} showPanel={setPanel} />
+              <YouPanel user={user} onNavigate={close} />
             </SheetContent>
           </Sheet>
           <Sheet {...panelProps('nav')}>

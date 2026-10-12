@@ -3,6 +3,7 @@
 import { useCallback, useRef } from 'react'
 import { GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { useMobilePanels } from '@/components/layout/mobile-panels'
 import { TOUR_STEPS, type TourPanel } from './tour-steps'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 import { isLeader } from '@/lib/roles'
@@ -15,8 +16,6 @@ const PANEL_OPEN_DELAY_MS = 300
 
 interface TourButtonProps {
   user: UserWithMemberships
-  /** Mobile only: show one slide-out panel (closing the other), or close both with null. */
-  showPanel?: (panel: TourPanel | null) => void
   showLabel?: boolean
 }
 
@@ -39,7 +38,9 @@ function userRole(user: UserWithMemberships): 'admin' | 'manager' | 'member' {
 
 const ROLE_ORDER = { member: 0, manager: 1, admin: 2 } as const
 
-export function TourButton({ user, showPanel, showLabel = false }: TourButtonProps) {
+export function TourButton({ user, showLabel = false }: TourButtonProps) {
+  // Mobile: open one slide-out panel (closing the other), or close both with null
+  const { setPanel: showPanel } = useMobilePanels()
   const role = userRole(user)
   const running = useRef(false)
 
@@ -69,7 +70,7 @@ export function TourButton({ user, showPanel, showLabel = false }: TourButtonPro
         if (!isMobile) return
         const wanted = present[index]?.panel ?? null
         if (wanted === openPanel) return
-        showPanel?.(wanted)
+        showPanel(wanted)
         openPanel = wanted
         if (wanted) await wait(PANEL_OPEN_DELAY_MS)
       }
@@ -100,7 +101,7 @@ export function TourButton({ user, showPanel, showLabel = false }: TourButtonPro
         // Providing this hook stops driver.js closing on its own: Done, ✕ and Esc
         // all land here, so we must call destroy() ourselves
         onDestroyStarted: (_el, _step, { driver: tour }) => {
-          if (isMobile) showPanel?.(null)
+          if (isMobile) showPanel(null)
           running.current = false
           tour.destroy()
         },
