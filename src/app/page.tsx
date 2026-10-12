@@ -70,15 +70,16 @@ export default async function HomePage() {
           }
         />
 
-        {/* Problem / Vantage explanation */}
+        {/* How it works */}
         <section className="bg-card border-t border-border px-6 py-20">
           <div className="max-w-4xl mx-auto">
             <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-4 text-center">
-              The problem with plant labels
+              How we can label plants better
             </h2>
             <p className="text-muted-foreground text-center max-w-2xl mx-auto mb-16">
-              Most labels stand too far from the path to read. When you can read one,
-              it carries a fixed name and a date — nothing more.
+              A label can only hold a few words, and the most remarkable plants are often
+              furthest from the path. One code at the viewpoint opens up every plant you can
+              see, with as much as there is to tell.
             </p>
 
             <div className="grid sm:grid-cols-3 gap-8">
@@ -116,8 +117,46 @@ export default async function HomePage() {
           </div>
         </section>
 
+        {/* Natural interpretation */}
+        <section className="px-6 py-20">
+          <div className="max-w-2xl mx-auto text-center">
+            <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+              Natural interpretation
+            </p>
+            <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-4">
+              Every plant has a story worth telling
+            </h2>
+            <p className="text-muted-foreground">
+              Where it came from, how it got here, who looks after it and what they did this
+              season. hortlog keeps those stories with the plant, so the label grows with the
+              garden: pruned in spring, repotted last week, newly flowering today.
+            </p>
+          </div>
+        </section>
+
         {/* Personal record */}
         <PersonalRecordSection />
+
+        {/* The story behind hortlog */}
+        <section className="bg-card border-t border-border px-6 py-20">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-6 text-center">
+              What&apos;s the story behind this?
+            </h2>
+            <div className="space-y-4 text-muted-foreground">
+              <p>
+                It began in a glasshouse, standing on the path and squinting at a label set
+                far back among the plants. The specimen behind it was extraordinary. The
+                label could only say so much.
+              </p>
+              <p>
+                hortlog was made by someone who works where design and botany meet, to give
+                every plant room to tell its story, and to give the people who care for it
+                the credit they deserve.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* CTA footer */}
         <section className="px-6 py-20 text-center">
