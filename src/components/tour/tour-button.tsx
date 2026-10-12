@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useRef } from 'react'
-import { Compass } from 'lucide-react'
+import { GraduationCap } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { TOUR_STEPS } from './tour-steps'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
@@ -101,7 +101,7 @@ export function TourButton({ user, openDrawer, closeDrawer }: TourButtonProps) {
       data-tour="tour-button"
       onClick={() => void startTour()}
     >
-      <Compass className="h-4 w-4" aria-hidden="true" />
+      <GraduationCap className="h-4 w-4" aria-hidden="true" />
     </Button>
   )
 }
