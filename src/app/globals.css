@@ -56,6 +56,10 @@
 
 /* ── hortlog light theme ────────────────────────────────────────────────── */
 :root {
+  /* Tour blue — deliberately different from the brand palette so tooltips
+     cannot be confused with the normal interface. Passes WCAG AA (4.5:1). */
+  --tour: #2563EB;
+  --tour-foreground: #FFFFFF;
   --background: #EDEEE0;
   --foreground: #192419;
   --card: #F5F5EC;
@@ -114,6 +118,47 @@
   --border: #C2D4BA;
   --input: #C2D4BA;
   --ring: #2B5A32;
+}
+
+/* ── driver.js tour overrides — use --tour blue, not the brand green ─────── */
+.hortlog-tour-popover,
+.driver-popover {
+  background-color: var(--tour) !important;
+  color: var(--tour-foreground) !important;
+  border: none !important;
+  border-radius: 0.5rem !important;
+}
+.hortlog-tour-popover .driver-popover-title,
+.driver-popover .driver-popover-title {
+  color: var(--tour-foreground) !important;
+  font-weight: 600 !important;
+}
+.hortlog-tour-popover .driver-popover-description,
+.driver-popover .driver-popover-description {
+  color: var(--tour-foreground) !important;
+  opacity: 0.9 !important;
+}
+.hortlog-tour-popover .driver-popover-progress-text,
+.driver-popover .driver-popover-progress-text {
+  color: var(--tour-foreground) !important;
+  opacity: 0.75 !important;
+}
+/* Arrow */
+.driver-popover-arrow-side-left.driver-popover-arrow { border-right-color: var(--tour) !important; }
+.driver-popover-arrow-side-right.driver-popover-arrow { border-left-color: var(--tour) !important; }
+.driver-popover-arrow-side-top.driver-popover-arrow { border-bottom-color: var(--tour) !important; }
+.driver-popover-arrow-side-bottom.driver-popover-arrow { border-top-color: var(--tour) !important; }
+/* Buttons */
+.hortlog-tour-popover button,
+.driver-popover .driver-popover-navigation-btns button {
+  background: rgba(255 255 255 / 0.15) !important;
+  color: var(--tour-foreground) !important;
+  border: 1px solid rgba(255 255 255 / 0.3) !important;
+  border-radius: 0.375rem !important;
+}
+.hortlog-tour-popover button:hover,
+.driver-popover .driver-popover-navigation-btns button:hover {
+  background: rgba(255 255 255 / 0.25) !important;
 }
 
 /* ── hortlog dark theme ─────────────────────────────────────────────────── */
