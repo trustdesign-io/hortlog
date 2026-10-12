@@ -1,6 +1,6 @@
 import { forwardRef, type CSSProperties } from 'react'
 import { Plus, X } from 'lucide-react'
-import { HexOutline } from '@/components/hex-grid'
+import { HexOutline, HexPlantLabel } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 
 export interface PlacedSpecimen {
@@ -70,8 +70,7 @@ export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function F
       role="gridcell"
       aria-rowindex={row + 1}
       aria-colindex={col + 1}
-      aria-label={`${specimen.commonName} at row ${row + 1}, column ${col + 1}`}
-      title={`${specimen.commonName} (${specimen.scientificName})`}
+      aria-label={`${specimen.scientificName} at row ${row + 1}, column ${col + 1}`}
       onFocus={onFocus}
       onKeyDown={onKeyDown}
     >
@@ -83,14 +82,12 @@ export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function F
           sizes="120px"
           className="object-cover"
         />
-        <span className="absolute inset-x-0 bottom-[22%] block truncate bg-black/65 px-4 py-0.5 text-center text-[11px] font-medium leading-tight text-white">
-          {specimen.commonName}
-        </span>
+        <HexPlantLabel scientificName={specimen.scientificName} />
         <button
           type="button"
           onClick={onRemove}
           className="group/remove absolute right-[14%] top-[18%] z-10 flex h-11 w-11 items-center justify-center text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-          aria-label={`Remove ${specimen.commonName} from this cell`}
+          aria-label={`Remove ${specimen.scientificName} from this cell`}
           tabIndex={-1}
         >
           <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/90 group-focus-visible/remove:ring-2 group-focus-visible/remove:ring-ring">

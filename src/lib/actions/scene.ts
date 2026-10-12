@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
-import { cellsOutside, MAX_GRID, MIN_GRID, withinLimits, type GridEdge } from '@/lib/scene-grid'
+import { GRID_SIDES, MAX_GRID, MIN_GRID, parseCell, planGridResize, type GridSide } from '@/lib/scene-grid'
 import { DEFAULT_PERSPECTIVE, parsePerspective } from '@/lib/scene-perspective'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -227,45 +227,112 @@ export async function removeSpecimenFromCell(
   return { success: true }
 }
 
-/** Adds or removes the last row or column. Removing only works when it's empty. */
+const SIDE_NAMES: Record<GridSide, string> = {
+  top: 'top row',
+  bottom: 'bottom row',
+  left: 'left column',
+  right: 'right column',
+}
+
+/**
+ * Adds or removes a row or column on one side of a scene's grid. Plants and
+ * task targets are renumbered so everything stays where it was on the ground.
+ */
 export async function resizeSceneGrid(
   orgSlug: string,
   sceneId: string,
-  edge: GridEdge,
+  side: GridSide,
   delta: 1 | -1,
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_edit_scene')
-  if (edge !== 'row' && edge !== 'col') return { success: false, error: 'Invalid change.' }
+  if (!GRID_SIDES.includes(side)) return { success: false, error: 'Invalid change.' }
   if (delta !== 1 && delta !== -1) return { success: false, error: 'Invalid change.' }
 
   const scene = await prisma.scene.findFirst({
     where: { id: sceneId, organisation: { slug: orgSlug } },
-    select: { id: true, gridRows: true, gridCols: true, specimens: { select: { gridCell: true } } },
+    select: {
+      id: true,
+      gridRows: true,
+      gridCols: true,
+      rowShift: true,
+      specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true } },
+      tasks: { where: { NOT: { cells: { isEmpty: true } } }, select: { id: true, cells: true } },
+    },
   })
   if (!scene) return { success: false, error: 'Scene not found.' }
 
-  const rows = edge === 'row' ? scene.gridRows + delta : scene.gridRows
-  const cols = edge === 'col' ? scene.gridCols + delta : scene.gridCols
-  if (!withinLimits(rows) || !withinLimits(cols)) {
+  const plan = planGridResize(
+    { rows: scene.gridRows, cols: scene.gridCols, rowShift: scene.rowShift },
+    side,
+    delta,
+    scene.specimens.map((s) => s.gridCell),
+  )
+  if (!plan.ok && plan.reason === 'limits') {
     return { success: false, error: `Grids can have ${MIN_GRID} to ${MAX_GRID} rows and columns.` }
   }
+  if (!plan.ok) {
+    const n = plan.blocked.length
+    return { success: false, error: `Move or remove the ${n} plant${n === 1 ? '' : 's'} in the ${SIDE_NAMES[side]} first.` }
+  }
 
-  const blocked = cellsOutside(scene.specimens.map((s) => s.gridCell), rows, cols)
-  if (blocked.length > 0) {
-    const which = edge === 'row' ? `row ${scene.gridRows}` : `column ${scene.gridCols}`
-    const n = blocked.length
-    return { success: false, error: `Move or remove the ${n} plant${n === 1 ? '' : 's'} in ${which} first.` }
+  const { rows, cols, rowShift } = plan.shape
+  const renumbers = side === 'top' || side === 'left'
+  // A removed row or column has no plants, but a task may still point at its cells.
+  const keep = (cell: string): boolean => {
+    const rc = parseCell(cell)
+    if (!rc) return false
+    const [r, c] = plan.moveCell(cell).split(',').map(Number)
+    return r >= 0 && c >= 0 && r < rows && c < cols
   }
 
   try {
-    await prisma.scene.update({ where: { id: scene.id }, data: { gridRows: rows, gridCols: cols } })
+    await prisma.$transaction([
+      prisma.scene.update({ where: { id: scene.id }, data: { gridRows: rows, gridCols: cols, rowShift } }),
+      ...(renumbers
+        ? scene.specimens.map((s) =>
+            prisma.specimen.update({ where: { id: s.id }, data: { gridCell: plan.moveCell(s.gridCell as string) } }),
+          )
+        : []),
+      ...scene.tasks
+        .map((t) => ({ id: t.id, before: t.cells, after: t.cells.filter(keep).map(plan.moveCell) }))
+        .filter((t) => t.after.join('|') !== t.before.join('|'))
+        .map((t) => prisma.task.update({ where: { id: t.id }, data: { cells: t.after } })),
+    ])
   } catch (err) {
     console.error('[resizeSceneGrid] error:', err)
     return { success: false, error: 'Failed to resize the grid. Please try again.' }
   }
 
-  revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}`, 'layout')
   revalidatePath(`/${orgSlug}/scenes`)
+  revalidatePath(`/${orgSlug}/todo`)
+  return { success: true }
+}
+
+/** Switches a scene between a bed (lies back) and a wall (upright). */
+export async function setScenePerspective(
+  orgSlug: string,
+  sceneId: string,
+  value: string,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+  const perspective = parsePerspective(value)
+  if (!perspective) return { success: false, error: 'Perspective must be Bed or Wall.' }
+
+  const scene = await prisma.scene.findFirst({
+    where: { id: sceneId, organisation: { slug: orgSlug } },
+    select: { id: true },
+  })
+  if (!scene) return { success: false, error: 'Scene not found.' }
+
+  try {
+    await prisma.scene.update({ where: { id: scene.id }, data: { perspective } })
+  } catch (err) {
+    console.error('[setScenePerspective] error:', err)
+    return { success: false, error: 'Failed to save. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}`, 'layout')
   return { success: true }
 }
 

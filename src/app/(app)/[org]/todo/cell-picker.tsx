@@ -1,6 +1,8 @@
 'use client'
 
-import { HexGrid, HexOutline } from '@/components/hex-grid'
+import { Check } from 'lucide-react'
+import { HexGrid, HexOutline, HexPlantLabel } from '@/components/hex-grid'
+import { SpecimenImage } from '@/components/ui/specimen-image'
 import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 import { cn } from '@/lib/utils'
 
@@ -12,8 +14,9 @@ export interface PickerScene {
   name: string
   gridRows: number
   gridCols: number
+  rowShift: number
   perspective: ScenePerspective
-  plants: Array<{ id: string; cell: string; name: string }>
+  plants: Array<{ id: string; cell: string; scientificName: string; thumbnailUrl: string | null }>
 }
 
 interface CellPickerProps {
@@ -63,6 +66,7 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
           cols={scene.gridCols}
           cellWidth={`${CELL_WIDTH_REM}rem`}
           tiltDeg={sceneTilt(scene.perspective, scene.gridRows, CELL_WIDTH_REM * PX_PER_REM)}
+          rowShift={scene.rowShift}
           renderCell={(row, col, style) => {
             const cell = `${row},${col}`
             const plant = byCell.get(cell)
@@ -83,21 +87,25 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
                 onClick={() => toggle(cell)}
                 disabled={disabled}
                 aria-pressed={isOn}
-                title={plant.name}
+                aria-label={plant.scientificName}
                 className="hex-cell"
                 style={style}
               >
                 <span
                   className={cn(
-                    'hex-shape flex items-center justify-center px-2 text-center text-[11px] leading-tight transition-colors',
-                    isOn
-                      ? 'bg-primary text-primary-foreground'
-                      : selected.length === 0
-                        ? 'bg-primary/15'
-                        : 'bg-muted text-muted-foreground',
+                    'hex-shape block bg-muted transition-opacity',
+                    selected.length > 0 && !isOn && 'opacity-40',
                   )}
                 >
-                  <span className="line-clamp-3">{plant.name}</span>
+                  <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="80px" className="object-cover" />
+                  {isOn && (
+                    <span className="absolute inset-0 flex items-start justify-center bg-primary/35 pt-[16%]">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                        <Check className="h-3.5 w-3.5" aria-hidden="true" />
+                      </span>
+                    </span>
+                  )}
+                  <HexPlantLabel scientificName={plant.scientificName} />
                 </span>
               </button>
             )

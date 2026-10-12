@@ -28,6 +28,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       perspective: true,
       gridRows: true,
       gridCols: true,
+      rowShift: true,
       primaryCollection: { select: { name: true } },
     },
   })
@@ -71,6 +72,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         sceneId={scene.id}
         gridRows={scene.gridRows}
         gridCols={scene.gridCols}
+        rowShift={scene.rowShift}
         perspective={scene.perspective}
         placedSpecimens={placedSpecimens.map((s) => ({
           id: s.id,

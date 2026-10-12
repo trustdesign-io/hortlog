@@ -66,9 +66,15 @@ export default async function TodoPage({ params }: TodoPageProps) {
             perspective: true,
             gridRows: true,
             gridCols: true,
+            rowShift: true,
             specimens: {
               where: { gridCell: { not: null } },
-              select: { id: true, gridCell: true, species: { select: { commonName: true } } },
+              select: {
+                id: true,
+                gridCell: true,
+                imageUrl: true,
+                species: { select: { scientificName: true, photoUrl: true } },
+              },
             },
           },
           orderBy: { name: 'asc' },
@@ -102,8 +108,14 @@ export default async function TodoPage({ params }: TodoPageProps) {
         name: sc.name,
         gridRows: sc.gridRows,
         gridCols: sc.gridCols,
+        rowShift: sc.rowShift,
         perspective: sc.perspective,
-        plants: sc.specimens.map((sp) => ({ id: sp.id, cell: sp.gridCell!, name: sp.species.commonName })),
+        plants: sc.specimens.map((sp) => ({
+          id: sp.id,
+          cell: sp.gridCell!,
+          scientificName: sp.species.scientificName,
+          thumbnailUrl: sp.imageUrl ?? sp.species.photoUrl,
+        })),
       }))}
       orgMembers={orgMembers.map((m) => m.user)}
       plants={specimens.map((sp) => ({

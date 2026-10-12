@@ -24,12 +24,22 @@ export interface HexExtent {
 }
 
 /**
- * Top-left corner of a cell, with x in cell widths and y in cell widths too,
- * so both scale from a single `--hex-w` length. Odd rows shift right by half
- * a cell ("odd-r" offset coordinates).
+ * Whether a row is the one shifted half a cell right. Rows alternate; a scene's
+ * `rowShift` flips the pattern when a row is added or removed at the top, so
+ * the rows already there keep their place.
  */
-export function hexOffset(row: number, col: number): HexOffset {
-  return { x: col + (row % 2) * 0.5, y: row * ROW_STEP * HEX_HEIGHT_RATIO }
+export function isShiftedRow(row: number, rowShift = 0): boolean {
+  return (row + rowShift) % 2 === 1
+}
+
+/**
+ * Top-left corner of a cell, with x in cell widths and y in cell widths too,
+ * so both scale from a single `--hex-w` length. Shifted rows sit half a cell
+ * right. A single shifted row is drawn flush left, as there's nothing to offset from.
+ */
+export function hexOffset(row: number, col: number, rowShift = 0, rows = Infinity): HexOffset {
+  const shift = rows > 1 && isShiftedRow(row, rowShift) ? 0.5 : 0
+  return { x: col + shift, y: row * ROW_STEP * HEX_HEIGHT_RATIO }
 }
 
 /** Viewer distance from the front edge of a bed, in cell widths. */
@@ -89,12 +99,13 @@ export function hexFrame(
   rows: number,
   cols: number,
   tiltDeg = 0,
+  rowShift = 0,
 ): HexFrame {
   const depth = rowDepth(row, rows)
   const scale = depthScale(depth, tiltDeg)
   const height = cellHeight(row, rows, tiltDeg)
   const { width: gridWidth, height: gridHeight } = hexGridExtent(rows, cols, tiltDeg)
-  const centreX = hexOffset(row, col).x + 0.5
+  const centreX = hexOffset(row, col, rowShift, rows).x + 0.5
   return {
     left: (centreX - gridWidth / 2) * scale + gridWidth / 2 - scale / 2,
     top: gridHeight - nearEdge(row, rows, tiltDeg) - height,
@@ -130,8 +141,9 @@ export function hexCellStyle(
   rows: number,
   cols: number,
   tiltDeg = 0,
+  rowShift = 0,
 ): CSSProperties {
-  const frame = hexFrame(row, col, rows, cols, tiltDeg)
+  const frame = hexFrame(row, col, rows, cols, tiltDeg, rowShift)
   return {
     position: 'absolute',
     left: widths(frame.left),

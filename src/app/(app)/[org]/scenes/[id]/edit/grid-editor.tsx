@@ -1,7 +1,8 @@
 'use client'
 
 import { useOptimistic, useTransition, useState, useCallback, useRef } from 'react'
-import { placeSpecimen, removeSpecimenFromCell } from '@/lib/actions/scene'
+import { useRouter } from 'next/navigation'
+import { placeSpecimen, removeSpecimenFromCell, setScenePerspective } from '@/lib/actions/scene'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Input } from '@/components/ui/input'
 import {
@@ -17,6 +18,7 @@ import { HexGrid } from '@/components/hex-grid'
 import { moveHexCell, type HexDirection } from '@/lib/hex-grid'
 import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 import { Button } from '@/components/ui/button'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { RotatePrompt } from './rotate-prompt'
 import { EmptyCell, FilledCell, type PlacedSpecimen } from './grid-cells'
 
@@ -49,6 +51,7 @@ interface GridEditorProps {
   sceneId: string
   gridRows: number
   gridCols: number
+  rowShift: number
   perspective: ScenePerspective
   placedSpecimens: PlacedSpecimen[]
   availableSpecimens: AvailableSpecimen[]
@@ -66,10 +69,14 @@ export function GridEditor({
   sceneId,
   gridRows,
   gridCols,
-  perspective,
+  rowShift,
+  perspective: savedPerspective,
   placedSpecimens,
   availableSpecimens,
 }: GridEditorProps) {
+  const router = useRouter()
+  const [perspective, setPerspective] = useState<ScenePerspective>(savedPerspective)
+  const [perspectiveError, setPerspectiveError] = useState<string | null>(null)
   const [, startTransition] = useTransition()
   const [optimisticGrid, dispatch] = useOptimistic<GridState, OptimisticAction>(
     buildInitialGrid(placedSpecimens),
@@ -140,6 +147,21 @@ export function GridEditor({
     [pickerCell, orgSlug, sceneId, dispatch],
   )
 
+  function changePerspective(next: ScenePerspective) {
+    if (next === perspective) return
+    const previous = perspective
+    setPerspective(next)
+    setPerspectiveError(null)
+    startTransition(async () => {
+      const result = await setScenePerspective(orgSlug, sceneId, next)
+      if (result.success) router.refresh()
+      else {
+        setPerspective(previous)
+        setPerspectiveError(result.error ?? 'Could not change the view.')
+      }
+    })
+  }
+
   function handleRemove(specimen: PlacedSpecimen) {
     const cell = specimen.gridCell
     startTransition(async () => {
@@ -151,19 +173,47 @@ export function GridEditor({
   return (
     <>
       <RotatePrompt />
-      {perspective === 'BED' && (
-        <div className="mb-3 flex justify-end">
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground" id="perspective-label">
+            Perspective
+          </span>
+          <ToggleGroup
+            variant="outline"
+            size="sm"
+            value={[perspective]}
+            onValueChange={(next: string[]) => {
+              const picked = next[0]
+              if (picked === 'BED' || picked === 'WALL') changePerspective(picked)
+            }}
+            aria-labelledby="perspective-label"
+          >
+            <ToggleGroupItem value="BED" className="min-h-9 px-3">
+              Bed
+            </ToggleGroupItem>
+            <ToggleGroupItem value="WALL" className="min-h-9 px-3">
+              Wall
+            </ToggleGroupItem>
+          </ToggleGroup>
+        </div>
+        {perspective === 'BED' && (
           <Button
             type="button"
             variant="outline"
             size="sm"
+            className="min-h-9"
             aria-pressed={isFlat}
             onClick={() => setIsFlat((v) => !v)}
           >
             Flat view
           </Button>
-        </div>
-      )}
+        )}
+        {perspectiveError && (
+          <p className="w-full text-sm text-destructive" role="alert">
+            {perspectiveError}
+          </p>
+        )}
+      </div>
       <div className="overflow-x-auto pb-4">
         <HexGrid
           role="grid"
@@ -175,6 +225,7 @@ export function GridEditor({
           cols={gridCols}
           cellWidth={`${CELL_WIDTH_REM}rem`}
           tiltDeg={tilt}
+          rowShift={rowShift}
           rowProps={(row) => ({ role: 'row', 'aria-rowindex': row + 1 })}
           renderCell={(row, col, style) => {
             const cell = `${row},${col}`
