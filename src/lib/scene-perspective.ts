@@ -30,14 +30,9 @@ export function bedTilt(rows: number, cellWidthPx: number): number {
   return 0
 }
 
-/** Tilt to draw a scene's grid at; walls and the editor's flat view are untilted. */
-export function sceneTilt(
-  perspective: ScenePerspective,
-  rows: number,
-  cellWidthPx: number,
-  isFlat = false,
-): number {
-  if (perspective === 'WALL' || isFlat) return 0
+/** Tilt to draw a scene's grid at; walls are untilted. */
+export function sceneTilt(perspective: ScenePerspective, rows: number, cellWidthPx: number): number {
+  if (perspective === 'WALL') return 0
   return bedTilt(rows, cellWidthPx)
 }
 
