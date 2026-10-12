@@ -42,9 +42,9 @@ describe('hexGridExtent', () => {
 
 describe('hexCellStyle', () => {
   it('scales every length from the --hex-w variable', () => {
-    const style = hexCellStyle(1, 2)
+    const style = hexCellStyle(1, 2, 3, 4)
     expect(style.left).toBe('calc(var(--hex-w) * 2.5)')
-    expect(style.width).toBe('var(--hex-w)')
+    expect(style.width).toBe('calc(var(--hex-w) * 1)')
     expect(String(style.height)).toContain('var(--hex-w)')
   })
 })

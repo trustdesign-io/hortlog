@@ -51,7 +51,7 @@ const resolveScene = cache(async function resolveScene(orgSlug: string, collecti
       organisationId: org.id,
       primaryCollectionId: collection.id,
     },
-    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true },
+    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true, perspective: true },
   })
   if (!scene) return null
 
@@ -127,6 +127,7 @@ export default async function PublicScenePage({ params, searchParams }: PublicSc
           <PublicSceneGrid
             rows={scene.gridRows}
             cols={scene.gridCols}
+            perspective={scene.perspective}
             specimens={specimens
               .filter((s): s is typeof s & { gridCell: string } => s.gridCell !== null)
               .map((s) => ({

@@ -32,11 +32,74 @@ export function hexOffset(row: number, col: number): HexOffset {
   return { x: col + (row % 2) * 0.5, y: row * ROW_STEP * HEX_HEIGHT_RATIO }
 }
 
-/** Bounding box of the whole grid, in cell widths. */
-export function hexGridExtent(rows: number, cols: number): HexExtent {
+/** Viewer distance from the front edge of a bed, in cell widths. */
+const VIEW_DISTANCE = 10
+
+export interface HexFrame {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
+function radians(deg: number): number {
+  return (deg * Math.PI) / 180
+}
+
+/** Distance from the front edge of the bed to the middle of a row, in cell widths. */
+function rowDepth(row: number, rows: number): number {
+  return (rows - 1 - row) * ROW_STEP * HEX_HEIGHT_RATIO + HEX_HEIGHT_RATIO / 2
+}
+
+function depthScale(depth: number, tiltDeg: number): number {
+  return VIEW_DISTANCE / (VIEW_DISTANCE + depth * Math.sin(radians(tiltDeg)))
+}
+
+/** Height above the front of the bed at which a point at `depth` appears. */
+function project(depth: number, tiltDeg: number): number {
+  return depth * Math.cos(radians(tiltDeg)) * depthScale(depth, tiltDeg)
+}
+
+function nearEdge(row: number, rows: number, tiltDeg: number): number {
+  return project(rowDepth(row, rows) - HEX_HEIGHT_RATIO / 2, tiltDeg)
+}
+
+/** Projected near-to-far extent of a row, so rows keep tiling as they lie back. */
+function cellHeight(row: number, rows: number, tiltDeg: number): number {
+  return project(rowDepth(row, rows) + HEX_HEIGHT_RATIO / 2, tiltDeg) - nearEdge(row, rows, tiltDeg)
+}
+
+/** Bounding box of the whole grid, in cell widths. A tilt lays it back as a bed. */
+export function hexGridExtent(rows: number, cols: number, tiltDeg = 0): HexExtent {
   return {
     width: cols + (rows > 1 ? 0.5 : 0),
-    height: (ROW_STEP * (rows - 1) + 1) * HEX_HEIGHT_RATIO,
+    height: project(rowDepth(0, rows) + HEX_HEIGHT_RATIO / 2, tiltDeg),
+  }
+}
+
+/**
+ * Box of one cell, in cell widths. With a tilt the grid is projected as a bed
+ * receding from the viewer, but each cell stays an upright box: scaled and
+ * moved, never rotated, so clipping, hit-testing and labels are unaffected.
+ * Each cell stands on its near edge, so the front row sits on the bed's front.
+ */
+export function hexFrame(
+  row: number,
+  col: number,
+  rows: number,
+  cols: number,
+  tiltDeg = 0,
+): HexFrame {
+  const depth = rowDepth(row, rows)
+  const scale = depthScale(depth, tiltDeg)
+  const height = cellHeight(row, rows, tiltDeg)
+  const { width: gridWidth, height: gridHeight } = hexGridExtent(rows, cols, tiltDeg)
+  const centreX = hexOffset(row, col).x + 0.5
+  return {
+    left: (centreX - gridWidth / 2) * scale + gridWidth / 2 - scale / 2,
+    top: gridHeight - nearEdge(row, rows, tiltDeg) - height,
+    width: scale,
+    height,
   }
 }
 
@@ -45,8 +108,13 @@ function widths(n: number): string {
 }
 
 /** Container style: sets `--hex-w` and sizes the box to hold every cell. */
-export function hexGridStyle(rows: number, cols: number, cellWidth: string): CSSProperties {
-  const { width, height } = hexGridExtent(rows, cols)
+export function hexGridStyle(
+  rows: number,
+  cols: number,
+  cellWidth: string,
+  tiltDeg = 0,
+): CSSProperties {
+  const { width, height } = hexGridExtent(rows, cols, tiltDeg)
   return {
     '--hex-w': cellWidth,
     position: 'relative',
@@ -56,14 +124,20 @@ export function hexGridStyle(rows: number, cols: number, cellWidth: string): CSS
 }
 
 /** Absolute position and size for one cell inside a `hexGridStyle` container. */
-export function hexCellStyle(row: number, col: number): CSSProperties {
-  const { x, y } = hexOffset(row, col)
+export function hexCellStyle(
+  row: number,
+  col: number,
+  rows: number,
+  cols: number,
+  tiltDeg = 0,
+): CSSProperties {
+  const frame = hexFrame(row, col, rows, cols, tiltDeg)
   return {
     position: 'absolute',
-    left: widths(x),
-    top: widths(y),
-    width: 'var(--hex-w)',
-    height: widths(HEX_HEIGHT_RATIO),
+    left: widths(frame.left),
+    top: widths(frame.top),
+    width: widths(frame.width),
+    height: widths(frame.height),
   }
 }
 

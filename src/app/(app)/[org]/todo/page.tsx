@@ -63,6 +63,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
           select: {
             id: true,
             name: true,
+            perspective: true,
             gridRows: true,
             gridCols: true,
             specimens: {
@@ -101,6 +102,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
         name: sc.name,
         gridRows: sc.gridRows,
         gridCols: sc.gridCols,
+        perspective: sc.perspective,
         plants: sc.specimens.map((sp) => ({ id: sp.id, cell: sp.gridCell!, name: sp.species.commonName })),
       }))}
       orgMembers={orgMembers.map((m) => m.user)}

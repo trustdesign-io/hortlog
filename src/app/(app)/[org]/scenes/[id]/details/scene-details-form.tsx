@@ -16,11 +16,20 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
+import type { ScenePerspective } from '@/lib/scene-perspective'
+import { PerspectiveField } from '../../perspective-field'
 import type { ActionResult } from '@/lib/shared/types'
 
 interface SceneDetailsFormProps {
   orgSlug: string
-  scene: { id: string; name: string; slug: string; primaryCollectionId: string | null; plantCount: number }
+  scene: {
+    id: string
+    name: string
+    slug: string
+    primaryCollectionId: string | null
+    perspective: ScenePerspective
+    plantCount: number
+  }
   collections: Array<{ id: string; name: string }>
 }
 
@@ -71,6 +80,7 @@ export function SceneDetailsForm({ orgSlug, scene, collections }: SceneDetailsFo
                 shared elsewhere won&apos;t.
               </p>
             </div>
+            <PerspectiveField defaultValue={scene.perspective} disabled={isPending} />
             {collections.length > 0 && (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="primaryCollectionId">Primary collection</Label>
