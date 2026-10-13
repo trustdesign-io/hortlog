@@ -12,7 +12,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   const { org: orgSlug } = await params
   const org = await prisma.organisation.findUnique({
     where: { slug: orgSlug },
-    select: { latitude: true, longitude: true },
+    select: { name: true, latitude: true, longitude: true },
   })
   const hasLocation = org?.latitude != null && org?.longitude != null
 
@@ -20,7 +20,7 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
     <>
       {hasLocation && (
         <Suspense fallback={null}>
-          <WeatherBar latitude={org.latitude!} longitude={org.longitude!} />
+          <WeatherBar latitude={org.latitude!} longitude={org.longitude!} place={org.name} />
         </Suspense>
       )}
       {children}

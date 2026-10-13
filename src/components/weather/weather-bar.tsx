@@ -28,10 +28,12 @@ const ICONS: Record<WeatherKind, LucideIcon> = {
 interface WeatherBarProps {
   latitude: number
   longitude: number
+  /** Where the forecast is for, e.g. the organisation's name */
+  place: string
 }
 
 /** Full-width strip with today's forecast for the garden. Renders nothing if there's no forecast. */
-export async function WeatherBar({ latitude, longitude }: WeatherBarProps) {
+export async function WeatherBar({ latitude, longitude, place }: WeatherBarProps) {
   const forecast = await getTodayForecast(latitude, longitude)
   if (!forecast) return null
   const Icon = ICONS[forecast.kind]
@@ -44,7 +46,9 @@ export async function WeatherBar({ latitude, longitude }: WeatherBarProps) {
     >
       <Icon className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <p className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
-        <span className="font-medium">Today: {forecast.summary}</span>
+        <span className="font-medium">
+          Today at {place}: {forecast.summary}
+        </span>
         {temps.length > 0 && (
           <span className="tabular-nums">
             {forecast.maxC !== null && (
