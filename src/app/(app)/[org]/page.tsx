@@ -242,13 +242,15 @@ export default async function OrgPage({ params }: OrgPageProps) {
           <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <ListTodo className="h-4 w-4" aria-hidden="true" />
-                Outstanding tasks
+                <ListTodo className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">Outstanding</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="font-heading text-3xl font-semibold">{outstanding}</p>
-              {overdue > 0 && <p className="mt-1 text-xs text-destructive">{overdue} overdue</p>}
+              <p className="flex items-baseline gap-2">
+                <span className="font-heading text-3xl font-semibold">{outstanding}</span>
+                {overdue > 0 && <span className="truncate text-xs text-destructive">{overdue} overdue</span>}
+              </p>
             </CardContent>
           </Card>
         </Link>
@@ -256,8 +258,8 @@ export default async function OrgPage({ params }: OrgPageProps) {
           <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
             <CardHeader className="pb-1">
               <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <CheckSquare className="h-4 w-4" aria-hidden="true" />
-                Done this week
+                <CheckSquare className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span className="truncate">Done this week</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
