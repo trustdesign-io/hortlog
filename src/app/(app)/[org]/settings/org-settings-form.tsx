@@ -22,6 +22,7 @@ interface OrgData {
   directorLabel: string
   managerLabel: string
   memberLabel: string
+  postcode: string | null
 }
 
 interface OrgSettingsFormProps {
@@ -56,7 +57,7 @@ export function OrgSettingsForm({ org, orgSlug }: OrgSettingsFormProps) {
         <Card>
           <CardHeader>
             <CardTitle className="text-base">General</CardTitle>
-            <CardDescription>Update your organisation&apos;s name and URL slug.</CardDescription>
+            <CardDescription>Update your organisation&apos;s name, URL slug and location.</CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
             {state !== null && !state.success && state.error && (
@@ -108,6 +109,27 @@ export function OrgSettingsForm({ org, orgSlug }: OrgSettingsFormProps) {
                   Warning: changing the slug will change your organisation&apos;s URL. Any existing links will break.
                 </p>
               )}
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="postcode">
+                Postcode
+                <span className="ml-1 font-normal text-xs text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="postcode"
+                name="postcode"
+                type="text"
+                autoComplete="postal-code"
+                autoCapitalize="characters"
+                defaultValue={org.postcode ?? ''}
+                placeholder="e.g. DA4 0JB"
+                maxLength={10}
+                className="max-w-40"
+                aria-describedby="postcode-hint"
+              />
+              <p id="postcode-hint" className="text-xs text-muted-foreground">
+                Where the garden is. Used for today&apos;s weather at the top of every page.
+              </p>
             </div>
           </CardContent>
         </Card>

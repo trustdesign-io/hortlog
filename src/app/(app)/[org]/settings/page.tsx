@@ -27,6 +27,7 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
       directorLabel: true,
       managerLabel: true,
       memberLabel: true,
+      postcode: true,
       recordsPublic: true,
       privateRecordsShowName: true,
     },

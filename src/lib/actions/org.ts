@@ -8,6 +8,7 @@ import { requireAuth, requireOrgAccess, isAdmin } from '@/lib/auth/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { uploadOrgLogo } from '@/lib/storage'
 import { RESERVED_ORG_SLUGS } from '@/lib/reserved-slugs'
+import { geocodePostcode, normalisePostcode } from '@/lib/postcode'
 import type { ActionResult } from '@/lib/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
@@ -15,6 +16,27 @@ const APP_URL =
   process.env.NEXT_PUBLIC_SITE_URL ??
   process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('.supabase.co', '.vercel.app') ??
   'http://localhost:3000'
+
+/**
+ * Validates the form's postcode and looks up its coordinates. An empty field
+ * clears the location. Only looks up when the postcode has changed.
+ */
+async function locationFromForm(
+  formData: FormData,
+  current: { postcode: string | null; latitude: number | null; longitude: number | null } | null,
+): Promise<{ error: string } | { postcode: string | null; latitude: number | null; longitude: number | null }> {
+  const raw = (formData.get('postcode') as string | null)?.trim() ?? ''
+  if (!raw) return { postcode: null, latitude: null, longitude: null }
+  const postcode = normalisePostcode(raw)
+  if (!postcode) return { error: 'Please enter a full UK postcode, e.g. DA4 0JB.' }
+  if (current && current.postcode === postcode && current.latitude !== null && current.longitude !== null) {
+    return { postcode, latitude: current.latitude, longitude: current.longitude }
+  }
+  const coords = await geocodePostcode(postcode)
+  if (coords === null) return { error: `We couldn't find the postcode ${postcode}.` }
+  if (coords === undefined) return { error: 'The postcode lookup is unavailable right now. Please try again.' }
+  return { postcode, ...coords }
+}
 
 export async function createOrg(
   _prevState: ActionResult,
@@ -62,10 +84,13 @@ export async function createOrg(
     }
   }
 
+  const location = await locationFromForm(formData, null)
+  if ('error' in location) return { success: false, error: location.error }
+
   let org: { id: string; slug: string }
   try {
     org = await prisma.organisation.create({
-      data: { slug, name },
+      data: { slug, name, ...location },
       select: { id: true, slug: true },
     })
   } catch (err) {
@@ -145,10 +170,18 @@ export async function updateOrgSettings(
     }
   }
 
+  const current = await prisma.organisation.findUnique({
+    where: { slug: orgSlug },
+    select: { postcode: true, latitude: true, longitude: true },
+  })
+  // Older forms have no postcode field: leave the location alone
+  const location = formData.has('postcode') ? await locationFromForm(formData, current) : null
+  if (location && 'error' in location) return { success: false, error: location.error }
+
   try {
     await prisma.organisation.update({
       where: { slug: orgSlug },
-      data: { name, slug, directorLabel, managerLabel, memberLabel },
+      data: { name, slug, directorLabel, managerLabel, memberLabel, ...(location ?? {}) },
     })
   } catch (err) {
     if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
@@ -162,7 +195,8 @@ export async function updateOrgSettings(
     redirect(`/${slug}/settings`)
   }
 
-  revalidatePath(`/${orgSlug}/settings`)
+  // The weather bar on every page of the organisation reads the location
+  revalidatePath(`/${orgSlug}`, 'layout')
   return { success: true }
 }
 

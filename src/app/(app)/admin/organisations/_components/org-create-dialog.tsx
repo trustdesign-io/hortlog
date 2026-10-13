@@ -99,6 +99,18 @@ export function OrgCreateDialog() {
               maxLength={120}
             />
           </Field>
+          <Field>
+            <FieldLabel htmlFor="create-postcode">Postcode (optional)</FieldLabel>
+            <Input
+              id="create-postcode"
+              name="postcode"
+              type="text"
+              autoComplete="postal-code"
+              autoCapitalize="characters"
+              placeholder="DA4 0JB"
+              maxLength={10}
+            />
+          </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>
               Cancel
