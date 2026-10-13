@@ -49,6 +49,11 @@ model Organisation {
   managerLabel  String  @default("Manager")
   memberLabel   String  @default("Member")
 
+  // Where the garden is, for the weather bar. Coordinates come from the postcode.
+  postcode  String?
+  latitude  Float?
+  longitude Float?
+
   // Whether members' public records may show plants worked with here
   recordsPublic          Boolean @default(true)
   // When they may not: whether the summary line names the organisation
