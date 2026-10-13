@@ -274,8 +274,11 @@ function YouSection({ user, onNavigate }: YouSectionProps) {
         You
       </p>
       <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
-      <div className="mt-2 border-t">
-        <UserMenu user={user} />
+      {/* Same height as the desktop site footer, so the two read as one bar */}
+      <div className="mt-2 flex h-16 items-center border-t">
+        <div className="w-full">
+          <UserMenu user={user} />
+        </div>
       </div>
     </>
   )
