@@ -28,22 +28,31 @@ export default async function CollectionsPage({
   });
   if (!org) return notFound();
 
-  const collections = await prisma.collection.findMany({
-    where: { organisationId: org.id },
-    orderBy: { name: "asc" },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      _count: { select: { specimens: true } },
-    },
-  });
+  const [collections, types] = await Promise.all([
+    prisma.collection.findMany({
+      where: { organisationId: org.id },
+      orderBy: { name: "asc" },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        description: true,
+        typeId: true,
+        _count: { select: { specimens: true } },
+      },
+    }),
+    prisma.collectionType.findMany({
+      where: { organisationId: org.id },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, _count: { select: { collections: true } } },
+    }),
+  ]);
 
   return (
     <CollectionsManager
       orgSlug={orgSlug}
       collections={collections}
+      types={types}
       canEdit={canEdit}
       canDelete={canDelete}
     />
