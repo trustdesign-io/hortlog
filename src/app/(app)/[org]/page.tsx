@@ -102,37 +102,6 @@ export default async function OrgPage({ params }: OrgPageProps) {
         )}
       </div>
 
-      {/* Tasks */}
-      <div className="grid grid-cols-2 gap-4">
-        <Link href={`/${orgSlug}/todo`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <ListTodo className="h-4 w-4" aria-hidden="true" />
-                Outstanding tasks
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-heading text-3xl font-semibold">{outstanding}</p>
-              {overdue > 0 && <p className="mt-1 text-xs text-destructive">{overdue} overdue</p>}
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href={`/${orgSlug}/todo`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <CheckSquare className="h-4 w-4" aria-hidden="true" />
-                Done this week
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-heading text-3xl font-semibold">{doneThisWeek}</p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
-
       {/* Summary stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Card size="sm">
@@ -170,6 +139,31 @@ export default async function OrgPage({ params }: OrgPageProps) {
             <p className="font-heading text-3xl font-semibold">{org._count.collections}</p>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Tasks: compact, under the summary */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <Link
+          href={`/${orgSlug}/todo`}
+          className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <ListTodo className="h-4 w-4" aria-hidden="true" />
+            Outstanding tasks
+            {overdue > 0 && <span className="text-xs text-destructive">({overdue} overdue)</span>}
+          </span>
+          <span className="font-medium tabular-nums">{outstanding}</span>
+        </Link>
+        <Link
+          href={`/${orgSlug}/todo`}
+          className="flex items-center justify-between gap-3 rounded-lg px-3 py-2 text-sm ring-1 ring-foreground/10 transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <span className="flex items-center gap-2 text-muted-foreground">
+            <CheckSquare className="h-4 w-4" aria-hidden="true" />
+            Done this week
+          </span>
+          <span className="font-medium tabular-nums">{doneThisWeek}</span>
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
