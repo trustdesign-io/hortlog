@@ -105,11 +105,16 @@ export default async function AppLayout({
           </a>
           <Sidebar user={user} allOrgs={allOrgs} />
           {/* On phones the fixed top bar is 3.5rem tall: clear it, then the usual gutter */}
-          <div className="flex min-w-0 flex-1 flex-col overflow-y-auto px-4 pb-6 pt-[4.75rem] sm:px-6 md:p-6">
-            <main id="main-content" className="flex-1">
-              {children}
-            </main>
-            <AppFooter user={user} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-6 pt-[4.75rem] sm:px-6 md:p-6">
+              <main id="main-content" className="flex-1">
+                {children}
+              </main>
+              {/* Phones: the footer ends the page */}
+              <AppFooter user={user} className="mt-12 pt-3 md:hidden" />
+            </div>
+            {/* Desktop: pinned, level with the sidebar's sign-out row so they form one bar */}
+            <AppFooter user={user} className="hidden h-16 shrink-0 px-6 md:flex" />
           </div>
         </div>
       </MobilePanelsProvider>
