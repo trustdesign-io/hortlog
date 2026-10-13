@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { Leaf, Grid3x3, BookOpen, Plus, CheckSquare, ListTodo } from 'lucide-react'
+import { Leaf, Grid3x3, BookOpen, Plus } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { roleLabel as titleFor } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
@@ -233,41 +233,37 @@ export default async function OrgPage({ params }: OrgPageProps) {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Tasks: the two cards together take one stat card's width */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-      <div className="grid grid-cols-2 gap-4">
-        <Link href={`/${orgSlug}/todo`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <ListTodo className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">Outstanding</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="flex items-baseline gap-2">
-                <span className="font-heading text-3xl font-semibold">{outstanding}</span>
-                {overdue > 0 && <span className="truncate text-xs text-destructive">{overdue} overdue</span>}
-              </p>
-            </CardContent>
-          </Card>
-        </Link>
-        <Link href={`/${orgSlug}/todo`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-          <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
-            <CardHeader className="pb-1">
-              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <CheckSquare className="h-4 w-4 shrink-0" aria-hidden="true" />
-                <span className="truncate">Done this week</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="font-heading text-3xl font-semibold">{doneThisWeek}</p>
-            </CardContent>
-          </Card>
-        </Link>
-      </div>
+        {/* Tasks */}
+        <Card>
+          <CardHeader className="border-b">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base">Tasks</CardTitle>
+              <Link
+                href={`/${orgSlug}/todo`}
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                See all
+              </Link>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0">
+            <ul className="divide-y">
+              {[
+                { label: 'Outstanding tasks', value: outstanding, alert: false },
+                { label: 'Tasks completed this week', value: doneThisWeek, alert: false },
+                { label: 'Overdue tasks', value: overdue, alert: overdue > 0 },
+              ].map((row) => (
+                <li key={row.label} className="flex items-center justify-between px-4 py-3 text-sm">
+                  <span className="font-medium">{row.label}</span>
+                  <span className={row.alert ? 'ml-4 shrink-0 tabular-nums text-destructive' : 'ml-4 shrink-0 tabular-nums text-muted-foreground'}>
+                    {row.value}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
