@@ -235,7 +235,8 @@ export default async function OrgPage({ params }: OrgPageProps) {
         </Card>
       </div>
 
-      {/* Tasks */}
+      {/* Tasks: the two cards together take one stat card's width */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
       <div className="grid grid-cols-2 gap-4">
         <Link href={`/${orgSlug}/todo`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
@@ -264,6 +265,7 @@ export default async function OrgPage({ params }: OrgPageProps) {
             </CardContent>
           </Card>
         </Link>
+      </div>
       </div>
     </div>
   )
