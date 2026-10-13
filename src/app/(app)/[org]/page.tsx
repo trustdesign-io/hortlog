@@ -1,13 +1,14 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { notFound } from 'next/navigation'
-import { Leaf, Grid3x3, BookOpen, Plus } from 'lucide-react'
+import { Leaf, Grid3x3, BookOpen, Plus, CheckSquare, ListTodo } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { roleLabel as titleFor } from '@/lib/roles'
 import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
+import { startOfWeek } from '@/lib/week'
 
 interface OrgPageProps {
   params: Promise<{ org: string }>
@@ -42,6 +43,15 @@ export default async function OrgPage({ params }: OrgPageProps) {
   })
 
   if (!org) return notFound()
+
+  const now = new Date()
+  const [doneThisWeek, outstanding, overdue] = await Promise.all([
+    prisma.task.count({
+      where: { organisationId: org.id, status: 'DONE', completedAt: { gte: startOfWeek(now) } },
+    }),
+    prisma.task.count({ where: { organisationId: org.id, status: 'OPEN' } }),
+    prisma.task.count({ where: { organisationId: org.id, status: 'OPEN', dueDate: { lt: now } } }),
+  ])
 
   const membership = user.memberships.find((m) => m.organisation.slug === orgSlug)
   const roleLabel = !membership
@@ -90,6 +100,37 @@ export default async function OrgPage({ params }: OrgPageProps) {
           </Link>
         </div>
         )}
+      </div>
+
+      {/* Tasks */}
+      <div className="grid grid-cols-2 gap-4">
+        <Link href={`/${orgSlug}/todo`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
+            <CardHeader className="pb-1">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <ListTodo className="h-4 w-4" aria-hidden="true" />
+                Outstanding tasks
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-heading text-3xl font-semibold">{outstanding}</p>
+              {overdue > 0 && <p className="mt-1 text-xs text-destructive">{overdue} overdue</p>}
+            </CardContent>
+          </Card>
+        </Link>
+        <Link href={`/${orgSlug}/todo`} className="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+          <Card size="sm" className="h-full transition-colors hover:bg-muted/50">
+            <CardHeader className="pb-1">
+              <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+                <CheckSquare className="h-4 w-4" aria-hidden="true" />
+                Done this week
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="font-heading text-3xl font-semibold">{doneThisWeek}</p>
+            </CardContent>
+          </Card>
+        </Link>
       </div>
 
       {/* Summary stats */}
