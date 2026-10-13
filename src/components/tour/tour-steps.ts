@@ -46,17 +46,17 @@ export const TOUR_STEPS: TourStep[] = [
     panel: 'nav',
   },
   {
-    tourId: 'org-scenes',
-    title: 'Scenes',
-    description:
-      'A scene is one viewpoint in the garden — a bed, a corner, or a glasshouse. Attach a QR code to the vantage point and visitors can browse every specimen from where they stand.',
-    panel: 'nav',
-  },
-  {
     tourId: 'org-collections',
     title: 'Collections',
     description:
       'Group specimens by theme, taxonomy, or any other scheme. A specimen can belong to multiple collections.',
+    panel: 'nav',
+  },
+  {
+    tourId: 'org-scenes',
+    title: 'Scenes',
+    description:
+      'A scene is one viewpoint in the garden — a bed, a corner, or a glasshouse. Attach a QR code to the vantage point and visitors can browse every specimen from where they stand.',
     panel: 'nav',
   },
   {
