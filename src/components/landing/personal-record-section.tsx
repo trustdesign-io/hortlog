@@ -44,6 +44,9 @@ export function PersonalRecordSection() {
     <section aria-labelledby="personal-record-heading" className="border-t border-border px-6 py-20">
       <div className="max-w-5xl mx-auto grid gap-12 md:grid-cols-2 md:items-center">
         <div>
+          <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
+            For students
+          </p>
           <h2
             id="personal-record-heading"
             className="font-heading text-2xl sm:text-3xl font-medium mb-4"
