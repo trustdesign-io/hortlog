@@ -102,44 +102,29 @@ export default async function OrgPage({ params }: OrgPageProps) {
         )}
       </div>
 
-      {/* Summary stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <Card size="sm">
-          <CardHeader className="pb-1">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Leaf className="h-4 w-4" aria-hidden="true" />
-              Specimens
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-heading text-3xl font-semibold">{org._count.specimens}</p>
-          </CardContent>
-        </Card>
-
-        <Card size="sm">
-          <CardHeader className="pb-1">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <Grid3x3 className="h-4 w-4" aria-hidden="true" />
-              Scenes
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-heading text-3xl font-semibold">{org._count.scenes}</p>
-          </CardContent>
-        </Card>
-
-        <Card size="sm">
-          <CardHeader className="pb-1">
-            <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-              <BookOpen className="h-4 w-4" aria-hidden="true" />
-              Collections
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="font-heading text-3xl font-semibold">{org._count.collections}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Summary stats: one card, three linked columns, same on every screen */}
+      <Card className="py-0">
+        <ul className="grid grid-cols-3 divide-x">
+          {[
+            { label: 'Specimens', value: org._count.specimens, href: `/${orgSlug}/specimens`, Icon: Leaf },
+            { label: 'Collections', value: org._count.collections, href: `/${orgSlug}/collections`, Icon: BookOpen },
+            { label: 'Scenes', value: org._count.scenes, href: `/${orgSlug}/scenes`, Icon: Grid3x3 },
+          ].map(({ label, value, href, Icon }) => (
+            <li key={label}>
+              <Link
+                href={href}
+                className="flex h-full flex-col items-center gap-1 px-2 py-4 text-center transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring sm:py-5"
+              >
+                <span className="font-heading text-2xl font-semibold tabular-nums sm:text-3xl">{value}</span>
+                <span className="flex items-center gap-1.5 text-xs text-muted-foreground sm:text-sm">
+                  <Icon className="hidden h-4 w-4 sm:block" aria-hidden="true" />
+                  {label}
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         {/* Recent scenes */}
