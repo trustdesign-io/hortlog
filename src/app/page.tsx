@@ -211,29 +211,39 @@ export default async function HomePage() {
                 from wherever you stand.
               </p>
             </div>
-            <ul role="list" className="grid grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-              <li className="flex flex-col gap-2">
+            {/* Phones: a swipeable row of cards that snap into place; wider screens: a grid */}
+            <div
+              role="region"
+              aria-label="What Vantage does"
+              tabIndex={0}
+              className="-mx-6 overflow-x-auto px-6 pb-2 [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
+            >
+            <ul
+              role="list"
+              className="flex snap-x snap-mandatory scroll-px-6 gap-4 sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-4"
+            >
+              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
                 <Eye className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 <h3 className="font-heading font-medium text-sm sm:text-base">Every plant, within reach</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   Read about plants far back in the bed or high in the canopy, without leaving the path.
                 </p>
               </li>
-              <li className="flex flex-col gap-2">
+              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
                 <Shield className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 <h3 className="font-heading font-medium text-sm sm:text-base">Built to last</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   One sturdy sign at the edge of the bed, clear of pruning, mulching and replanting.
                 </p>
               </li>
-              <li className="flex flex-col gap-2">
+              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
                 <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 <h3 className="font-heading font-medium text-sm sm:text-base">Alive with context</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
                   Flowering now, recently repotted, newly arrived: what&apos;s happening to each plant, as it happens.
                 </p>
               </li>
-              <li className="flex flex-col gap-2">
+              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
                 <RefreshCw className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                 <h3 className="font-heading font-medium text-sm sm:text-base">Update once, everywhere</h3>
                 <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
@@ -241,6 +251,7 @@ export default async function HomePage() {
                 </p>
               </li>
             </ul>
+            </div>
           </div>
         </section>
 
