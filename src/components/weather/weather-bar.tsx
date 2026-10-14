@@ -32,7 +32,7 @@ interface WeatherBarProps {
   place: string
 }
 
-/** Full-width strip with today's forecast for the garden. Renders nothing if there's no forecast. */
+/** Full-width strip with today's forecast for the garden, from tablet/desktop width up. Renders nothing if there's no forecast. */
 export async function WeatherBar({ latitude, longitude, place }: WeatherBarProps) {
   const forecast = await getTodayForecast(latitude, longitude)
   if (!forecast) return null
@@ -42,7 +42,7 @@ export async function WeatherBar({ latitude, longitude, place }: WeatherBarProps
   return (
     <section
       aria-label="Today's weather"
-      className="-mx-4 -mt-5 mb-6 flex items-center gap-x-3 gap-y-1 border-b bg-card px-4 py-2 text-sm sm:-mx-6 sm:px-6 md:-mt-6"
+      className="-mx-4 -mt-5 mb-6 hidden items-center md:flex gap-x-3 gap-y-1 border-b bg-card px-4 py-2 text-sm sm:-mx-6 sm:px-6 md:-mt-6"
     >
       <Icon className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden="true" />
       <p className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-3 gap-y-0.5">
