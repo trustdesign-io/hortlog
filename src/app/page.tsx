@@ -9,6 +9,7 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { HeroSection } from '@/components/landing/hero-section'
 import { PersonalRecordSection } from '@/components/landing/personal-record-section'
+import { SwipeCards } from '@/components/landing/swipe-cards'
 import { CookieSettingsButton } from '@/components/cookie-banner'
 import { cn } from '@/lib/utils'
 import { Eye, Shield, Sparkles, RefreshCw } from 'lucide-react'
@@ -155,38 +156,43 @@ export default async function HomePage() {
                 can see, with as much as there is to tell.
               </p>
 
-              <div className="grid sm:grid-cols-3 gap-8">
-                <div className="flex flex-col gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
-                    1
-                  </div>
-                  <h3 className="font-heading text-lg font-medium">Scan the code</h3>
-                  <p className="text-sm text-muted-foreground">
-                    One QR code at the vantage point covers every specimen visible
-                    from where you stand. No app to install.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
-                    2
-                  </div>
-                  <h3 className="font-heading text-lg font-medium">See what&apos;s in the scene</h3>
-                  <p className="text-sm text-muted-foreground">
-                    A grid or list of every specimen placed in that scene,
-                    laid out the way the garden staff decided.
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3">
-                  <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
-                    3
-                  </div>
-                  <h3 className="font-heading text-lg font-medium">Read the full record</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Scientific name, family, origin, conservation status, planting notes —
-                    updated whenever the record changes.
-                  </p>
-                </div>
-              </div>
+              <SwipeCards
+                label="How it works"
+                gridClassName="sm:grid sm:grid-cols-3 sm:gap-8"
+                itemClassName="gap-3"
+                items={[
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
+                      1
+                    </div>
+                    <h3 className="font-heading text-lg font-medium">Scan the code</h3>
+                    <p className="text-sm text-muted-foreground">
+                      One QR code at the vantage point covers every specimen visible
+                      from where you stand. No app to install.
+                    </p>
+                  </>,
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
+                      2
+                    </div>
+                    <h3 className="font-heading text-lg font-medium">See what&apos;s in the scene</h3>
+                    <p className="text-sm text-muted-foreground">
+                      A grid or list of every specimen placed in that scene,
+                      laid out the way the garden staff decided.
+                    </p>
+                  </>,
+                  <>
+                    <div className="w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-sm font-medium font-heading text-accent-foreground">
+                      3
+                    </div>
+                    <h3 className="font-heading text-lg font-medium">Read the full record</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Scientific name, family, origin, conservation status, planting notes —
+                      updated whenever the record changes.
+                    </p>
+                  </>,
+                ]}
+              />
             </div>
           </div>
         </section>
@@ -211,47 +217,41 @@ export default async function HomePage() {
                 from wherever you stand.
               </p>
             </div>
-            {/* Phones: a swipeable row of cards that snap into place; wider screens: a grid */}
-            <div
-              role="region"
-              aria-label="What Vantage does"
-              tabIndex={0}
-              className="-mx-6 overflow-x-auto px-6 pb-2 [scrollbar-width:none] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:mx-0 sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden"
-            >
-            <ul
-              role="list"
-              className="flex snap-x snap-mandatory scroll-px-6 gap-4 sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-4"
-            >
-              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
-                <Eye className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <h3 className="font-heading font-medium text-sm sm:text-base">Every plant, within reach</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Read about plants far back in the bed or high in the canopy, without leaving the path.
-                </p>
-              </li>
-              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
-                <Shield className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <h3 className="font-heading font-medium text-sm sm:text-base">Built to last</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  One sturdy sign at the edge of the bed, clear of pruning, mulching and replanting.
-                </p>
-              </li>
-              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
-                <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <h3 className="font-heading font-medium text-sm sm:text-base">Alive with context</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Flowering now, recently repotted, newly arrived: what&apos;s happening to each plant, as it happens.
-                </p>
-              </li>
-              <li className="flex w-[78%] shrink-0 snap-start flex-col gap-2 rounded-xl border bg-background p-5 sm:w-auto sm:rounded-none sm:border-0 sm:bg-transparent sm:p-0">
-                <RefreshCw className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-                <h3 className="font-heading font-medium text-sm sm:text-base">Update once, everywhere</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                  Change a record and every page reflects it straight away.
-                </p>
-              </li>
-            </ul>
-            </div>
+            <SwipeCards
+              label="What Vantage does"
+              gridClassName="sm:grid sm:grid-cols-2 sm:gap-8 lg:grid-cols-4"
+              itemClassName="gap-2"
+              items={[
+                <>
+                  <Eye className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <h3 className="font-heading font-medium text-sm sm:text-base">Every plant, within reach</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    Read about plants far back in the bed or high in the canopy, without leaving the path.
+                  </p>
+                </>,
+                <>
+                  <Shield className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <h3 className="font-heading font-medium text-sm sm:text-base">Built to last</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    One sturdy sign at the edge of the bed, clear of pruning, mulching and replanting.
+                  </p>
+                </>,
+                <>
+                  <Sparkles className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <h3 className="font-heading font-medium text-sm sm:text-base">Alive with context</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    Flowering now, recently repotted, newly arrived: what&apos;s happening to each plant, as it happens.
+                  </p>
+                </>,
+                <>
+                  <RefreshCw className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+                  <h3 className="font-heading font-medium text-sm sm:text-base">Update once, everywhere</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                    Change a record and every page reflects it straight away.
+                  </p>
+                </>,
+              ]}
+            />
           </div>
         </section>
 
