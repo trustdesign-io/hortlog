@@ -96,7 +96,8 @@ export default async function AppLayout({
   return (
     <AuthProvider initialUser={user}>
       <MobilePanelsProvider>
-        <div className="flex h-dvh overflow-hidden">
+        {/* --utility-h is the weather bar's height when it's shown (see globals.css) */}
+        <div className="flex h-dvh overflow-hidden pt-[var(--utility-h)]">
           <a
             href="#main-content"
             className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-background focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:ring-2 focus:ring-ring focus:outline-none"

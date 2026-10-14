@@ -318,7 +318,7 @@ export function Sidebar({ user, allOrgs }: SidebarProps) {
       </aside>
 
       {/* Mobile top bar */}
-      <div className="fixed left-0 right-0 top-0 z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
+      <div className="fixed left-0 right-0 top-[var(--utility-h)] z-40 flex h-14 items-center justify-between border-b bg-background px-4 md:hidden">
         <Logo href="/records" />
         <div className="flex items-center gap-1">
           <Sheet {...panelProps('you')}>

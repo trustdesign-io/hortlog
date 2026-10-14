@@ -1,6 +1,6 @@
 import { Suspense, type ReactNode } from 'react'
 import { prisma } from '@/lib/prisma'
-import { WeatherBar } from '@/components/weather/weather-bar'
+import { UTILITY_BAR_CLASS, WeatherBar } from '@/components/weather/weather-bar'
 
 interface OrgLayoutProps {
   children: ReactNode
@@ -19,7 +19,8 @@ export default async function OrgLayout({ children, params }: OrgLayoutProps) {
   return (
     <>
       {hasLocation && (
-        <Suspense fallback={null}>
+        // The placeholder holds the bar's space while the forecast loads, so nothing jumps
+        <Suspense fallback={<div id="utility-bar" aria-hidden="true" className={UTILITY_BAR_CLASS} />}>
           <WeatherBar latitude={org.latitude!} longitude={org.longitude!} place={org.name} />
         </Suspense>
       )}

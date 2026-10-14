@@ -253,3 +253,27 @@
   filter: drop-shadow(2px 0 0 var(--ring)) drop-shadow(-2px 0 0 var(--ring))
     drop-shadow(0 2px 0 var(--ring)) drop-shadow(0 -2px 0 var(--ring));
 }
+
+/*
+ * Utility bar (today's weather) pinned above everything. While it's on the
+ * page, --utility-h reserves its height so the app moves down beneath it.
+ */
+:root {
+  --utility-h: 0px;
+}
+:root:has(#utility-bar) {
+  --utility-h: 2rem;
+}
+
+/* Weather ticker: two copies side by side, scrolled by exactly one copy so it loops seamlessly */
+.ticker-track {
+  animation: ticker 28s linear infinite;
+}
+@keyframes ticker {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
