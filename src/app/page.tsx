@@ -12,7 +12,7 @@ import { PersonalRecordSection } from '@/components/landing/personal-record-sect
 import { SwipeCards } from '@/components/landing/swipe-cards'
 import { CookieSettingsButton } from '@/components/cookie-banner'
 import { cn } from '@/lib/utils'
-import { Eye, Shield, Sparkles, RefreshCw } from 'lucide-react'
+import { Eye, Shield, Sparkles, RefreshCw, MapPin } from 'lucide-react'
 
 export const metadata: Metadata = {
   title: { absolute: 'hortlog — horticultural tools for gardens and woodlands' },
@@ -86,6 +86,15 @@ export default async function HomePage() {
 
   return (
     <div className="force-light min-h-screen bg-background text-foreground">
+      {/* Visitors at a garden: always to hand, bottom right */}
+      <Link
+        href="/check-in"
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 z-40 flex h-14 items-center gap-2 rounded-full bg-primary px-5 font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+      >
+        <MapPin className="h-5 w-5" aria-hidden="true" />
+        Check in
+      </Link>
+
       {/* Nav */}
       <header className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
         <Logo href="/" />
@@ -139,15 +148,6 @@ export default async function HomePage() {
                 )}
               >
                 Sign in
-              </Link>
-              <Link
-                href="/check-in"
-                className={cn(
-                  buttonVariants({ variant: 'outline', size: 'xl' }),
-                  'w-full border-white bg-transparent text-white hover:bg-white/10 hover:text-white sm:w-auto',
-                )}
-              >
-                Check in
               </Link>
             </div>
           }
