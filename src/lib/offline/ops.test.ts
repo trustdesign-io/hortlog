@@ -83,3 +83,61 @@ describe('applyPending', () => {
     expect(applyPending(snap, [{ ...op, org: 'other' }])).toBe(snap)
   })
 })
+
+describe('building a scene offline', () => {
+  const scene = {
+    id: 'sc1',
+    name: 'Scene 001',
+    slug: 'scene-001',
+    shortCode: 'abc123',
+    gridRows: 2,
+    gridCols: 2,
+    rowShift: 0,
+    perspective: 'BED' as const,
+    primaryCollectionId: null,
+    splitCells: [],
+    active: false,
+  }
+  const s0 = { ...snap, scenes: [scene], speciesList: [{ id: 'sp1', scientificName: 'Rosa', commonName: 'Rose' }] }
+  const at = (n: number) => ({ id: `0b6f4c3e-1111-4c2a-9f00-12345678900${n}`, org: 'acme', createdAt: `2026-10-16T10:0${n}:00.000Z` })
+  const newId = 'c' + 'a'.repeat(24)
+
+  it('parses the new kinds of change', () => {
+    expect(parseOp({ ...at(1), kind: 'createSpecimen', specimenId: newId, speciesId: null, fieldName: 'Agave sp.' })).toMatchObject({ fieldName: 'Agave sp.' })
+    expect(parseOp({ ...at(1), kind: 'createSpecimen', specimenId: 'nope', speciesId: null, fieldName: 'Agave' })).toBeNull()
+    expect(parseOp({ ...at(2), kind: 'placeSpecimen', sceneId: 'sc1', specimenId: newId, row: 0, col: 1, sub: 7 })).toBeNull()
+    expect(parseOp({ ...at(3), kind: 'resizeGrid', sceneId: 'sc1', steps: [{ side: 'top', delta: 1 }] })).toMatchObject({ kind: 'resizeGrid' })
+    expect(parseOp({ ...at(4), kind: 'updateScene', sceneId: 'sc1', active: true, title: '  Cactus  bed ' })).toMatchObject({ active: true, title: 'Cactus bed' })
+  })
+
+  it('shows a scene set up offline straight away', () => {
+    const out = applyPending(s0, [
+      { ...at(1), kind: 'updateScene', sceneId: 'sc1', active: true, title: 'Cactus bed' },
+      { ...at(2), kind: 'createSpecimen', specimenId: newId, speciesId: null, fieldName: 'Agave sp.', accessionNumber: null, notes: null },
+      { ...at(3), kind: 'placeSpecimen', sceneId: 'sc1', specimenId: newId, row: 1, col: 1, sub: null },
+      { ...at(4), kind: 'resizeGrid', sceneId: 'sc1', steps: [{ side: 'top', delta: 1 }] },
+      { ...at(5), kind: 'splitHex', sceneId: 'sc1', row: 2, col: 1, split: true },
+    ])
+    const sc = out.scenes[0]
+    expect(sc).toMatchObject({ active: true, title: 'Cactus bed', gridRows: 3, splitCells: ['2,1'] })
+    const plant = out.specimens.find((s) => s.id === newId)!
+    expect(plant).toMatchObject({ sceneId: 'sc1', gridCell: '2,1:0', pending: true })
+    expect(plant.species.scientificName).toBe('Agave sp.')
+  })
+
+  it('names a new plant from a species already in hortlog', () => {
+    const out = applyPending(s0, [
+      { ...at(1), kind: 'createSpecimen', specimenId: newId, speciesId: 'sp1', fieldName: null, accessionNumber: null, notes: null },
+    ])
+    expect(out.specimens.find((s) => s.id === newId)!.species.commonName).toBe('Rose')
+  })
+
+  it('takes a plant off the cell another is placed in', () => {
+    const out = applyPending(s0, [
+      { ...at(1), kind: 'placeSpecimen', sceneId: 'sc1', specimenId: 's1', row: 0, col: 0, sub: null },
+      { ...at(2), kind: 'createSpecimen', specimenId: newId, speciesId: 'sp1', fieldName: null, accessionNumber: null, notes: null },
+      { ...at(3), kind: 'placeSpecimen', sceneId: 'sc1', specimenId: newId, row: 0, col: 0, sub: null },
+    ])
+    expect(out.specimens.find((s) => s.id === 's1')!.sceneId).toBeNull()
+  })
+})

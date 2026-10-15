@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
-const { organisation, specimen, scene, collection, task, workRecord } = vi.hoisted(() => ({
+const { organisation, specimen, scene, collection, task, workRecord, species } = vi.hoisted(() => ({
   organisation: { findUnique: vi.fn() },
   specimen: { findMany: vi.fn() },
   scene: { findMany: vi.fn() },
   collection: { findMany: vi.fn() },
   task: { findMany: vi.fn() },
   workRecord: { findMany: vi.fn() },
+  species: { findMany: vi.fn() },
 }))
 
-vi.mock('@/lib/prisma', () => ({ prisma: { organisation, specimen, scene, collection, task, workRecord } }))
+vi.mock('@/lib/prisma', () => ({ prisma: { organisation, specimen, scene, collection, task, workRecord, species } }))
 
 import { buildOrgSnapshot } from './snapshot'
 import { offlineImageUrl, snapshotImageUrls, SNAPSHOT_VERSION } from './types'
@@ -44,6 +45,7 @@ beforeEach(() => {
     },
   ])
   scene.findMany.mockResolvedValue([])
+  species.findMany.mockResolvedValue([{ id: 'sp1', scientificName: 'Rosa', commonName: 'Rose' }])
   collection.findMany.mockResolvedValue([{ id: 'c1', name: 'Hot', slug: 'hot', description: null, type: { name: 'Location' } }])
   task.findMany.mockResolvedValue([
     {
@@ -89,6 +91,16 @@ describe('buildOrgSnapshot', () => {
     expect(s!.tasks[0]).toMatchObject({ dueDate: day.toISOString(), assignees: ['a@b.c'] })
     expect(s!.myRecords[0].entries[0].date).toBe(day.toISOString())
     expect(JSON.parse(JSON.stringify(s))).toEqual(s)
+  })
+
+  it('gives managers every scene and the species list, members only active scenes', async () => {
+    const m = await buildOrgSnapshot('acme', { id: 'u1', name: null }, true)
+    expect(scene.findMany.mock.calls[0][0].where).toEqual({ organisationId: 'o1' })
+    expect(m!.speciesList).toHaveLength(1)
+    scene.findMany.mockClear()
+    const v = await buildOrgSnapshot('acme', { id: 'u1', name: null }, false)
+    expect(scene.findMany.mock.calls[0][0].where).toEqual({ organisationId: 'o1', active: true })
+    expect(v!.speciesList).toBeUndefined()
   })
 
   it("only includes the member's own records", async () => {

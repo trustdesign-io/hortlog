@@ -23,9 +23,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { ScientificName } from '@/components/ui/scientific-name'
 import { Trash2, MapPin, X } from 'lucide-react'
 import { cellLabel } from '@/lib/scene-grid'
+import { SpeciesPicker, type PickedSpecies } from '@/components/species/species-picker'
 import type { ActionResult } from '@/lib/shared/types'
 
 interface SpecimenData {
@@ -131,6 +131,7 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
     null,
   )
   const [isRemovingFromScene, startRemoveTransition] = useTransition()
+  const [species, setSpecies] = useState<PickedSpecies | null>(specimen.species)
   const [slug, setSlug] = useState(specimen.slug)
   const [slugEdited, setSlugEdited] = useState(true)
   const [removeSceneError, setRemoveSceneError] = useState<string | null>(null)
@@ -200,18 +201,19 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
           </p>
         )}
 
-        {/* Species (read-only) */}
+        {/* Species: changeable, e.g. once an unidentified plant is named */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Species</CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-sm font-medium">{specimen.species.commonName}</p>
-            <ScientificName className="text-xs text-muted-foreground">
-              {specimen.species.scientificName}
-            </ScientificName>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Species cannot be changed after creation.
+          <CardContent className="space-y-2">
+            <input type="hidden" name="speciesId" value={species?.id ?? specimen.species.id} />
+            <Label htmlFor="species-input" className="sr-only">
+              Species
+            </Label>
+            <SpeciesPicker id="species-input" value={species} onChange={setSpecies} disabled={isPending} />
+            <p className="text-xs text-muted-foreground">
+              Search by botanical name to change it. Saved with the other details.
             </p>
           </CardContent>
         </Card>

@@ -90,9 +90,9 @@ describe('applyOps', () => {
     expect((await applyOps(outsider, [work]))[0].status).toBe('rejected')
   })
 
-  it('leaves out an op that failed unexpectedly, so it is sent again', async () => {
+  it('stops at an op that failed unexpectedly, so it and the rest are sent again in order', async () => {
     ensureWorkRecord.mockRejectedValue(new Error('db down'))
     vi.spyOn(console, 'error').mockImplementation(() => {})
-    expect(await applyOps(user('MEMBER'), [work, tick])).toEqual([{ id: tick.id, status: 'rejected', error: expect.any(String) }])
+    expect(await applyOps(user('MEMBER'), [work, tick])).toEqual([])
   })
 })

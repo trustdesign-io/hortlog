@@ -124,9 +124,18 @@ export async function updateSpecimen(
 
   const target = await prisma.specimen.findUnique({
     where: { id: specimenId, organisationId: org.id },
-    select: { slug: true },
+    select: { slug: true, speciesId: true },
   })
   if (!target) return { success: false, error: 'Specimen not found.' }
+
+  // Changing the species, e.g. naming a plant added as Unidentified
+  const speciesIdRaw = (formData.get('speciesId') as string | null)?.trim() || null
+  let speciesId: string | undefined
+  if (speciesIdRaw && speciesIdRaw !== target.speciesId) {
+    const exists = await prisma.species.findUnique({ where: { id: speciesIdRaw }, select: { id: true } })
+    if (!exists) return { success: false, error: 'Selected species not found.' }
+    speciesId = speciesIdRaw
+  }
 
   if (accessionNumber) {
     const existingAccession = await prisma.specimen.findFirst({
@@ -154,7 +163,7 @@ export async function updateSpecimen(
     await prisma.$transaction([
       prisma.specimen.update({
         where: { id: specimenId, organisationId: org.id },
-        data: { slug, cultivar, accessionNumber, notes, latitude, longitude },
+        data: { slug, cultivar, accessionNumber, notes, latitude, longitude, ...(speciesId ? { speciesId } : {}) },
       }),
       prisma.collectionMembership.deleteMany({ where: { specimenId } }),
       ...(validCollectionIds.length > 0

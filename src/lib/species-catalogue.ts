@@ -63,7 +63,7 @@ export async function findExistingSpecies(query: string): Promise<ExistingSpecie
 }
 
 /** The botanical name part of a catalogue label, without authority: "Sansevieria trifasciata". */
-function labelName(label: string): string {
+export function labelName(label: string): string {
   // Genus, then lowercase epithets and rank markers, up to the first author name
   const words = label.split(' ')
   const out = [words[0]]

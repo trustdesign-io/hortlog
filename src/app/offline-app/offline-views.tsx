@@ -2,14 +2,12 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- plain links on purpose: the offline app handles clicks itself and must never ask the server */
 
 import { useState, type ReactNode } from 'react'
-import { Leaf } from 'lucide-react'
 import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { cellKey, cellLabel, hexOf } from '@/lib/scene-grid'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { sceneCellScale, sceneTilt } from '@/lib/scene-perspective'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
 import {
-  offlineImageUrl,
   specimenPhoto,
   type OfflineScene,
   type OfflineSpecimen,
@@ -21,6 +19,8 @@ import type { OfflineRoute } from '@/lib/offline/routes'
 import type { OutboxOp } from '@/lib/offline/ops'
 import { applyPending } from '@/lib/offline/pending'
 import { OutboxList, RecordWorkPanel, TaskToggle, WaitingBadge } from './offline-actions'
+import { Photo } from './offline-photo'
+import { OfflineSceneEditor } from './offline-scene-editor'
 import { cn } from '@/lib/utils'
 import type { WorkAction } from '@prisma/client'
 
@@ -39,22 +39,6 @@ function startOfToday(): number {
   const d = new Date()
   d.setHours(0, 0, 0, 0)
   return d.getTime()
-}
-
-/** A saved plant photo, or a leaf when there's none or it wasn't saved. */
-function Photo({ src, className }: { src: string | null; className?: string }) {
-  const [failed, setFailed] = useState(false)
-  if (!src || failed) {
-    return (
-      <span className={cn('flex items-center justify-center bg-muted text-muted-foreground', className)} aria-hidden="true">
-        <Leaf className="h-2/5 w-2/5" />
-      </span>
-    )
-  }
-  return (
-    // eslint-disable-next-line @next/next/no-img-element -- the saved copy is the optimiser's output; next/image would ask for other sizes
-    <img src={offlineImageUrl(src)} alt="" loading="lazy" onError={() => setFailed(true)} className={cn('object-cover', className)} />
-  )
 }
 
 function Section({ title, children, action }: { title: string; children: ReactNode; action?: ReactNode }) {
@@ -397,28 +381,41 @@ function SpecimenView({ s, snap }: { s: OfflineSpecimen; snap: OrgSnapshot }) {
   )
 }
 
+function SceneList({ scenes, snap }: { scenes: OfflineScene[]; snap: OrgSnapshot }) {
+  return (
+    <ul className="divide-y rounded-lg border">
+      {scenes.map((sc) => {
+        const count = snap.specimens.filter((s) => s.sceneId === sc.id).length
+        return (
+          <li key={sc.id}>
+            <a href={`/${snap.org.slug}/scenes/${sc.id}`} className="flex min-h-12 items-center justify-between gap-3 px-4 py-2 hover:bg-muted">
+              <span className="min-w-0">
+                <span className="block font-medium">{sc.title ?? sc.name}</span>
+                {sc.title && <span className="block text-xs text-muted-foreground">{sc.name}</span>}
+              </span>
+              <span className="shrink-0 text-sm text-muted-foreground">
+                {count} plant{count === 1 ? '' : 's'}
+              </span>
+            </a>
+          </li>
+        )
+      })}
+    </ul>
+  )
+}
+
 function ScenesView({ snap }: { snap: OrgSnapshot }) {
+  const active = snap.scenes.filter((s) => s.active !== false)
+  const inactive = snap.scenes.filter((s) => s.active === false)
   return (
     <>
-      <Title sub={`${snap.scenes.length} scenes`}>Scenes</Title>
-      {snap.scenes.length === 0 ? (
-        <Empty>No scenes yet.</Empty>
-      ) : (
-        <ul className="divide-y rounded-lg border">
-          {snap.scenes.map((sc) => {
-            const count = snap.specimens.filter((s) => s.sceneId === sc.id).length
-            return (
-              <li key={sc.id}>
-                <a href={`/${snap.org.slug}/scenes/${sc.id}`} className="flex min-h-12 items-center justify-between gap-3 px-4 py-2 hover:bg-muted">
-                  <span className="font-medium">{sc.title ?? sc.name}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {count} plant{count === 1 ? '' : 's'}
-                  </span>
-                </a>
-              </li>
-            )
-          })}
-        </ul>
+      <Title sub={`${active.length} active scene${active.length === 1 ? '' : 's'}`}>Scenes</Title>
+      {active.length === 0 ? <Empty>No active scenes yet.</Empty> : <SceneList scenes={active} snap={snap} />}
+      {inactive.length > 0 && (
+        <Section title={`Inactive (${inactive.length})`}>
+          <p className="text-sm text-muted-foreground">Open one to set it up and switch it on.</p>
+          <SceneList scenes={inactive} snap={snap} />
+        </Section>
       )}
     </>
   )
@@ -429,8 +426,11 @@ function SceneView({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) 
   const tasks = snap.tasks.filter((t) => t.sceneId === scene.id && (t.status === 'OPEN' || t.pending))
   return (
     <>
-      <Title sub={`${plants.length} plant${plants.length === 1 ? '' : 's'}`}>{scene.title ?? scene.name}</Title>
-      <SceneGrid scene={scene} snap={snap} />
+      <Title sub={[scene.title && scene.name, `${plants.length} plant${plants.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}>
+        {scene.title ?? scene.name}
+      </Title>
+      {/* Managers set the scene up here; changes wait on the device until there's a connection */}
+      {snap.user.canManage ? <OfflineSceneEditor scene={scene} snap={snap} /> : <SceneGrid scene={scene} snap={snap} />}
       {tasks.length > 0 && (
         <Section title="To do">
           <ul className="space-y-2">
