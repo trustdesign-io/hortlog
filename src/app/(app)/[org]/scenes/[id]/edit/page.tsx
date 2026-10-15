@@ -30,7 +30,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       gridCols: true,
       rowShift: true,
       splitCells: true,
-      active: true, primaryCollection: { select: { name: true, slug: true } },
+      active: true, title: true, primaryCollection: { select: { name: true, slug: true } },
     },
   })
   if (!scene) return notFound()
@@ -66,6 +66,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         name={scene.name}
         collectionName={scene.primaryCollection?.name ?? null}
         isActive={scene.active}
+        title={scene.title}
         publicPath={publicScenePath(orgSlug, scene.slug, scene.primaryCollection?.slug ?? null)}
         active="layout"
       />

@@ -18,6 +18,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
     select: {
       id: true,
       name: true,
+      title: true,
       slug: true,
       perspective: true,
       organisationId: true,
@@ -42,6 +43,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
         name={scene.name}
         collectionName={scene.primaryCollection?.name ?? null}
         isActive={scene.active}
+        title={scene.title}
         publicPath={publicScenePath(orgSlug, scene.slug, scene.primaryCollection?.slug ?? null)}
         active="details"
       />
@@ -50,6 +52,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
         scene={{
           id: scene.id,
           name: scene.name,
+          title: scene.title,
           primaryCollectionId: scene.primaryCollectionId,
           perspective: scene.perspective,
           plantCount: scene._count.specimens,

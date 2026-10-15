@@ -57,6 +57,7 @@ export async function buildOrgSnapshot(
         gridCols: true,
         rowShift: true,
         splitCells: true,
+        title: true,
         perspective: true,
         primaryCollectionId: true,
       },

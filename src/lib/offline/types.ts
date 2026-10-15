@@ -32,6 +32,8 @@ export interface OfflineSpecimen {
 export interface OfflineScene {
   id: string
   name: string
+  /** Optional on-screen title (missing in older saved copies) */
+  title?: string | null
   slug: string
   shortCode: string
   gridRows: number

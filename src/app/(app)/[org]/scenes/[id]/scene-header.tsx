@@ -9,6 +9,8 @@ interface SceneHeaderProps {
   orgSlug: string
   sceneId: string
   name: string
+  /** Optional on-screen title */
+  title?: string | null
   collectionName: string | null
   active: 'layout' | 'qr' | 'details'
   /** The scene's public page, as visitors see it */
@@ -18,7 +20,7 @@ interface SceneHeaderProps {
 }
 
 /** Back link, title, a link to the public page, and the Layout / QR code / Details tabs shared by a scene's pages. */
-export function SceneHeader({ orgSlug, sceneId, name, collectionName, active, publicPath, isActive }: SceneHeaderProps) {
+export function SceneHeader({ orgSlug, sceneId, name, title, collectionName, active, publicPath, isActive }: SceneHeaderProps) {
   const base = `/${orgSlug}/scenes/${sceneId}`
   return (
     <div className="space-y-4">
@@ -33,7 +35,8 @@ export function SceneHeader({ orgSlug, sceneId, name, collectionName, active, pu
         {/* Phones: the visitor view link sits under the title; wider screens: beside it */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="font-heading text-2xl font-medium">{name}</h1>
+            {title && <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>}
+            <h1 className="font-heading text-2xl font-medium">{title ?? name}</h1>
             {collectionName && <p className="mt-1 text-sm text-muted-foreground">{collectionName}</p>}
             <div className="mt-2">
               <SceneActiveToggle orgSlug={orgSlug} sceneId={sceneId} active={isActive} />

@@ -163,7 +163,10 @@ export default async function OrgPage({ params }: OrgPageProps) {
                       href={canManage ? `/${orgSlug}/scenes/${scene.id}/edit` : `/${orgSlug}/scenes`}
                       className="flex items-center justify-between px-4 py-3 text-sm hover:bg-muted transition-colors"
                     >
-                      <span className="min-w-0 truncate font-medium">{scene.name}</span>
+                      <span className="min-w-0 truncate font-medium">
+                        {scene.name}
+                        {scene.title && <span className="font-normal text-muted-foreground"> · {scene.title}</span>}
+                      </span>
                       <span className="ml-4 shrink-0 text-muted-foreground tabular-nums">
                         {scene._count.specimens} specimen{scene._count.specimens !== 1 ? 's' : ''}
                       </span>

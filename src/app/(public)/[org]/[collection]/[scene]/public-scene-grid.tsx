@@ -1,10 +1,12 @@
 'use client'
 
-import { useRef } from 'react'
+import { useRef, useState } from 'react'
 import Link from 'next/link'
 import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
-import { cellKey, cellLabel, hexOf } from '@/lib/scene-grid'
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { HEX_HEIGHT_RATIO } from '@/lib/hex-grid'
+import { cellKey, hexOf, SUB_CELL_NAMES } from '@/lib/scene-grid'
 import { unmeasuredCellWidth, useFittedGrid } from '@/hooks/use-fitted-grid'
 import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 
@@ -34,6 +36,8 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
   const box = useRef<HTMLDivElement>(null)
   // Fit the grid to the space left on screen, so it shows whole without scrolling
   const fitted = useFittedGrid(box, rows, cols, perspective, CELL_WIDTH_REM * PX_PER_REM)
+  // A split hex opened to choose one of its small cells
+  const [openHex, setOpenHex] = useState<{ row: number; col: number } | null>(null)
 
   if (rows <= 0 || cols <= 0) {
     return (
@@ -80,34 +84,34 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
           const specimen = cellMap[cell]
 
           if (split.has(cell)) {
+            const planted = Array.from({ length: 7 }, (_, sub) => cellMap[cellKey(row, col, sub)]).filter(Boolean)
             return (
-              <div key={cell} className="hex-cell" style={style}>
-                <span className="hex-shape block bg-muted/30">
+              <button
+                key={cell}
+                type="button"
+                onClick={() => setOpenHex({ row, col })}
+                className="hex-cell group"
+                style={style}
+                aria-label={`${planted.length} plant${planted.length === 1 ? '' : 's'} at row ${row + 1}, column ${col + 1}: ${planted.map((p) => p.scientificName).join(', ')}`}
+              >
+                <span className="hex-shape block bg-muted/30 group-hover:opacity-80">
                   <HexOutline className="text-border/60" />
                   <HexSubCells
                     renderSub={(sub, subStyle) => {
-                      const key = cellKey(row, col, sub)
-                      const plant = cellMap[key]
-                      return plant ? (
-                        <Link
-                          key={key}
-                          href={`${basePath}/${plant.slug}`}
-                          className="hex-sub bg-muted hover:opacity-80"
-                          style={subStyle}
-                          aria-label={`${plant.scientificName}, ${cellLabel(key)}`}
-                          title={plant.scientificName}
-                        >
-                          <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="48px" className="object-cover" />
-                        </Link>
-                      ) : (
-                        <span key={key} className="hex-sub" style={subStyle} aria-hidden="true">
-                          <HexOutline className="text-border/60" />
+                      const plant = cellMap[cellKey(row, col, sub)]
+                      return (
+                        <span key={sub} className="hex-sub bg-muted" style={subStyle}>
+                          {plant ? (
+                            <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="48px" className="object-cover" />
+                          ) : (
+                            <HexOutline className="text-border/60" />
+                          )}
                         </span>
                       )
                     }}
                   />
                 </span>
-              </div>
+              </button>
             )
           }
 
@@ -148,6 +152,43 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
           )
         }}
       />
+      {/* A split hex, enlarged: choose which of its plants to see */}
+      <Sheet open={openHex !== null} onOpenChange={(open) => !open && setOpenHex(null)}>
+        <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Choose a plant</SheetTitle>
+            <SheetDescription>{openHex && `Row ${openHex.row + 1}, column ${openHex.col + 1}`}</SheetDescription>
+          </SheetHeader>
+          {openHex && (
+            <div
+              className="relative mx-auto mb-6"
+              style={{ width: 'min(100% - 2rem, 20rem, calc((100dvh - 10rem) * 0.866))', aspectRatio: `1 / ${HEX_HEIGHT_RATIO}` }}
+            >
+              <HexSubCells
+                renderSub={(sub, subStyle) => {
+                  const plant = cellMap[cellKey(openHex.row, openHex.col, sub)]
+                  return plant ? (
+                    <Link
+                      key={sub}
+                      href={`${basePath}/${plant.slug}`}
+                      className="hex-sub bg-muted hover:opacity-80"
+                      style={subStyle}
+                      aria-label={`${plant.scientificName}, ${SUB_CELL_NAMES[sub]}`}
+                    >
+                      <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="110px" className="object-cover" />
+                      <HexPlantLabel scientificName={plant.scientificName} />
+                    </Link>
+                  ) : (
+                    <span key={sub} className="hex-sub" style={subStyle} aria-hidden="true">
+                      <HexOutline className="text-border/60" />
+                    </span>
+                  )
+                }}
+              />
+            </div>
+          )}
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

@@ -36,6 +36,7 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
       gridRows: true,
       gridCols: true,
       active: true,
+      title: true,
       primaryCollection: { select: { name: true, slug: true } },
       _count: { select: { specimens: true } },
     },
@@ -58,7 +59,10 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
               className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium">{v.name}</p>
+                <p className="text-sm font-medium">
+                  {v.name}
+                  {v.title && <span className="font-normal text-muted-foreground"> · {v.title}</span>}
+                </p>
                 <p className="text-xs text-muted-foreground">
                   {v.gridRows}×{v.gridCols} grid ·{' '}
                   {v._count.specimens} specimen{v._count.specimens === 1 ? '' : 's'}

@@ -18,12 +18,14 @@ import {
 import type { ScenePerspective } from '@/lib/scene-perspective'
 import { PerspectiveField } from '../../perspective-field'
 import type { ActionResult } from '@/lib/shared/types'
+import { MAX_SCENE_TITLE } from '@/lib/scene-title'
 
 interface SceneDetailsFormProps {
   orgSlug: string
   scene: {
     id: string
     name: string
+    title: string | null
     primaryCollectionId: string | null
     perspective: ScenePerspective
     plantCount: number
@@ -61,6 +63,20 @@ export function SceneDetailsForm({ orgSlug, scene, collections }: SceneDetailsFo
               <p className="text-sm">{scene.name}</p>
               <p className="text-xs text-muted-foreground">
                 Fixed: it&apos;s printed on the scene&apos;s QR label, so it can&apos;t be changed.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="scene-title">Title (optional)</Label>
+              <Input
+                id="scene-title"
+                name="title"
+                defaultValue={scene.title ?? ''}
+                maxLength={MAX_SCENE_TITLE}
+                placeholder="e.g. Cactus bed by the castle wall"
+                disabled={isPending}
+              />
+              <p className="text-xs text-muted-foreground">
+                Shown on screen with the name. Not printed on the QR label.
               </p>
             </div>
             <PerspectiveField defaultValue={scene.perspective} disabled={isPending} />
