@@ -117,7 +117,8 @@ export default async function AppLayout({
                 {children}
               </main>
               {/* Phones: the footer ends the page */}
-              <AppFooter user={user} className="mt-12 pt-3 md:hidden" />
+              {/* Edge to edge: out past the page's side padding, and down to the bottom */}
+              <AppFooter user={user} className="-mx-4 -mb-6 mt-12 h-14 px-4 sm:-mx-6 sm:px-6 md:hidden" />
             </div>
             {/* Desktop: pinned, level with the sidebar's sign-out row so they form one bar */}
             <AppFooter user={user} className="hidden h-16 shrink-0 px-6 md:flex" />
