@@ -12,7 +12,8 @@ interface SceneTabNavProps {
 export function SceneTabNav({ basePath }: SceneTabNavProps) {
   const searchParams = useSearchParams()
   const rawTab = searchParams.get('tab')
-  const tab = rawTab === 'layout' || rawTab === 'grid' ? 'layout' : 'list'
+  // Layout unless the list is asked for
+  const tab = rawTab === 'list' ? 'list' : 'layout'
 
   return (
     <nav
