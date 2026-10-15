@@ -80,3 +80,10 @@ describe('toCareDate', () => {
     expect(toCareDate(new Date('2027-05-17T23:59:00Z')).toISOString()).toBe('2027-05-17T00:00:00.000Z')
   })
 })
+
+describe('inCells with split hexes', () => {
+  it('covers plants in the small cells of a chosen hex', () => {
+    expect(inCells(['1,2'], '1,2:4')).toBe(true)
+    expect(inCells(['1,2'], '1,3:0')).toBe(false)
+  })
+})

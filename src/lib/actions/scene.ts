@@ -6,7 +6,16 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
-import { GRID_SIDES, gridResizeError, MAX_GRID_OPS, planGridOps, type GridOp } from '@/lib/scene-grid'
+import {
+  cellKey,
+  GRID_SIDES,
+  gridResizeError,
+  hexOf,
+  MAX_GRID_OPS,
+  planGridOps,
+  SUB_CELLS,
+  type GridOp,
+} from '@/lib/scene-grid'
 import { DEFAULT_PERSPECTIVE, parsePerspective } from '@/lib/scene-perspective'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -121,6 +130,8 @@ export async function placeSpecimen(
   specimenId: string,
   row: number,
   col: number,
+  /** One of a split hex's seven small cells (0–6); omit for a whole hex */
+  sub: number | null = null,
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_edit_scene')
 
@@ -129,11 +140,15 @@ export async function placeSpecimen(
 
   const scene = await prisma.scene.findUnique({
     where: { id: sceneId, organisationId: org.id },
-    select: { id: true, gridRows: true, gridCols: true },
+    select: { id: true, gridRows: true, gridCols: true, splitCells: true },
   })
   if (!scene) return { success: false, error: 'Scene not found.' }
   if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0 || row >= scene.gridRows || col >= scene.gridCols) {
     return { success: false, error: 'That cell is outside the grid.' }
+  }
+  const isSplit = scene.splitCells.includes(cellKey(row, col))
+  if (sub === null ? isSplit : !isSplit || !Number.isInteger(sub) || sub < 0 || sub >= SUB_CELLS) {
+    return { success: false, error: 'That cell has changed. Refresh the page and try again.' }
   }
 
   const specimen = await prisma.specimen.findUnique({
@@ -142,7 +157,7 @@ export async function placeSpecimen(
   })
   if (!specimen) return { success: false, error: 'Specimen not found.' }
 
-  const cell = `${row},${col}`
+  const cell = cellKey(row, col, sub)
 
   try {
     await prisma.$transaction([
@@ -228,6 +243,68 @@ export async function removeSpecimenFromCell(
 }
 
 /**
+ * Splits a hex into seven smaller cells, or merges them back. A plant in the
+ * hex moves to the centre small cell; merging needs at most one plant, which
+ * then fills the whole hex.
+ */
+export async function setHexSplit(
+  orgSlug: string,
+  sceneId: string,
+  row: number,
+  col: number,
+  split: boolean,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+
+  const scene = await prisma.scene.findFirst({
+    where: { id: sceneId, organisation: { slug: orgSlug } },
+    select: { id: true, gridRows: true, gridCols: true, splitCells: true },
+  })
+  if (!scene) return { success: false, error: 'Scene not found.' }
+  if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0 || row >= scene.gridRows || col >= scene.gridCols) {
+    return { success: false, error: 'That cell is outside the grid.' }
+  }
+
+  const hex = cellKey(row, col)
+  const isSplit = scene.splitCells.includes(hex)
+  if (isSplit === split) return { success: true }
+
+  const inHex = (
+    await prisma.specimen.findMany({
+      where: { sceneId: scene.id, gridCell: { startsWith: `${hex}` } },
+      select: { id: true, gridCell: true },
+    })
+  ).filter((s) => hexOf(s.gridCell) === hex)
+
+  if (!split && inHex.length > 1) {
+    return { success: false, error: `Move or remove ${inHex.length - 1} of the ${inHex.length} plants first; a whole hex holds one.` }
+  }
+
+  try {
+    await prisma.$transaction([
+      prisma.scene.update({
+        where: { id: scene.id },
+        data: { splitCells: split ? [...scene.splitCells, hex] : scene.splitCells.filter((c) => c !== hex) },
+      }),
+      ...inHex.map((s) =>
+        prisma.specimen.update({
+          where: { id: s.id },
+          data: { gridCell: split ? cellKey(row, col, 0) : hex },
+        }),
+      ),
+    ])
+  } catch (err) {
+    console.error('[setHexSplit] error:', err)
+    return { success: false, error: 'Failed to change the cell. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}`, 'layout')
+  revalidatePath('/[org]/[collection]/[scene]', 'page')
+  revalidatePath('/[org]/scene/[scene]', 'page')
+  return { success: true }
+}
+
+/**
  * Adds or removes rows and columns on any side, in order, as one save. Plants
  * and task targets are renumbered so everything stays where it was on the ground.
  */
@@ -251,6 +328,7 @@ export async function resizeSceneGrid(
       gridRows: true,
       gridCols: true,
       rowShift: true,
+      splitCells: true,
       specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true } },
       tasks: { where: { NOT: { cells: { isEmpty: true } } }, select: { id: true, cells: true } },
     },
@@ -278,7 +356,16 @@ export async function resizeSceneGrid(
 
   try {
     await prisma.$transaction([
-      prisma.scene.update({ where: { id: scene.id }, data: { gridRows: rows, gridCols: cols, rowShift } }),
+      prisma.scene.update({
+        where: { id: scene.id },
+        data: {
+          gridRows: rows,
+          gridCols: cols,
+          rowShift,
+          // Split hexes move with the plants in them; an emptied edge takes its splits with it
+          splitCells: scene.splitCells.map(plan.moveCell).filter((c): c is string => c !== null),
+        },
+      }),
       ...moved.map((s) => prisma.specimen.update({ where: { id: s.id }, data: { gridCell: s.after } })),
       ...tasks.map((t) => prisma.task.update({ where: { id: t.id }, data: { cells: t.after } })),
     ])

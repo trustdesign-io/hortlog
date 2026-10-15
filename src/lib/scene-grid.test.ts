@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { cellsOutside, parseCell, planGridOps, planGridResize, withinLimits } from './scene-grid'
+import { cellKey, cellLabel, cellsOutside, hexOf, parseCell, parseGridCell, planGridOps, planGridResize, withinLimits } from './scene-grid'
 import { hexOffset } from './hex-grid'
 
 describe('parseCell', () => {
@@ -105,5 +105,27 @@ describe('planGridOps', () => {
   it('checks each step against where plants have moved to', () => {
     const plan = planGridOps(shape, [{ side: 'top', delta: 1 }, { side: 'bottom', delta: -1 }], ['2,0'])
     expect(plan).toEqual({ ok: false, reason: 'occupied', side: 'bottom', blocked: ['3,0'] })
+  })
+})
+
+describe('split hexes', () => {
+  it('reads whole and small cells', () => {
+    expect(parseGridCell('2,3')).toEqual({ row: 2, col: 3, sub: null })
+    expect(parseGridCell('2,3:6')).toEqual({ row: 2, col: 3, sub: 6 })
+    expect(parseGridCell('2,3:7')).toBeNull()
+    expect(parseCell('2,3:4')).toEqual([2, 3])
+    expect(hexOf('2,3:4')).toBe('2,3')
+    expect(cellKey(2, 3, 0)).toBe('2,3:0')
+    expect(cellLabel('0,1:1')).toBe('row 1, column 2 (top left)')
+  })
+
+  it('keeps a plant in its small cell when rows are added at the top', () => {
+    const plan = planGridResize({ rows: 3, cols: 3, rowShift: 0 }, 'top', 1, ['1,1:5'])
+    expect(plan.ok && plan.moveCell('1,1:5')).toBe('2,1:5')
+  })
+
+  it('won’t remove a row with a plant in a small cell', () => {
+    const plan = planGridResize({ rows: 3, cols: 3, rowShift: 0 }, 'bottom', -1, ['2,0:3'])
+    expect(plan).toMatchObject({ ok: false, reason: 'occupied', blocked: ['2,0:3'] })
   })
 })

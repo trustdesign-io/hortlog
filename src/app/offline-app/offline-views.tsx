@@ -3,7 +3,8 @@
 
 import { useState, type ReactNode } from 'react'
 import { Leaf } from 'lucide-react'
-import { HexGrid, HexOutline, HexPlantLabel } from '@/components/hex-grid'
+import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
+import { cellKey, cellLabel, hexOf } from '@/lib/scene-grid'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { sceneCellScale, sceneTilt } from '@/lib/scene-perspective'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
@@ -150,7 +151,12 @@ function RecordEntries({ record }: { record: OfflineWorkRecord }) {
 
 function SceneGrid({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) {
   const byCell = new Map<string, OfflineSpecimen>()
-  for (const s of snap.specimens) if (s.sceneId === scene.id && s.gridCell) byCell.set(s.gridCell, s)
+  const split = new Set(scene.splitCells ?? [])
+  for (const s of snap.specimens) {
+    if (s.sceneId !== scene.id || !s.gridCell) continue
+    byCell.set(s.gridCell, s)
+    if (s.gridCell.includes(':')) split.add(hexOf(s.gridCell) ?? '')
+  }
   if (scene.gridRows <= 0 || scene.gridCols <= 0) return null
   const tilt = sceneTilt(scene.perspective, scene.gridRows, CELL_WIDTH_REM * PX_PER_REM)
   return (
@@ -165,6 +171,36 @@ function SceneGrid({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) 
         renderCell={(row, col, style) => {
           const cell = `${row},${col}`
           const s = byCell.get(cell)
+          if (split.has(cell)) {
+            return (
+              <div key={cell} className="hex-cell" style={style}>
+                <span className="hex-shape block bg-muted/30">
+                  <HexOutline className="text-border/60" />
+                  <HexSubCells
+                    renderSub={(sub, subStyle) => {
+                      const key = cellKey(row, col, sub)
+                      const p = byCell.get(key)
+                      return p ? (
+                        <a
+                          key={key}
+                          href={`/${snap.org.slug}/specimens/${p.id}`}
+                          className="hex-sub bg-muted"
+                          style={subStyle}
+                          aria-label={`${p.species.scientificName}, ${cellLabel(key)}`}
+                        >
+                          <Photo src={specimenPhoto(p)} className="absolute inset-0 h-full w-full" />
+                        </a>
+                      ) : (
+                        <span key={key} className="hex-sub" style={subStyle} aria-hidden="true">
+                          <HexOutline className="text-border/60" />
+                        </span>
+                      )
+                    }}
+                  />
+                </span>
+              </div>
+            )
+          }
           if (s) {
             return (
               <a

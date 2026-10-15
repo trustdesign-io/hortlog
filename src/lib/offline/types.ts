@@ -37,6 +37,8 @@ export interface OfflineScene {
   gridRows: number
   gridCols: number
   rowShift: number
+  /** Hexes split into seven smaller cells (missing in copies saved before splitting existed) */
+  splitCells?: string[]
   perspective: 'BED' | 'WALL'
   primaryCollectionId: string | null
 }

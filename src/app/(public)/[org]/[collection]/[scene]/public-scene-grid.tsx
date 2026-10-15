@@ -1,6 +1,7 @@
 import Link from 'next/link'
-import { HexGrid, HexOutline, HexPlantLabel } from '@/components/hex-grid'
+import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
+import { cellKey, cellLabel, hexOf } from '@/lib/scene-grid'
 import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 
 const CELL_WIDTH_REM = 6
@@ -22,9 +23,11 @@ interface PublicSceneGridProps {
   basePath: string
   perspective: ScenePerspective
   rowShift: number
+  /** Hexes split into seven smaller cells */
+  splitCells?: string[]
 }
 
-export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, rowShift }: PublicSceneGridProps) {
+export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, rowShift, splitCells = [] }: PublicSceneGridProps) {
   if (rows <= 0 || cols <= 0) {
     return (
       <p className="py-12 text-center text-sm text-muted-foreground">
@@ -42,8 +45,10 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
   }
 
   const cellMap: Record<string, GridSpecimen> = {}
+  const split = new Set(splitCells)
   for (const s of specimens) {
     cellMap[s.gridCell] = s
+    if (s.gridCell.includes(':')) split.add(hexOf(s.gridCell) ?? '')
   }
 
   const tilt = sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)
@@ -64,6 +69,38 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
         renderCell={(row, col, style) => {
           const cell = `${row},${col}`
           const specimen = cellMap[cell]
+
+          if (split.has(cell)) {
+            return (
+              <div key={cell} className="hex-cell" style={style}>
+                <span className="hex-shape block bg-muted/30">
+                  <HexOutline className="text-border/60" />
+                  <HexSubCells
+                    renderSub={(sub, subStyle) => {
+                      const key = cellKey(row, col, sub)
+                      const plant = cellMap[key]
+                      return plant ? (
+                        <Link
+                          key={key}
+                          href={`${basePath}/${plant.slug}`}
+                          className="hex-sub bg-muted hover:opacity-80"
+                          style={subStyle}
+                          aria-label={`${plant.scientificName}, ${cellLabel(key)}`}
+                          title={plant.scientificName}
+                        >
+                          <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="48px" className="object-cover" />
+                        </Link>
+                      ) : (
+                        <span key={key} className="hex-sub" style={subStyle} aria-hidden="true">
+                          <HexOutline className="text-border/60" />
+                        </span>
+                      )
+                    }}
+                  />
+                </span>
+              </div>
+            )
+          }
 
           if (specimen) {
             return (
