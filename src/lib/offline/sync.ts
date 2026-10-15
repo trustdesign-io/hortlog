@@ -64,6 +64,11 @@ function postToWorker(message: unknown) {
   void navigator.serviceWorker.ready.then((reg) => reg.active?.postMessage(message)).catch(() => {})
 }
 
+/** Re-save the offline app page, so the device always has the latest version of it. */
+export function refreshOfflineShell() {
+  postToWorker({ type: 'CACHE_SHELL' })
+}
+
 let running: Promise<void> | null = null
 
 /**
