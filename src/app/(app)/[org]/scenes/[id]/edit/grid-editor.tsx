@@ -15,7 +15,8 @@ import { Search } from 'lucide-react'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { HexGrid } from '@/components/hex-grid'
 import { moveHexCell, type HexDirection } from '@/lib/hex-grid'
-import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { unmeasuredCellWidth, useFittedGrid } from '@/hooks/use-fitted-grid'
 import {
   cellKey,
   cellLabel,
@@ -27,13 +28,14 @@ import {
   type GridSide,
 } from '@/lib/scene-grid'
 import { Button } from '@/components/ui/button'
-import { RotatePrompt } from './rotate-prompt'
 import { EmptyCell, FilledCell, SplitCell, type PlacedSpecimen } from './grid-cells'
 import { HexSheet } from './hex-sheet'
 import { GridSizeControls } from './grid-size-controls'
 
 const CELL_WIDTH_REM = 7.5
 const PX_PER_REM = 16
+/** Below this cell width the remove button is left off the grid; it's in the cell's options instead. */
+const COMPACT_CELL_PX = 72
 /** Clicks on the resize buttons within this long are saved together. */
 const RESIZE_SAVE_DELAY_MS = 700
 
@@ -140,8 +142,12 @@ export function GridEditor({
   const [pickerOpen, setPickerOpen] = useState(false)
   const [pickerCell, setPickerCell] = useState<{ row: number; col: number; sub: number | null } | null>(null)
   const [search, setSearch] = useState('')
-  const tilt = sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)
-  const cellWidthRem = CELL_WIDTH_REM * sceneCellScale(rows, tilt)
+  // The whole grid fits on screen, even on a phone held upright
+  const gridBox = useRef<HTMLDivElement>(null)
+  const fitted = useFittedGrid(gridBox, rows, cols, perspective, CELL_WIDTH_REM * PX_PER_REM)
+  const tilt = fitted?.tilt ?? sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)
+  const cellWidth = fitted ? `${fitted.cellPx}px` : unmeasuredCellWidth(rows, cols, tilt, CELL_WIDTH_REM)
+  const compact = fitted !== null && fitted.cellPx < COMPACT_CELL_PX
 
   // Roving tabindex: track which cell currently owns the tab stop
   const [focusCell, setActiveCell] = useState<{ row: number; col: number }>({ row: 0, col: 0 })
@@ -291,7 +297,6 @@ export function GridEditor({
 
   return (
     <>
-      <RotatePrompt />
       <div className="mb-4">
         <GridSizeControls
           orgSlug={orgSlug}
@@ -303,7 +308,7 @@ export function GridEditor({
           resizeError={resizeError}
         />
       </div>
-      <div className="overflow-x-auto pb-4">
+      <div ref={gridBox} className="overflow-x-auto">
         <HexGrid
           role="grid"
           className="mx-auto"
@@ -312,7 +317,7 @@ export function GridEditor({
           aria-colcount={cols}
           rows={rows}
           cols={cols}
-          cellWidth={`${cellWidthRem}rem`}
+          cellWidth={cellWidth}
           tiltDeg={tilt}
           rowShift={shape.rowShift}
           rowProps={(row) => ({ role: 'row', 'aria-rowindex': row + 1 })}
@@ -351,6 +356,7 @@ export function GridEditor({
                 specimen={placed}
                 isActive={isActive}
                 onRemove={() => handleRemove(placed)}
+                compact={compact}
                 onOpen={() => setHexSheet({ row, col })}
                 onFocus={() => setActiveCell({ row, col })}
                 onKeyDown={(e) => {

@@ -58,10 +58,12 @@ interface FilledCellProps extends CellProps {
   onRemove: () => void
   /** Options for this hex, such as splitting it */
   onOpen: () => void
+  /** Cells too small for the remove button; removing is in the options */
+  compact?: boolean
 }
 
 export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function FilledCell(
-  { row, col, style, specimen, isActive, onRemove, onOpen, onFocus, onKeyDown },
+  { row, col, style, specimen, isActive, onRemove, onOpen, compact = false, onFocus, onKeyDown },
   ref,
 ) {
   return (
@@ -94,20 +96,22 @@ export const FilledCell = forwardRef<HTMLDivElement, FilledCellProps>(function F
           className="object-cover"
         />
         <HexPlantLabel scientificName={specimen.scientificName} />
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            onRemove()
-          }}
-          className="group/remove absolute right-[14%] top-[18%] z-10 flex h-11 w-11 items-center justify-center text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
-          aria-label={`Remove ${specimen.scientificName} from this cell`}
-          tabIndex={-1}
-        >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/90 group-focus-visible/remove:ring-2 group-focus-visible/remove:ring-ring">
-            <X className="h-4 w-4" aria-hidden="true" />
-          </span>
-        </button>
+        {!compact && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation()
+              onRemove()
+            }}
+            className="group/remove absolute right-[14%] top-[18%] z-10 flex h-11 w-11 items-center justify-center text-muted-foreground opacity-0 hover:text-destructive focus-visible:opacity-100 focus-visible:outline-none group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100"
+            aria-label={`Remove ${specimen.scientificName} from this cell`}
+            tabIndex={-1}
+          >
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/90 group-focus-visible/remove:ring-2 group-focus-visible/remove:ring-ring">
+              <X className="h-4 w-4" aria-hidden="true" />
+            </span>
+          </button>
+        )}
       </span>
     </div>
   )

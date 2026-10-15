@@ -221,13 +221,6 @@
   }
 }
 
-/* Rotate-to-landscape hint on the scene grid editor */
-@keyframes rotate-hint {
-  0%, 20% { transform: rotate(0deg); }
-  50%, 80% { transform: rotate(-90deg); }
-  100% { transform: rotate(0deg); }
-}
-
 /*
  * Hexagonal scene grid. The positioned .hex-cell is the interactive element and
  * ignores pointer events itself; only the clipped .hex-shape receives them, so
