@@ -62,6 +62,7 @@ export async function SpecimenCare({ specimenId, audience }: SpecimenCareProps) 
               >
                 {formatRecordDate(entry.date, 'short')}
               </time>
+              <span className="sr-only">: </span>
               <div className="min-w-0 flex-1">
                 <p className="leading-snug">
                   <span className="font-medium">{entry.label}</span>

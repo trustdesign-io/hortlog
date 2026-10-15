@@ -126,6 +126,7 @@ export function InTheWild({
                   >
                     Read more on Wikipedia
                     <ExternalLink className="h-3 w-3" aria-hidden="true" />
+                    {' '}<span className="sr-only">(opens in a new tab)</span>
                   </a>
                 </>
               )}
@@ -144,13 +145,13 @@ export function InTheWild({
                 target="_blank"
                 rel="noopener noreferrer"
                 className="group block"
-                aria-label="View wild occurrence records on GBIF"
+                aria-label={`Map of wild records of ${speciesName} on GBIF (opens in a new tab)`}
               >
                 <div className="relative h-32 w-full overflow-hidden rounded-lg border bg-muted">
                   {/* eslint-disable-next-line @next/next/no-img-element -- GBIF tile API has no Next.js Image equivalent */}
                   <img
                     src={`https://api.gbif.org/v2/map/occurrence/density/0/0/0@1x.png?taxonKey=${gbifTaxonKey}&style=classic-noborder.poly&bin=square`}
-                    alt={`Wild occurrence map for ${speciesName} (GBIF)`}
+                    alt=""
                     className="h-full w-full object-cover opacity-90 transition-opacity group-hover:opacity-100"
                     loading="lazy"
                   />
