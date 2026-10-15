@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { SceneHeader } from '../scene-header'
+import { publicScenePath } from '@/lib/scene-urls'
 import { SceneDetailsForm } from './scene-details-form'
 
 interface SceneDetailsPageProps {
@@ -21,7 +22,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
       perspective: true,
       organisationId: true,
       primaryCollectionId: true,
-      primaryCollection: { select: { name: true } },
+      primaryCollection: { select: { name: true, slug: true } },
       _count: { select: { specimens: true } },
     },
   })
@@ -40,6 +41,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
         sceneId={scene.id}
         name={scene.name}
         collectionName={scene.primaryCollection?.name ?? null}
+        publicPath={publicScenePath(orgSlug, scene.slug, scene.primaryCollection?.slug ?? null)}
         active="details"
       />
       <SceneDetailsForm

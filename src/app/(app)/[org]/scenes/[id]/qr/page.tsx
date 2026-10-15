@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { SceneHeader } from '../scene-header'
+import { publicScenePath } from '@/lib/scene-urls'
 import { QRPanel } from './qr-panel'
 
 interface SceneQrPageProps {
@@ -14,7 +15,7 @@ export default async function SceneQrPage({ params }: SceneQrPageProps) {
 
   const scene = await prisma.scene.findFirst({
     where: { id: sceneId, organisation: { slug: orgSlug } },
-    select: { id: true, name: true, slug: true, shortCode: true, primaryCollection: { select: { name: true } } },
+    select: { id: true, name: true, slug: true, shortCode: true, primaryCollection: { select: { name: true, slug: true } } },
   })
   if (!scene) return notFound()
 
@@ -27,6 +28,7 @@ export default async function SceneQrPage({ params }: SceneQrPageProps) {
         sceneId={scene.id}
         name={scene.name}
         collectionName={scene.primaryCollection?.name ?? null}
+        publicPath={publicScenePath(orgSlug, scene.slug, scene.primaryCollection?.slug ?? null)}
         active="qr"
       />
       <QRPanel
