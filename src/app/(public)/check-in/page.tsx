@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 }
 
 export default async function CheckInPage() {
-  // Venues with at least one scene to visit
+  // Venues with at least one scene in use
   const venues = await prisma.organisation.findMany({
-    where: { scenes: { some: {} } },
-    select: { slug: true, name: true, _count: { select: { scenes: true } } },
+    where: { scenes: { some: { active: true } } },
+    select: { slug: true, name: true, _count: { select: { scenes: { where: { active: true } } } } },
     orderBy: { name: 'asc' },
   })
 

@@ -380,6 +380,33 @@ export async function resizeSceneGrid(
   return { success: true }
 }
 
+/**
+ * Marks a scene as in use at the venue, or not. Inactive scenes aren't
+ * counted or listed for visitors; their QR labels still open a page.
+ */
+export async function setSceneActive(orgSlug: string, sceneId: string, active: boolean): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+  if (typeof active !== 'boolean') return { success: false, error: 'Invalid change.' }
+
+  const scene = await prisma.scene.findFirst({
+    where: { id: sceneId, organisation: { slug: orgSlug } },
+    select: { id: true },
+  })
+  if (!scene) return { success: false, error: 'Scene not found.' }
+
+  try {
+    await prisma.scene.update({ where: { id: scene.id }, data: { active } })
+  } catch (err) {
+    console.error('[setSceneActive] error:', err)
+    return { success: false, error: 'Failed to save. Please try again.' }
+  }
+
+  revalidatePath(`/${orgSlug}/scenes`, 'layout')
+  revalidatePath(`/${orgSlug}`)
+  revalidatePath('/check-in', 'layout')
+  return { success: true }
+}
+
 /** Switches a scene between a bed (lies back) and a wall (upright). */
 export async function setScenePerspective(
   orgSlug: string,

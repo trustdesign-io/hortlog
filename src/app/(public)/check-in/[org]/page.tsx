@@ -17,6 +17,7 @@ async function getVenue(slug: string) {
       slug: true,
       name: true,
       scenes: {
+        where: { active: true },
         select: { id: true, name: true, slug: true, primaryCollection: { select: { slug: true } }, _count: { select: { specimens: true } } },
         orderBy: { name: 'asc' },
       },
@@ -32,7 +33,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 /** A venue: save it to the phone for use without signal, and its scenes. */
 export default async function VenueCheckInPage({ params }: PageProps) {
   const venue = await getVenue((await params).org)
-  if (!venue || venue.scenes.length === 0) return notFound()
+  if (!venue) return notFound()
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
@@ -51,7 +52,12 @@ export default async function VenueCheckInPage({ params }: PageProps) {
 
       <section className="space-y-3">
         <h2 className="font-heading text-lg font-medium">Scenes</h2>
-        <ul role="list" className="divide-y overflow-hidden rounded-xl border bg-card">
+        {venue.scenes.length === 0 && (
+          <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
+            The garden&rsquo;s scenes are still being set up.
+          </p>
+        )}
+        <ul role="list" className="divide-y overflow-hidden rounded-xl border bg-card empty:hidden">
           {venue.scenes.map((s) => (
             <li key={s.id}>
               <Link

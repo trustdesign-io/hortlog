@@ -30,7 +30,7 @@ export async function GET(
   }
 
   const scenes = await prisma.scene.findMany({
-    where: { organisationId: org.id },
+    where: { organisationId: org.id, active: true },
     select: {
       slug: true,
       shortCode: true,
