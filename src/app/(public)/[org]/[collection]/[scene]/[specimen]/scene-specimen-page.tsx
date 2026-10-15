@@ -31,7 +31,7 @@ const resolveData = cache(async function resolveData(
 
   const scene = await prisma.scene.findFirst({
     where: { slug: sceneSlug, organisationId: org.id, primaryCollectionId: collection?.id ?? null },
-    select: { id: true, name: true, slug: true },
+    select: { id: true, name: true, title: true, slug: true },
   })
   if (!scene) return null
 
@@ -152,6 +152,7 @@ export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, sp
         }}
         breadcrumbs={breadcrumbs}
         backHref={scenePath}
+        backLabel={scene.title ?? scene.name}
       >
         <SpecimenCare specimenId={specimen.id} audience={isMember ? 'members' : 'public'} />
         {isMember && currentUser && (

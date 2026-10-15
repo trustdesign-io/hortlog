@@ -56,6 +56,8 @@ interface SpecimenDetailProps {
   }
   breadcrumbs?: BreadcrumbItem[]
   backHref?: string
+  /** Where the back link goes, for screen readers: "Back to …" */
+  backLabel?: string
   children?: React.ReactNode
 }
 
@@ -80,7 +82,7 @@ function conservationBadgeVariant(
   return 'outline'
 }
 
-export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, children }: SpecimenDetailProps) {
+export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, backLabel, children }: SpecimenDetailProps) {
   // Prefer the automatic statusCategory; fall back to the legacy manual code
   const conservationLabel =
     species.statusCategory ??
@@ -101,6 +103,12 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
         >
           <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Back
+          {backLabel && (
+            <>
+              {' '}
+              <span className="sr-only">to {backLabel}</span>
+            </>
+          )}
         </Link>
       )}
 
@@ -131,7 +139,11 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
             <div className="relative h-48 w-full overflow-hidden rounded-xl border bg-muted sm:h-64">
               <SpecimenImage
                 imageUrl={specimen.imageUrl ?? species.photoUrl}
-                alt={species.commonName}
+                alt={
+                  specimen.imageUrl
+                    ? `Photo of this ${species.commonName}`
+                    : `Reference photo of ${species.commonName}, the species`
+                }
                 fill
                 priority
                 sizes="(max-width: 640px) calc(100vw - 2rem), 640px"
@@ -152,6 +164,7 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
                         className="underline underline-offset-2 hover:text-foreground"
                       >
                         {species.photoLicence}
+                        {' '}<span className="sr-only">(opens in a new tab)</span>
                       </a>
                     ) : (
                       species.photoLicence
@@ -168,6 +181,7 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
                       className="underline underline-offset-2 hover:text-foreground"
                     >
                       iNaturalist
+                      {' '}<span className="sr-only">(opens in a new tab)</span>
                     </a>
                   </>
                 )}
@@ -175,22 +189,32 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
             )}
           </figure>
         )}
-        <ScientificName className="text-3xl font-medium leading-tight">
-          {species.scientificName}
-        </ScientificName>
-        {specimen.cultivar && (
-          <span className="font-heading text-3xl font-medium leading-tight"> ‘{specimen.cultivar}’</span>
-        )}
-        <h1 className="mt-1 text-xl font-medium text-foreground">{species.commonName}</h1>
+        {/* One heading with both names, so they're read together and found by heading */}
+        <h1>
+          <span className="block">
+            <ScientificName className="text-3xl font-medium leading-tight">{species.scientificName}</ScientificName>
+            {specimen.cultivar && (
+              <span className="font-heading text-3xl font-medium leading-tight">
+                {' '}
+                <span className="sr-only">cultivar</span>{' '}‘{specimen.cultivar}’
+              </span>
+            )}
+          </span>
+          <span className="sr-only">, </span>
+          <span className="mt-1 block text-xl font-medium text-foreground">{species.commonName}</span>
+        </h1>
         {specimen.accessionNumber && (
           <p className="mt-1 font-mono text-xs text-muted-foreground">
-            #{specimen.accessionNumber}
+            <span aria-hidden="true">#</span>
+            <span className="sr-only">Accession number</span>{' '}
+            {specimen.accessionNumber}
           </p>
         )}
         {/* Legacy badge — only shown when there's no automatic statusCategory yet */}
         {conservationLabel && conservationBadgeStatus && (
           <div className="mt-2">
             <Badge variant={conservationBadgeVariant(conservationBadgeStatus)}>
+              <span className="sr-only">Conservation status:</span>{' '}
               {conservationLabel}
             </Badge>
           </div>
@@ -198,6 +222,7 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, child
       </header>
 
       {/* Details */}
+      <h2 className="sr-only">About this plant</h2>
       <dl className="space-y-4">
         {species.family && (
           <div>
