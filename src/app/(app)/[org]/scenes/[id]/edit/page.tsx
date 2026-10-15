@@ -3,6 +3,7 @@ import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { GridEditor } from './grid-editor'
 import { SceneHeader } from '../scene-header'
+import { publicScenePath } from '@/lib/scene-urls'
 
 interface SceneEditPageProps {
   params: Promise<{ org: string; id: string }>
@@ -29,7 +30,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       gridCols: true,
       rowShift: true,
       splitCells: true,
-      primaryCollection: { select: { name: true } },
+      primaryCollection: { select: { name: true, slug: true } },
     },
   })
   if (!scene) return notFound()
@@ -64,6 +65,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         sceneId={scene.id}
         name={scene.name}
         collectionName={scene.primaryCollection?.name ?? null}
+        publicPath={publicScenePath(orgSlug, scene.slug, scene.primaryCollection?.slug ?? null)}
         active="layout"
       />
       <GridEditor
