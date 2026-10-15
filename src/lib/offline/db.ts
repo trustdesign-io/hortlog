@@ -1,3 +1,4 @@
+import type { OutboxOp } from './ops'
 import type { OrgSnapshot } from './types'
 
 /**
@@ -119,4 +120,21 @@ export async function deleteOfflineStore(): Promise<void> {
     req.onerror = () => resolve()
     req.onblocked = () => resolve()
   })
+}
+
+// ─── Outbox: changes made offline ────────────────────────────────────────────
+
+export async function listOutbox(): Promise<OutboxOp[]> {
+  if (!offlineStoreAvailable()) return []
+  const ops = await idbGetAll<OutboxOp>(STORES.outbox)
+  // Send in the order they were made
+  return ops.sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+}
+
+export function putOutboxOp(op: OutboxOp): Promise<void> {
+  return idbPut(STORES.outbox, op)
+}
+
+export function deleteOutboxOp(id: string): Promise<void> {
+  return idbDelete(STORES.outbox, id)
 }

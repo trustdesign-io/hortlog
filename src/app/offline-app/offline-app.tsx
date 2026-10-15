@@ -2,8 +2,9 @@
 
 import { useCallback, useEffect, useState, useSyncExternalStore, type MouseEvent } from 'react'
 import { CloudOff, Wifi } from 'lucide-react'
-import { listSnapshots, offlineStoreAvailable } from '@/lib/offline/db'
-import { oldestSync } from '@/lib/offline/sync'
+import { listOutbox, listSnapshots, offlineStoreAvailable } from '@/lib/offline/db'
+import type { OutboxOp } from '@/lib/offline/ops'
+import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, syncOrgs } from '@/lib/offline/sync'
 import { offlineAppHref, resolveOfflineRoute, type OfflineRoute } from '@/lib/offline/routes'
 import type { OrgSnapshot } from '@/lib/offline/types'
 import { timeAgo } from '@/components/offline/offline-status'
@@ -53,14 +54,42 @@ export function OfflineApp() {
   const path = useSyncExternalStore(subscribePath, currentPath, () => null)
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true)
   const [saved, setSaved] = useState<{ snapshots: OrgSnapshot[]; loadedAt: number } | null>(null)
+  const [ops, setOps] = useState<OutboxOp[]>([])
 
   useEffect(() => {
     let cancelled = false
-    void loadSnapshots().then((snapshots) => {
-      if (!cancelled) setSaved({ snapshots, loadedAt: Date.now() })
-    })
+    const reloadOps = () =>
+      void listOutbox()
+        .catch(() => [] as OutboxOp[])
+        .then((o) => {
+          if (!cancelled) setOps(o)
+        })
+    const reloadSnapshots = () =>
+      loadSnapshots().then((snapshots) => {
+        if (!cancelled) setSaved({ snapshots, loadedAt: Date.now() })
+        return snapshots
+      })
+
+    // Back online: send what was done here, then refresh the saved copy
+    async function sendAndRefresh() {
+      if (!navigator.onLine) return
+      const sent = await flushOutbox()
+      if (sent) {
+        const slugs = (await loadSnapshots()).map((s) => s.org.slug)
+        await syncOrgs(slugs)
+        await reloadSnapshots()
+      }
+    }
+
+    void reloadSnapshots()
+    void refreshOutboxStatus()
+    void sendAndRefresh()
+    window.addEventListener(OUTBOX_EVENT, reloadOps)
+    window.addEventListener('online', sendAndRefresh)
     return () => {
       cancelled = true
+      window.removeEventListener(OUTBOX_EVENT, reloadOps)
+      window.removeEventListener('online', sendAndRefresh)
     }
   }, [])
 
@@ -112,7 +141,7 @@ export function OfflineApp() {
         )}
       </div>
 
-      <OfflineView route={route} orgSlug={orgSlug} snapshots={snapshots} />
+      <OfflineView route={route} orgSlug={orgSlug} snapshots={snapshots} ops={ops} />
     </div>
   )
 }

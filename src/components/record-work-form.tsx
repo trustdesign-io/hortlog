@@ -6,8 +6,13 @@ import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { recordWork } from '@/lib/actions/work-record'
+import { newOpId } from '@/lib/offline/ops'
+import { queueOp } from '@/lib/offline/sync'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
 import type { ActionResult } from '@/lib/shared/types'
+
+/** `queued`: saved on the device to send later, as there was no connection */
+type FormResult = ActionResult | { success: true; queued: true }
 
 interface RecordWorkFormProps {
   orgSlug: string
@@ -18,10 +23,39 @@ interface RecordWorkFormProps {
 export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
   const boundAction = useMemo(
-    () => recordWork.bind(null, orgSlug, specimenId),
+    () =>
+      async (prev: FormResult | null, formData: FormData): Promise<FormResult> => {
+        // No connection: keep the entry on the device and send it later
+        const saveOnDevice = async (): Promise<FormResult> => {
+          const field = (name: string) => String(formData.get(name) ?? '').trim() || null
+          const action = String(formData.get('action') ?? '')
+          const date = String(formData.get('date') ?? '')
+          if (!(action in WORK_ACTION_LABELS)) return { success: false, error: 'Please select an action.' }
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return { success: false, error: 'Please choose a date.' }
+          try {
+            await queueOp({
+              id: newOpId(),
+              org: orgSlug,
+              createdAt: new Date().toISOString(),
+              kind: 'recordWork',
+              specimenId,
+              entry: { action, date, actionNote: field('actionNote'), location: field('location'), text: field('text') },
+            })
+          } catch {
+            return { success: false, error: 'Failed to record work. Please try again.' }
+          }
+          return { success: true, queued: true }
+        }
+        if (!navigator.onLine) return saveOnDevice()
+        try {
+          return await recordWork(orgSlug, specimenId, prev, formData)
+        } catch {
+          return saveOnDevice()
+        }
+      },
     [orgSlug, specimenId],
   )
-  const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(
+  const [state, formAction, isPending] = useActionState<FormResult | null, FormData>(
     boundAction,
     null,
   )
@@ -100,7 +134,11 @@ export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFor
         <p className="text-sm text-destructive">{state.error}</p>
       )}
       {state?.success && (
-        <p className="text-sm text-green-700 dark:text-green-400">Work recorded.</p>
+        <p className="text-sm text-green-700 dark:text-green-400">
+          {'queued' in state && state.queued
+            ? 'No connection, so it’s saved on this device. It will be added to your record when you’re back online.'
+            : 'Work recorded.'}
+        </p>
       )}
 
       <Button type="submit" disabled={isPending} className="w-full sm:w-auto">

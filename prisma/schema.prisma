@@ -477,3 +477,14 @@ model WorkLogEntryEdit {
   workLogEntryId String
   workLogEntry   WorkLogEntry @relation(fields: [workLogEntryId], references: [id], onDelete: Cascade)
 }
+
+/// A change a member made offline and sent later. The id comes from their
+/// device, so sending the same change twice only applies it once.
+model SyncOp {
+  id        String   @id
+  kind      String
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}

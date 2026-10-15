@@ -61,6 +61,8 @@ export interface OfflineTask {
   sceneId: string | null
   cells: string[]
   assignees: string[]
+  /** Changed on this device and not yet sent */
+  pending?: boolean
 }
 
 export interface OfflineLogEntry {
@@ -70,6 +72,8 @@ export interface OfflineLogEntry {
   actionNote: string | null
   location: string | null
   text: string | null
+  /** Recorded on this device and not yet sent */
+  pending?: boolean
 }
 
 export interface OfflineWorkRecord {
@@ -79,6 +83,8 @@ export interface OfflineWorkRecord {
   scientificName: string
   firstWorkedDate: string
   entries: OfflineLogEntry[]
+  /** Started on this device; numbered once it's sent */
+  pending?: boolean
 }
 
 export interface OrgSnapshot {
