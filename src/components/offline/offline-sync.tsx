@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { flushOutbox, loadSavedStatus, refreshOutboxStatus, setOnline, syncOrgs } from '@/lib/offline/sync'
+import { flushOutbox, loadSavedStatus, refreshOfflineShell, refreshOutboxStatus, setOnline, syncOrgs } from '@/lib/offline/sync'
 
 /** Refresh the saved copies at most this often while the app is open. */
 const REFRESH_MS = 5 * 60_000
@@ -27,7 +27,11 @@ export function OfflineSync({ memberOrgSlugs, viewableOrgSlugs }: OfflineSyncPro
 
   useEffect(() => {
     if (!('serviceWorker' in navigator)) return
-    navigator.serviceWorker.register('/sw.js').catch(() => {})
+    navigator.serviceWorker
+      .register('/sw.js')
+      // Each time the app opens online, pick up the newest offline pages
+      .then(() => navigator.onLine && refreshOfflineShell())
+      .catch(() => {})
   }, [])
 
   useEffect(() => {
