@@ -53,7 +53,7 @@ export async function GET(
 
     // Scene page (list and grid tabs)
     urls.push(sceneBase)
-    urls.push(`${sceneBase}?tab=grid`)
+    urls.push(`${sceneBase}?tab=layout`)
 
     // QR redirect shortlink
     urls.push(`/v/${scene.shortCode}`)
