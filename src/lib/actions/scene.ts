@@ -320,7 +320,11 @@ export async function setScenePerspective(
   return { success: true }
 }
 
-/** Renames a scene, changes its slug, primary collection or perspective. */
+/**
+ * Changes a scene's primary collection or perspective. A scene's name and slug
+ * are permanent: the name is printed on its QR label, so neither can change
+ * after creation and any attempt is refused.
+ */
 export async function updateScene(
   orgSlug: string,
   sceneId: string,
@@ -329,20 +333,15 @@ export async function updateScene(
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_edit_scene')
 
-  const name = (formData.get('name') as string | null)?.trim() ?? ''
-  const slug = (formData.get('slug') as string | null)?.trim() || toSlug(name)
+  if (formData.has('name') || formData.has('slug')) {
+    return { success: false, error: "A scene's name can't be changed: it's printed on its QR label." }
+  }
+
   const primaryCollectionId = (formData.get('primaryCollectionId') as string | null)?.trim() || null
   const perspectiveRaw = formData.get('perspective') as string | null
   const perspective = perspectiveRaw === null ? undefined : parsePerspective(perspectiveRaw)
-
-  if (!name) return { success: false, error: 'Name is required.' }
-  if (name.length > 120) return { success: false, error: 'Name must be 120 characters or fewer.' }
   if (perspectiveRaw !== null && !perspective) {
     return { success: false, error: 'Perspective must be Bed or Wall.' }
-  }
-  if (slug.length < 2 || slug.length > 48) return { success: false, error: 'Slug must be 2–48 characters.' }
-  if (!SLUG_PATTERN.test(slug)) {
-    return { success: false, error: 'Slug may only contain lowercase letters, numbers, and hyphens.' }
   }
 
   const scene = await prisma.scene.findFirst({
@@ -350,12 +349,6 @@ export async function updateScene(
     select: { id: true, organisationId: true },
   })
   if (!scene) return { success: false, error: 'Scene not found.' }
-
-  const clash = await prisma.scene.findFirst({
-    where: { organisationId: scene.organisationId, slug, id: { not: scene.id } },
-    select: { id: true },
-  })
-  if (clash) return { success: false, error: `The slug "${slug}" is already in use.` }
 
   if (primaryCollectionId) {
     const collection = await prisma.collection.findFirst({
@@ -366,11 +359,11 @@ export async function updateScene(
   }
 
   try {
-    await prisma.scene.update({ where: { id: scene.id }, data: { name, slug, primaryCollectionId, perspective: perspective ?? undefined } })
+    await prisma.scene.update({
+      where: { id: scene.id },
+      data: { primaryCollectionId, perspective: perspective ?? undefined },
+    })
   } catch (err) {
-    if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2002') {
-      return { success: false, error: `The slug "${slug}" is already in use.` }
-    }
     console.error('[updateScene] error:', err)
     return { success: false, error: 'Failed to save. Please try again.' }
   }
