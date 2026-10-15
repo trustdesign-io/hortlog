@@ -1,42 +1,15 @@
 'use client'
 
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useRef } from 'react'
 import Link from 'next/link'
 import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { cellKey, cellLabel, hexOf } from '@/lib/scene-grid'
-import { hexGridExtent } from '@/lib/hex-grid'
-import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { unmeasuredCellWidth, useFittedGrid } from '@/hooks/use-fitted-grid'
+import { sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
 
 const CELL_WIDTH_REM = 6
 const PX_PER_REM = 16
-/** Cells are never drawn narrower than this, however big the grid. */
-const MIN_CELL_PX = 28
-/** Space kept clear under the grid. */
-const BOTTOM_GAP_PX = 16
-
-/**
- * Cell width and tilt that fit the whole grid in `width` × `height` pixels,
- * never larger than the usual size. The bed tilt depends on cell size, so it's
- * worked out from a first fit, then the fit is redone at that tilt.
- */
-export function fitGrid(
-  rows: number,
-  cols: number,
-  perspective: ScenePerspective,
-  width: number,
-  height: number,
-): { cellPx: number; tilt: number } {
-  const fit = (tilt: number) => {
-    const extent = hexGridExtent(rows, cols, tilt)
-    const usual = CELL_WIDTH_REM * PX_PER_REM * sceneCellScale(rows, tilt)
-    return Math.max(MIN_CELL_PX, Math.min(usual, width / extent.width, height / extent.height))
-  }
-  const first = fit(sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM))
-  const tilt = sceneTilt(perspective, rows, first)
-  return { cellPx: Math.floor(fit(tilt)), tilt }
-}
-
 interface GridSpecimen {
   id: string
   slug: string
@@ -59,26 +32,8 @@ interface PublicSceneGridProps {
 
 export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, rowShift, splitCells = [] }: PublicSceneGridProps) {
   const box = useRef<HTMLDivElement>(null)
-  const [fitted, setFitted] = useState<{ cellPx: number; tilt: number } | null>(null)
-
   // Fit the grid to the space left on screen, so it shows whole without scrolling
-  useLayoutEffect(() => {
-    const el = box.current
-    if (!el) return
-    const measure = () => {
-      const top = el.getBoundingClientRect().top + window.scrollY
-      const height = window.innerHeight - top - BOTTOM_GAP_PX
-      setFitted(fitGrid(rows, cols, perspective, el.clientWidth, Math.max(height, 200)))
-    }
-    measure()
-    const observer = new ResizeObserver(measure)
-    observer.observe(el)
-    window.addEventListener('resize', measure)
-    return () => {
-      observer.disconnect()
-      window.removeEventListener('resize', measure)
-    }
-  }, [rows, cols, perspective])
+  const fitted = useFittedGrid(box, rows, cols, perspective, CELL_WIDTH_REM * PX_PER_REM)
 
   if (rows <= 0 || cols <= 0) {
     return (
@@ -103,11 +58,8 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
     if (s.gridCell.includes(':')) split.add(hexOf(s.gridCell) ?? '')
   }
 
-  // Before measuring (and without JavaScript): the usual size, squeezed to the screen's width
   const tilt = fitted?.tilt ?? sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)
-  const cellWidth = fitted
-    ? `${fitted.cellPx}px`
-    : `min(${CELL_WIDTH_REM * sceneCellScale(rows, tilt)}rem, calc((100vw - 2rem) / ${hexGridExtent(rows, cols, tilt).width}))`
+  const cellWidth = fitted ? `${fitted.cellPx}px` : unmeasuredCellWidth(rows, cols, tilt, CELL_WIDTH_REM)
 
   return (
     <div
