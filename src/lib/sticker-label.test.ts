@@ -2,13 +2,15 @@ import { describe, expect, it } from 'vitest'
 import { labelUrl, qrMatrix, qrPath, QR_BLOCK_MM, QUIET_MODULES, STICKER_MM, stickerSvg } from './sticker-label'
 
 describe('labelUrl', () => {
-  it('is the short link in capitals', () => {
-    expect(labelUrl('https://hortlog.com', 'abc123')).toBe('HTTPS://HORTLOG.COM/V/ABC123')
-    expect(labelUrl('https://hortlog.com/', 'abc123')).toBe('HTTPS://HORTLOG.COM/V/ABC123')
+  it('capitalises the host but keeps the /v/ path and code as they are', () => {
+    expect(labelUrl('https://hortlog.com', 'abc123')).toBe('HTTPS://HORTLOG.COM/v/abc123')
+    expect(labelUrl('https://hortlog.com/', 'abc123')).toBe('HTTPS://HORTLOG.COM/v/abc123')
   })
 
-  it('fits a 25 × 25 module code at error correction M', () => {
-    expect(qrMatrix(labelUrl('https://hortlog.com', 'z9y8x7')).size).toBe(25)
+  it('fits a 25 × 25 module code at error correction M for any code', () => {
+    for (const code of ['z9y8x7', 'abcdef', '123456', 'a1b2c3', 'zzzzzz']) {
+      expect(qrMatrix(labelUrl('https://hortlog.com', code)).size).toBe(25)
+    }
   })
 })
 
@@ -39,11 +41,11 @@ describe('stickerSvg', () => {
 
   it('draws the cut line on the 25 mm edge only when asked', () => {
     expect(svg).toContain('stroke="#bbbbbb"')
-    expect(stickerSvg({ url: 'HTTPS://HORTLOG.COM/V/ABC123', name: 'Scene 001' })).not.toContain('stroke="#bbbbbb"')
+    expect(stickerSvg({ url: 'HTTPS://HORTLOG.COM/v/abc123', name: 'Scene 001' })).not.toContain('stroke="#bbbbbb"')
   })
 
   it('squeezes a long name to fit the label', () => {
-    expect(stickerSvg({ url: 'HTTPS://HORTLOG.COM/V/ABC123', name: 'The World Garden North America' })).toContain(
+    expect(stickerSvg({ url: 'HTTPS://HORTLOG.COM/v/abc123', name: 'The World Garden North America' })).toContain(
       'textLength="22"',
     )
     expect(svg).not.toContain('textLength')

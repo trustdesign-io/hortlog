@@ -20,13 +20,13 @@ const NAME_MAX_WIDTH_MM = 22
 const FONT_FAMILY = 'Helvetica, Arial, sans-serif'
 
 /**
- * The URL encoded on a label, in capitals: the QR code can then use its
- * compact alphanumeric mode, which keeps it at 25 × 25 modules (version 2)
- * so each module prints larger. Scheme and host ignore case; /V/ redirects
- * to /v/ and codes are matched case-insensitively.
+ * The URL encoded on a label. Scheme and host are written in capitals, which
+ * the QR code can store in its compact alphanumeric mode; the short code stays
+ * lowercase as stored. Every code then fits a 25 × 25 module code (version 2)
+ * at error correction M, so each module prints larger.
  */
 export function labelUrl(siteUrl: string, shortCode: string): string {
-  return `${siteUrl.replace(/\/+$/, '')}/V/${shortCode}`.toUpperCase()
+  return `${siteUrl.replace(/\/+$/, '').toUpperCase()}/v/${shortCode}`
 }
 
 export interface QrMatrix {
