@@ -7,7 +7,6 @@ import { SpecimenImage } from '@/components/ui/specimen-image'
 import { SceneTabNav } from './scene-tab-nav'
 import { PublicSceneGrid } from './public-scene-grid'
 import { GaEvent } from '@/components/ga-event'
-import { CheckInButton } from '@/components/offline/check-in-button'
 import { OfflineNotice } from '@/components/offline/offline-notice'
 import { publicScenePath } from '@/lib/scene-urls'
 
@@ -121,7 +120,6 @@ export async function ScenePage({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <OfflineNotice />
-            <CheckInButton orgSlug={orgSlug} />
           </div>
         </div>
       </header>

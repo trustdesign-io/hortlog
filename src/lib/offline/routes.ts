@@ -33,6 +33,8 @@ const RESERVED = new Set([
   'auth',
   'api',
   'offline-app',
+  'check-in',
+  'print',
 ])
 
 /** Organisation pages that need a connection */

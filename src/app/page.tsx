@@ -140,6 +140,15 @@ export default async function HomePage() {
               >
                 Sign in
               </Link>
+              <Link
+                href="/check-in"
+                className={cn(
+                  buttonVariants({ variant: 'outline', size: 'xl' }),
+                  'w-full border-white bg-transparent text-white hover:bg-white/10 hover:text-white sm:w-auto',
+                )}
+              >
+                Check in
+              </Link>
             </div>
           }
         />
