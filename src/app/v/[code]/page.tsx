@@ -8,7 +8,8 @@ interface ShortLinkPageProps {
 }
 
 export default async function ShortLinkPage({ params }: ShortLinkPageProps) {
-  const { code } = await params
+  // Codes are lowercase; printed labels may carry them in capitals
+  const code = (await params).code.toLowerCase()
 
   const scene = await prisma.scene.findUnique({
     where: { shortCode: code },
