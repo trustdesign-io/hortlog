@@ -248,6 +248,25 @@
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
 }
 
+/* One of a split hex's seven small cells, inside the big cell's .hex-shape */
+.hex-sub {
+  overflow: hidden;
+  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+}
+
+.hex-sub:focus-visible {
+  outline: none;
+}
+
+/* Focus ring for a small cell; clip-path would cut off an outline */
+.hex-sub-ring {
+  display: none;
+}
+
+.hex-sub:focus-visible .hex-sub-ring {
+  display: block;
+}
+
 .hex-cell:focus-visible {
   z-index: 20;
   filter: drop-shadow(2px 0 0 var(--ring)) drop-shadow(-2px 0 0 var(--ring))

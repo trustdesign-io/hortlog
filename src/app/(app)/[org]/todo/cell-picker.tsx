@@ -1,9 +1,10 @@
 'use client'
 
 import { Check } from 'lucide-react'
-import { HexGrid, HexOutline, HexPlantLabel } from '@/components/hex-grid'
+import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
+import { cellKey, hexOf } from '@/lib/scene-grid'
 import { cn } from '@/lib/utils'
 
 const CELL_WIDTH_REM = 5
@@ -32,7 +33,14 @@ interface CellPickerProps {
  */
 export function CellPicker({ scene, selected, onChange, disabled }: CellPickerProps) {
   const byCell = new Map(scene.plants.map((p) => [p.cell, p]))
+  // Hexes holding plants, including split hexes with plants in their small cells
+  const plantsByHex = new Map<string, PickerScene['plants']>()
+  for (const p of scene.plants) {
+    const hex = hexOf(p.cell)
+    if (hex) plantsByHex.set(hex, [...(plantsByHex.get(hex) ?? []), p])
+  }
   const chosen = new Set(selected)
+  const chosenPlants = scene.plants.filter((p) => chosen.has(hexOf(p.cell) ?? '')).length
 
   function toggle(cell: string) {
     onChange(chosen.has(cell) ? selected.filter((c) => c !== cell) : [...selected, cell])
@@ -41,7 +49,7 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
   const tilt = sceneTilt(scene.perspective, scene.gridRows, CELL_WIDTH_REM * PX_PER_REM)
 
   const summary = selected.length
-    ? `${selected.length} of ${scene.plants.length} plants`
+    ? `${chosenPlants} of ${scene.plants.length} plants`
     : `Whole scene: ${scene.plants.length} plant${scene.plants.length === 1 ? '' : 's'}`
 
   return (
@@ -71,8 +79,9 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
           rowShift={scene.rowShift}
           renderCell={(row, col, style) => {
             const cell = `${row},${col}`
+            const plants = plantsByHex.get(cell) ?? []
             const plant = byCell.get(cell)
-            if (!plant) {
+            if (plants.length === 0) {
               return (
                 <div key={cell} className="hex-cell" style={style} aria-hidden="true">
                   <span className="hex-shape block">
@@ -89,7 +98,7 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
                 onClick={() => toggle(cell)}
                 disabled={disabled}
                 aria-pressed={isOn}
-                aria-label={plant.scientificName}
+                aria-label={plants.map((p) => p.scientificName).join(', ')}
                 className="hex-cell"
                 style={style}
               >
@@ -99,7 +108,24 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
                     selected.length > 0 && !isOn && 'opacity-40',
                   )}
                 >
-                  <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="80px" className="object-cover" />
+                  {plant ? (
+                    <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="80px" className="object-cover" />
+                  ) : (
+                    <HexSubCells
+                      renderSub={(sub, subStyle) => {
+                        const p = byCell.get(cellKey(row, col, sub))
+                        return (
+                          <span key={sub} className="hex-sub" style={subStyle}>
+                            {p ? (
+                              <SpecimenImage imageUrl={p.thumbnailUrl} alt="" fill sizes="32px" className="object-cover" />
+                            ) : (
+                              <HexOutline className="text-border/60" />
+                            )}
+                          </span>
+                        )
+                      }}
+                    />
+                  )}
                   {isOn && (
                     <span className="absolute inset-0 flex items-start justify-center bg-primary/35 pt-[16%]">
                       <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-primary-foreground">
@@ -107,7 +133,7 @@ export function CellPicker({ scene, selected, onChange, disabled }: CellPickerPr
                       </span>
                     </span>
                   )}
-                  <HexPlantLabel scientificName={plant.scientificName} />
+                  {plant && <HexPlantLabel scientificName={plant.scientificName} />}
                 </span>
               </button>
             )

@@ -5,10 +5,50 @@ export type GridSide = 'top' | 'bottom' | 'left' | 'right'
 
 export const GRID_SIDES: readonly GridSide[] = ['top', 'bottom', 'left', 'right']
 
-/** "row,col" → [row, col], or null for anything malformed. */
+/**
+ * A hex can be split into seven smaller cells: a centre and a ring of six,
+ * each a third of the hex's width. A plant in one is stored as "row,col:sub".
+ */
+export const SUB_CELLS = 7
+
+/** Where each small cell sits in its hex, numbered clockwise from the top left after the centre. */
+export const SUB_CELL_NAMES = ['centre', 'top left', 'top right', 'right', 'bottom right', 'bottom left', 'left'] as const
+
+export interface GridCell {
+  row: number
+  col: number
+  /** Which of a split hex's seven cells, or null for a whole hex */
+  sub: number | null
+}
+
+/** "row,col" or "row,col:sub" → its parts, or null for anything malformed. */
+export function parseGridCell(cell: string | null): GridCell | null {
+  const m = cell ? /^(\d+),(\d+)(?::([0-6]))?$/.exec(cell) : null
+  return m ? { row: Number(m[1]), col: Number(m[2]), sub: m[3] === undefined ? null : Number(m[3]) } : null
+}
+
+export function cellKey(row: number, col: number, sub: number | null = null): string {
+  return sub === null ? `${row},${col}` : `${row},${col}:${sub}`
+}
+
+/** The whole hex a cell is in: "row,col". */
+export function hexOf(cell: string | null): string | null {
+  const c = parseGridCell(cell)
+  return c ? cellKey(c.row, c.col) : null
+}
+
+/** "row,col" or "row,col:sub" → [row, col] of its hex, or null for anything malformed. */
 export function parseCell(cell: string | null): [number, number] | null {
-  const m = cell ? /^(\d+),(\d+)$/.exec(cell) : null
-  return m ? [Number(m[1]), Number(m[2])] : null
+  const c = parseGridCell(cell)
+  return c ? [c.row, c.col] : null
+}
+
+/** "Row 2, column 3", with the small cell's position when there is one. */
+export function cellLabel(cell: string | null): string | null {
+  const c = parseGridCell(cell)
+  if (!c) return null
+  const base = `row ${c.row + 1}, column ${c.col + 1}`
+  return c.sub === null ? base : `${base} (${SUB_CELL_NAMES[c.sub]})`
 }
 
 /**
@@ -68,9 +108,9 @@ export function planGridResize(
   const dCol = side === 'left' ? delta : 0
   const rowShift = side === 'top' ? (shape.rowShift + 1) % 2 : shape.rowShift
   const moveCell = (cell: string): string => {
-    const rc = parseCell(cell)
-    if (!rc || !leading) return cell
-    return `${rc[0] + dRow},${rc[1] + dCol}`
+    const c = parseGridCell(cell)
+    if (!c || !leading) return cell
+    return cellKey(c.row + dRow, c.col + dCol, c.sub)
   }
   return { ok: true, shape: { rows, cols, rowShift }, moveCell }
 }

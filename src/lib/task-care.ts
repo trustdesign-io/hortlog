@@ -1,5 +1,6 @@
 import type { Prisma, WorkAction } from '@prisma/client'
 import { ensureWorkRecord, WORK_RECORD_SPECIMEN_SELECT } from '@/lib/work-record-db'
+import { hexOf } from '@/lib/scene-grid'
 
 /** What a task points at: one plant, a whole scene, or some of a scene's cells. */
 export interface TaskTarget {
@@ -14,9 +15,14 @@ export function sameTarget(a: TaskTarget, b: TaskTarget): boolean {
   return a.specimenId === b.specimenId && a.sceneId === b.sceneId && cells(a) === cells(b)
 }
 
-/** Whether a plant placed at `gridCell` is covered by a task's cell selection. */
+/**
+ * Whether a plant placed at `gridCell` is covered by a task's cell selection.
+ * Tasks pick whole hexes, so a plant in a split hex's small cell counts too.
+ */
 export function inCells(cells: string[], gridCell: string | null): boolean {
-  return cells.length === 0 || (gridCell !== null && cells.includes(gridCell))
+  if (cells.length === 0) return true
+  const hex = hexOf(gridCell)
+  return hex !== null && cells.includes(hex)
 }
 
 export interface TaskCareState {

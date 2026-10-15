@@ -196,6 +196,8 @@ model Scene {
   gridCols    Int              @default(4)
   /// 0: odd rows are offset half a cell right; 1: even rows are. Flips when a row is added or removed at the top.
   rowShift    Int              @default(0)
+  /// Hexes ("row,col") split into seven smaller cells; plants in them are at "row,col:0"–"row,col:6"
+  splitCells  String[]         @default([])
   shortCode   String           @unique
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt

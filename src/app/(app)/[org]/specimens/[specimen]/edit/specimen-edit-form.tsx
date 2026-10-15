@@ -25,6 +25,7 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Trash2, MapPin, X } from 'lucide-react'
+import { cellLabel } from '@/lib/scene-grid'
 import type { ActionResult } from '@/lib/shared/types'
 
 interface SpecimenData {
@@ -162,7 +163,7 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
                 <p className="text-sm font-medium">Placed on scene</p>
                 <p className="text-xs text-muted-foreground">
                   {specimen.scene.name}
-                  {specimen.gridCell && ` — cell ${specimen.gridCell}`}
+                  {specimen.gridCell && ` — ${cellLabel(specimen.gridCell)}`}
                 </p>
               </div>
             </div>

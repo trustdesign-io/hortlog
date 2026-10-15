@@ -1,7 +1,7 @@
 'use client'
 
 import { useOptimistic, useTransition, useState, useCallback, useRef, useEffect } from 'react'
-import { placeSpecimen, removeSpecimenFromCell, resizeSceneGrid } from '@/lib/actions/scene'
+import { placeSpecimen, removeSpecimenFromCell, resizeSceneGrid, setHexSplit } from '@/lib/actions/scene'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Input } from '@/components/ui/input'
 import {
@@ -16,10 +16,20 @@ import { SpecimenImage } from '@/components/ui/specimen-image'
 import { HexGrid } from '@/components/hex-grid'
 import { moveHexCell, type HexDirection } from '@/lib/hex-grid'
 import { sceneCellScale, sceneTilt, type ScenePerspective } from '@/lib/scene-perspective'
-import { gridResizeError, planGridOps, type GridOp, type GridShape, type GridSide } from '@/lib/scene-grid'
+import {
+  cellKey,
+  cellLabel,
+  gridResizeError,
+  hexOf,
+  planGridOps,
+  type GridOp,
+  type GridShape,
+  type GridSide,
+} from '@/lib/scene-grid'
 import { Button } from '@/components/ui/button'
 import { RotatePrompt } from './rotate-prompt'
-import { EmptyCell, FilledCell, type PlacedSpecimen } from './grid-cells'
+import { EmptyCell, FilledCell, SplitCell, type PlacedSpecimen } from './grid-cells'
+import { HexSheet } from './hex-sheet'
 import { GridSizeControls } from './grid-size-controls'
 
 const CELL_WIDTH_REM = 7.5
@@ -48,11 +58,13 @@ type GridState = Record<string, PlacedSpecimen>
 interface LocalLayout {
   shape: GridShape
   grid: GridState
+  splitCells: string[]
 }
 
 type OptimisticAction =
   | { type: 'place'; cell: string; specimen: PlacedSpecimen }
   | { type: 'remove'; cell: string }
+  | { type: 'move'; from: string; to: string }
 
 interface GridEditorProps {
   orgSlug: string
@@ -60,6 +72,8 @@ interface GridEditorProps {
   gridRows: number
   gridCols: number
   rowShift: number
+  /** Hexes split into seven smaller cells */
+  splitCells: string[]
   perspective: ScenePerspective
   placedSpecimens: PlacedSpecimen[]
   availableSpecimens: AvailableSpecimen[]
@@ -78,6 +92,7 @@ export function GridEditor({
   gridRows,
   gridCols,
   rowShift,
+  splitCells,
   perspective,
   placedSpecimens,
   availableSpecimens,
@@ -102,14 +117,28 @@ export function GridEditor({
         next[action.cell] = action.specimen
         return next
       }
+      if (action.type === 'move') {
+        const next = { ...state }
+        const specimen = next[action.from]
+        if (!specimen) return state
+        delete next[action.from]
+        next[action.to] = { ...specimen, gridCell: action.to }
+        return next
+      }
       const next = { ...state }
       delete next[action.cell]
       return next
     },
   )
+  const [optimisticSplits, setSplitOptimistic] = useOptimistic<string[], { hex: string; split: boolean }>(
+    layout?.splitCells ?? splitCells,
+    (state, { hex, split }) => (split ? [...state.filter((c) => c !== hex), hex] : state.filter((c) => c !== hex)),
+  )
+  const splitSet = new Set(optimisticSplits)
+  const [hexSheet, setHexSheet] = useState<{ row: number; col: number } | null>(null)
 
   const [pickerOpen, setPickerOpen] = useState(false)
-  const [pickerCell, setPickerCell] = useState<{ row: number; col: number } | null>(null)
+  const [pickerCell, setPickerCell] = useState<{ row: number; col: number; sub: number | null } | null>(null)
   const [search, setSearch] = useState('')
   const tilt = sceneTilt(perspective, rows, CELL_WIDTH_REM * PX_PER_REM)
   const cellWidthRem = CELL_WIDTH_REM * sceneCellScale(rows, tilt)
@@ -176,7 +205,8 @@ export function GridEditor({
       const moved = plan.moveCell(cell)
       if (moved) grid[moved] = { ...specimen, gridCell: moved }
     }
-    setLayout({ shape: plan.shape, grid })
+    const splits = optimisticSplits.map(plan.moveCell).filter((c): c is string => c !== null)
+    setLayout({ shape: plan.shape, grid, splitCells: splits })
     queuedOps.current.push({ side, delta })
     scheduleSave()
   }
@@ -204,8 +234,8 @@ export function GridEditor({
     )
   })
 
-  function openPicker(row: number, col: number) {
-    setPickerCell({ row, col })
+  function openPicker(row: number, col: number, sub: number | null = null) {
+    setPickerCell({ row, col, sub })
     setSearch('')
     setPickerOpen(true)
   }
@@ -213,19 +243,41 @@ export function GridEditor({
   const handlePlace = useCallback(
     (specimen: AvailableSpecimen) => {
       if (!pickerCell) return
-      const { row, col } = pickerCell
-      const cell = `${row},${col}`
+      const { row, col, sub } = pickerCell
+      const cell = cellKey(row, col, sub)
       const optimisticSpecimen: PlacedSpecimen = { ...specimen, gridCell: cell }
       setPickerOpen(false)
+      // Back to the enlarged hex to carry on filling its small cells
+      if (sub !== null) setHexSheet({ row, col })
       startTransition(async () => {
         dispatch({ type: 'place', cell, specimen: optimisticSpecimen })
         await savePending()
-        await placeSpecimen(orgSlug, sceneId, specimen.id, row, col)
+        const result = await placeSpecimen(orgSlug, sceneId, specimen.id, row, col, sub)
+        if (!result.success) setResizeError(result.error ?? 'Could not place the plant.')
         releaseLayout()
       })
     },
     [pickerCell, orgSlug, sceneId, dispatch, savePending],
   )
+
+  function handleSplit(row: number, col: number, split: boolean) {
+    const hex = cellKey(row, col)
+    const whole = optimisticGrid[hex]
+    const inSubs = Object.keys(optimisticGrid).filter((c) => c !== hex && hexOf(c) === hex)
+    if (!split && inSubs.length > 1) return
+    setResizeError(null)
+    if (split) setHexSheet({ row, col })
+    startTransition(async () => {
+      setSplitOptimistic({ hex, split })
+      if (split && whole) dispatch({ type: 'move', from: hex, to: cellKey(row, col, 0) })
+      if (!split && inSubs.length === 1) dispatch({ type: 'move', from: inSubs[0], to: hex })
+      await savePending()
+      const result = await setHexSplit(orgSlug, sceneId, row, col, split)
+      if (!result.success) setResizeError(result.error ?? 'Could not change the cell.')
+      releaseLayout()
+    })
+    if (!split) setHexSheet(null)
+  }
 
   function handleRemove(specimen: PlacedSpecimen) {
     const cell = specimen.gridCell
@@ -273,6 +325,23 @@ export function GridEditor({
               else cellRefs.current.delete(cell)
             }
 
+            if (splitSet.has(cell)) {
+              return (
+                <SplitCell
+                  key={cell}
+                  row={row}
+                  col={col}
+                  style={style}
+                  plants={optimisticGrid}
+                  isActive={isActive}
+                  onOpen={() => setHexSheet({ row, col })}
+                  onFocus={() => setActiveCell({ row, col })}
+                  onKeyDown={(e) => handleCellKeyDown(e, row, col)}
+                  ref={setRef}
+                />
+              )
+            }
+
             return placed ? (
               <FilledCell
                 key={cell}
@@ -282,6 +351,7 @@ export function GridEditor({
                 specimen={placed}
                 isActive={isActive}
                 onRemove={() => handleRemove(placed)}
+                onOpen={() => setHexSheet({ row, col })}
                 onFocus={() => setActiveCell({ row, col })}
                 onKeyDown={(e) => {
                   if (e.key === 'Delete' || e.key === 'Backspace') {
@@ -316,12 +386,23 @@ export function GridEditor({
           <SheetHeader>
             <SheetTitle>Place specimen</SheetTitle>
             <SheetDescription>
-              {pickerCell
-                ? `Row ${pickerCell.row + 1}, Column ${pickerCell.col + 1}`
-                : ''}
+              {pickerCell ? cellLabel(cellKey(pickerCell.row, pickerCell.col, pickerCell.sub))?.replace(/^r/, 'R') : ''}
             </SheetDescription>
           </SheetHeader>
           <div className="space-y-4 px-4 pb-6">
+            {pickerCell && pickerCell.sub === null && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setPickerOpen(false)
+                  handleSplit(pickerCell.row, pickerCell.col, true)
+                }}
+              >
+                Split into 7 smaller cells
+              </Button>
+            )}
             <div className="relative">
               <Search
                 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
@@ -370,6 +451,28 @@ export function GridEditor({
           </div>
         </SheetContent>
       </Sheet>
+
+      <HexSheet
+        hex={hexSheet}
+        isSplit={hexSheet !== null && splitSet.has(cellKey(hexSheet.row, hexSheet.col))}
+        plants={
+          hexSheet
+            ? Object.fromEntries(
+                Object.entries(optimisticGrid).filter(([c]) => hexOf(c) === cellKey(hexSheet.row, hexSheet.col)),
+              )
+            : {}
+        }
+        onOpenChange={(open) => {
+          if (!open) setHexSheet(null)
+        }}
+        onSplit={(split) => hexSheet && handleSplit(hexSheet.row, hexSheet.col, split)}
+        onPick={(sub) => {
+          if (!hexSheet) return
+          setHexSheet(null)
+          openPicker(hexSheet.row, hexSheet.col, sub)
+        }}
+        onRemove={(specimen) => handleRemove(specimen)}
+      />
     </>
   )
 }

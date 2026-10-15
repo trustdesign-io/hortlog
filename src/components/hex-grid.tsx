@@ -1,6 +1,7 @@
 import type { CSSProperties, HTMLAttributes, ReactNode } from 'react'
 import { ScientificName } from '@/components/ui/scientific-name'
-import { hexCellStyle, hexGridStyle } from '@/lib/hex-grid'
+import { hexCellStyle, hexGridStyle, subCellStyle } from '@/lib/hex-grid'
+import { SUB_CELLS } from '@/lib/scene-grid'
 
 interface HexGridProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children' | 'style'> {
   rows: number
@@ -63,6 +64,21 @@ export function HexOutline({ className }: { className?: string }) {
   )
 }
 
+/** Focus ring for a focusable `.hex-sub`; shown by CSS only while it has keyboard focus. */
+export function HexFocusRing() {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 100 100" preserveAspectRatio="none" className="hex-sub-ring absolute inset-0 z-10 h-full w-full text-ring">
+      <polygon
+        points="50,1 99,25.5 99,74.5 50,99 1,74.5 1,25.5"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="4"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  )
+}
+
 /** Botanical name across the lower part of a planted cell, over its thumbnail. */
 export function HexPlantLabel({ scientificName }: { scientificName: string }) {
   return (
@@ -70,4 +86,12 @@ export function HexPlantLabel({ scientificName }: { scientificName: string }) {
       <ScientificName className="line-clamp-2 break-words">{scientificName}</ScientificName>
     </span>
   )
+}
+
+/**
+ * A split hex's seven small cells, for drawing inside its `.hex-shape`. Each
+ * must apply the given style and the `hex-sub` class.
+ */
+export function HexSubCells({ renderSub }: { renderSub: (sub: number, style: CSSProperties) => ReactNode }) {
+  return <>{Array.from({ length: SUB_CELLS }, (_, sub) => renderSub(sub, subCellStyle(sub)))}</>
 }

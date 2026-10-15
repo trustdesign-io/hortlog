@@ -177,3 +177,32 @@ export function moveHexCell(
     col: clamp(from.col + delta.col, cols),
   }
 }
+
+/**
+ * Centres of a split hex's seven small cells, as fractions of the hex's box:
+ * the centre, then clockwise from the top left. Each small hex is a third of
+ * the big one's width (and height), so the seven fit exactly inside it.
+ */
+const SUB_CENTRES: ReadonlyArray<readonly [number, number]> = [
+  [1 / 2, 1 / 2],
+  [1 / 3, 1 / 4],
+  [2 / 3, 1 / 4],
+  [5 / 6, 1 / 2],
+  [2 / 3, 3 / 4],
+  [1 / 3, 3 / 4],
+  [1 / 6, 1 / 2],
+]
+
+const pct = (n: number): string => `${Number((n * 100).toFixed(4))}%`
+
+/** Position and size of small cell `sub` (0–6) inside its hex's box. */
+export function subCellStyle(sub: number): CSSProperties {
+  const [x, y] = SUB_CENTRES[sub]
+  return {
+    position: 'absolute',
+    left: pct(x - 1 / 6),
+    top: pct(y - 1 / 6),
+    width: pct(1 / 3),
+    height: pct(1 / 3),
+  }
+}

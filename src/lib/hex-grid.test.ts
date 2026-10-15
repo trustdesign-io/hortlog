@@ -6,6 +6,7 @@ import {
   hexOffset,
   moveHexCell,
 } from './hex-grid'
+import { subCellStyle } from './hex-grid'
 
 describe('hexOffset', () => {
   it('places even rows on whole cell widths', () => {
@@ -87,5 +88,45 @@ describe('moveHexCell', () => {
 
   it('keeps a single-row grid in place vertically', () => {
     expect(moveHexCell({ row: 0, col: 0 }, 'down', 1, 1)).toEqual({ row: 0, col: 0 })
+  })
+})
+
+describe('subCellStyle', () => {
+  // Pointy-topped hex in a unit box, as clip-path draws it
+  const hex = (cx: number, cy: number, w: number, h: number): Array<[number, number]> => [
+    [cx, cy - h / 2],
+    [cx + w / 2, cy - h / 4],
+    [cx + w / 2, cy + h / 4],
+    [cx, cy + h / 2],
+    [cx - w / 2, cy + h / 4],
+    [cx - w / 2, cy - h / 4],
+  ]
+  // Inside the big hex (unit box): within its slanted edges
+  const inside = ([x, y]: [number, number]) => {
+    const dx = Math.abs(x - 0.5)
+    return dx <= 0.5 + 1e-6 && Math.abs(y - 0.5) <= 0.5 - (dx / 0.5) * 0.25 + 1e-6
+  }
+  const pct = (v: string | number | undefined) => parseFloat(String(v)) / 100
+
+  it('fits all seven small cells inside the hex without overlapping', () => {
+    const centres = Array.from({ length: 7 }, (_, k) => {
+      const s = subCellStyle(k)
+      const w = pct(s.width)
+      const h = pct(s.height)
+      expect(w).toBeCloseTo(1 / 3, 4)
+      const cx = pct(s.left) + w / 2
+      const cy = pct(s.top) + h / 2
+      for (const v of hex(cx, cy, w, h)) expect(inside(v)).toBe(true)
+      return [cx, cy] as const
+    })
+    // Neighbouring small hexes are exactly one small-hex width apart in hex space
+    for (let a = 0; a < 7; a++) {
+      for (let b = a + 1; b < 7; b++) {
+        const dx = centres[a][0] - centres[b][0]
+        // Rows are 3/4 of a hex height apart; height ratio to width is fixed by the box
+        const dy = (centres[a][1] - centres[b][1]) / 0.75
+        expect(Math.hypot(dx * 3, dy * 4) / 1).toBeGreaterThan(0.99)
+      }
+    }
   })
 })
