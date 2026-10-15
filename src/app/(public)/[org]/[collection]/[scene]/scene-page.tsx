@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { ScientificName } from '@/components/ui/scientific-name'
+import { SpecimenImage } from '@/components/ui/specimen-image'
 import { SceneTabNav } from './scene-tab-nav'
 import { PublicSceneGrid } from './public-scene-grid'
 import { GaEvent } from '@/components/ga-event'
@@ -71,7 +72,8 @@ export async function ScenePage({
   sceneSlug: string
   rawTab: string | undefined
 }) {
-  const tab = rawTab === 'grid' ? 'grid' : 'list'
+  // 'grid' is the old name for the layout tab; links to it still work
+  const tab = rawTab === 'layout' || rawTab === 'grid' ? 'layout' : 'list'
 
   const data = await resolveScene(orgSlug, collectionSlug, sceneSlug)
   if (!data) return notFound()
@@ -134,7 +136,7 @@ export async function ScenePage({
         {tab === 'list' && (
           <SpecimenList specimens={specimens} basePath={basePath} />
         )}
-        {tab === 'grid' && (
+        {tab === 'layout' && (
           <PublicSceneGrid
             rows={scene.gridRows}
             cols={scene.gridCols}
@@ -164,10 +166,12 @@ interface SpecimenEntry {
   slug: string
   accessionNumber: string | null
   gridCell: string | null
+  imageUrl: string | null
   species: {
     commonName: string
     scientificName: string
     description: string | null
+    photoUrl: string | null
   }
 }
 
@@ -197,8 +201,12 @@ function SpecimenList({
           <li key={s.id}>
             <Link
               href={`${basePath}/${s.slug}`}
-              className="flex flex-col gap-0.5 px-4 py-4 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+              className="flex items-start gap-3 px-4 py-4 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
             >
+              <span className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+                <SpecimenImage imageUrl={s.imageUrl ?? s.species.photoUrl} alt="" fill sizes="56px" className="object-cover" />
+              </span>
+              <span className="flex min-w-0 flex-1 flex-col gap-0.5">
               <div className="flex items-baseline justify-between gap-2">
                 <p className="text-sm font-medium">{s.species.commonName}</p>
                 {s.accessionNumber && (
@@ -215,6 +223,7 @@ function SpecimenList({
                   {descriptionSnippet}
                 </p>
               )}
+              </span>
             </Link>
           </li>
         )
