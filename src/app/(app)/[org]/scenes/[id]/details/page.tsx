@@ -47,7 +47,6 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
         scene={{
           id: scene.id,
           name: scene.name,
-          slug: scene.slug,
           primaryCollectionId: scene.primaryCollectionId,
           perspective: scene.perspective,
           plantCount: scene._count.specimens,

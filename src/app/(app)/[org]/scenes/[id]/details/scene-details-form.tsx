@@ -2,7 +2,6 @@
 
 import { useActionState, useState, useTransition } from 'react'
 import { updateScene, deleteScene } from '@/lib/actions/scene'
-import { toSlug } from '@/lib/utils/slug'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -25,7 +24,6 @@ interface SceneDetailsFormProps {
   scene: {
     id: string
     name: string
-    slug: string
     primaryCollectionId: string | null
     perspective: ScenePerspective
     plantCount: number
@@ -41,7 +39,6 @@ export function SceneDetailsForm({ orgSlug, scene, collections }: SceneDetailsFo
     updateScene.bind(null, orgSlug, scene.id),
     null,
   )
-  const [slug, setSlug] = useState(scene.slug)
 
   return (
     <div className="space-y-6">
@@ -59,25 +56,11 @@ export function SceneDetailsForm({ orgSlug, scene, collections }: SceneDetailsFo
                 Saved.
               </p>
             )}
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" name="name" defaultValue={scene.name} required maxLength={120} disabled={isPending} />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="slug">Slug</Label>
-              <Input
-                id="slug"
-                name="slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                onBlur={() => !slug && setSlug(toSlug(scene.name))}
-                minLength={2}
-                maxLength={48}
-                disabled={isPending}
-              />
+            <div className="flex flex-col gap-1">
+              <p className="text-sm font-medium">Name</p>
+              <p className="text-sm">{scene.name}</p>
               <p className="text-xs text-muted-foreground">
-                Part of the scene&apos;s public web address. Printed QR codes keep working if you change it; links
-                shared elsewhere won&apos;t.
+                Fixed: it&apos;s printed on the scene&apos;s QR label, so it can&apos;t be changed.
               </p>
             </div>
             <PerspectiveField defaultValue={scene.perspective} disabled={isPending} />
