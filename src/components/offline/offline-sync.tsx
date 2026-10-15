@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { loadSavedStatus, setOnline, syncOrgs } from '@/lib/offline/sync'
+import { flushOutbox, loadSavedStatus, refreshOutboxStatus, setOnline, syncOrgs } from '@/lib/offline/sync'
 
 /** Refresh the saved copies at most this often while the app is open. */
 const REFRESH_MS = 5 * 60_000
@@ -36,11 +36,13 @@ export function OfflineSync({ memberOrgSlugs, viewableOrgSlugs }: OfflineSyncPro
 
     async function refreshIfStale() {
       if (!navigator.onLine || cancelled) return
+      // Send changes made offline first, so the fresh copy includes them
+      const sent = await flushOutbox()
       const saved = await loadSavedStatus()
       const savedSlugs = new Set(saved.map((s) => s.org.slug))
       const oldest = Math.min(...saved.map((s) => Date.parse(s.syncedAt)))
       const missing = orgs.some((o) => !savedSlugs.has(o))
-      if (missing || !(Date.now() - oldest < REFRESH_MS)) await syncOrgs(orgs)
+      if (sent || missing || !(Date.now() - oldest < REFRESH_MS)) await syncOrgs(orgs)
     }
 
     function onOnline() {
@@ -52,6 +54,7 @@ export function OfflineSync({ memberOrgSlugs, viewableOrgSlugs }: OfflineSyncPro
     }
 
     setOnline(navigator.onLine)
+    void refreshOutboxStatus()
     void refreshIfStale()
     const timer = window.setInterval(() => void refreshIfStale(), REFRESH_MS)
     window.addEventListener('online', onOnline)

@@ -17,6 +17,9 @@ import {
   type OrgSnapshot,
 } from '@/lib/offline/types'
 import type { OfflineRoute } from '@/lib/offline/routes'
+import type { OutboxOp } from '@/lib/offline/ops'
+import { applyPending } from '@/lib/offline/pending'
+import { OutboxList, RecordWorkPanel, TaskToggle, WaitingBadge } from './offline-actions'
 import { cn } from '@/lib/utils'
 import type { WorkAction } from '@prisma/client'
 
@@ -90,8 +93,11 @@ function TaskRow({ t, snap }: { t: OfflineTask; snap: OrgSnapshot }) {
   const specimen = t.specimenId ? snap.specimens.find((s) => s.id === t.specimenId) : undefined
   const scene = t.sceneId ? snap.scenes.find((s) => s.id === t.sceneId) : undefined
   return (
-    <li className="space-y-1 rounded-lg border p-3">
+    <li className="flex gap-3 rounded-lg border p-3">
+      {snap.user.canManage && <TaskToggle task={t} org={snap.org.slug} />}
+      <div className="min-w-0 flex-1 space-y-1">
       <p className={cn('font-medium', t.status === 'DONE' && 'text-muted-foreground line-through')}>{t.title}</p>
+      {t.pending && <WaitingBadge />}
       {t.description && <p className="text-sm text-muted-foreground">{t.description}</p>}
       <p className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
         {t.dueDate && <span className={cn(overdue && 'font-medium text-destructive')}>{overdue ? 'Overdue · ' : 'Due '}{formatDate(t.dueDate)}</span>}
@@ -110,8 +116,17 @@ function TaskRow({ t, snap }: { t: OfflineTask; snap: OrgSnapshot }) {
         )}
         {t.assignees.length > 0 && <span>{t.assignees.join(', ')}</span>}
       </p>
+      </div>
     </li>
   )
+}
+
+function recordTitle(r: OfflineWorkRecord): string {
+  return r.pending ? 'My record (new)' : `My record #${r.recordNumber}`
+}
+
+function RecordNumber({ r }: { r: OfflineWorkRecord }) {
+  return <span className="mr-2 text-muted-foreground tabular-nums">{r.pending ? 'New' : `#${r.recordNumber}`}</span>
 }
 
 function RecordEntries({ record }: { record: OfflineWorkRecord }) {
@@ -124,6 +139,7 @@ function RecordEntries({ record }: { record: OfflineWorkRecord }) {
             {formatDate(e.date)} · {actionLabel(e.action)}
             {e.actionNote && <span className="font-normal text-muted-foreground"> – {e.actionNote}</span>}
           </p>
+          {e.pending && <WaitingBadge className="mt-1" />}
           {e.location && <p className="text-muted-foreground">{e.location}</p>}
           {e.text && <p className="mt-1 whitespace-pre-line">{e.text}</p>}
         </li>
@@ -282,7 +298,7 @@ function SpecimensView({ snap }: { snap: OrgSnapshot }) {
 function SpecimenView({ s, snap }: { s: OfflineSpecimen; snap: OrgSnapshot }) {
   const scene = s.sceneId ? snap.scenes.find((x) => x.id === s.sceneId) : undefined
   const collections = snap.collections.filter((c) => s.collectionIds.includes(c.id))
-  const tasks = snap.tasks.filter((t) => t.specimenId === s.id && t.status === 'OPEN')
+  const tasks = snap.tasks.filter((t) => t.specimenId === s.id && (t.status === 'OPEN' || t.pending))
   const record = snap.myRecords.find((r) => r.specimenId === s.id)
   const facts: [string, ReactNode][] = [
     ['Common name', s.species.commonName],
@@ -337,11 +353,10 @@ function SpecimenView({ s, snap }: { s: OfflineSpecimen; snap: OrgSnapshot }) {
           </ul>
         </Section>
       )}
-      {record && (
-        <Section title={`My record #${record.recordNumber}`}>
-          <RecordEntries record={record} />
-        </Section>
-      )}
+      <Section title={record ? recordTitle(record) : 'My record'}>
+        <RecordWorkPanel org={snap.org.slug} specimenId={s.id} />
+        {record && <RecordEntries record={record} />}
+      </Section>
     </>
   )
 }
@@ -375,7 +390,7 @@ function ScenesView({ snap }: { snap: OrgSnapshot }) {
 
 function SceneView({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) {
   const plants = snap.specimens.filter((s) => s.sceneId === scene.id)
-  const tasks = snap.tasks.filter((t) => t.sceneId === scene.id && t.status === 'OPEN')
+  const tasks = snap.tasks.filter((t) => t.sceneId === scene.id && (t.status === 'OPEN' || t.pending))
   return (
     <>
       <Title sub={`${plants.length} plant${plants.length === 1 ? '' : 's'}`}>{scene.name}</Title>
@@ -498,11 +513,14 @@ function OverviewView({ snap }: { snap: OrgSnapshot }) {
   )
 }
 
-function HomeView({ snapshots }: { snapshots: OrgSnapshot[] }) {
-  const records = snapshots.flatMap((s) => s.myRecords).sort((a, b) => a.recordNumber - b.recordNumber)
+function HomeView({ snapshots, ops }: { snapshots: OrgSnapshot[]; ops: OutboxOp[] }) {
+  // New records (not yet numbered) last
+  const order = (r: OfflineWorkRecord) => (r.pending ? Infinity : r.recordNumber)
+  const records = snapshots.flatMap((s) => s.myRecords).sort((a, b) => order(a) - order(b))
   return (
     <>
       <Title>My record</Title>
+      <OutboxList ops={ops} snapshots={snapshots} />
       {records.length === 0 ? (
         <Empty>No records saved on this device.</Empty>
       ) : (
@@ -511,7 +529,7 @@ function HomeView({ snapshots }: { snapshots: OrgSnapshot[] }) {
             <li key={r.id}>
               <a href={`/records/${r.id}`} className="flex min-h-12 items-center justify-between gap-3 px-4 py-2 hover:bg-muted">
                 <span className="min-w-0 truncate">
-                  <span className="mr-2 text-muted-foreground tabular-nums">#{r.recordNumber}</span>
+                  <RecordNumber r={r} />
                   <ScientificName>{r.scientificName}</ScientificName>
                 </span>
                 <span className="shrink-0 text-sm text-muted-foreground">
@@ -542,7 +560,7 @@ function RecordView({ record, snap }: { record: OfflineWorkRecord; snap: OrgSnap
   return (
     <>
       <Title sub={`First worked ${formatDate(record.firstWorkedDate)}`}>
-        <span className="mr-2 text-muted-foreground tabular-nums">#{record.recordNumber}</span>
+        <RecordNumber r={record} />
         <ScientificName>{record.scientificName}</ScientificName>
       </Title>
       {s && (
@@ -567,9 +585,12 @@ interface OfflineViewProps {
   route: OfflineRoute
   orgSlug: string | null
   snapshots: OrgSnapshot[]
+  /** Changes on this device not yet sent, shown on top of the saved copy */
+  ops: OutboxOp[]
 }
 
-export function OfflineView({ route, orgSlug, snapshots }: OfflineViewProps) {
+export function OfflineView({ route, orgSlug, snapshots: saved, ops }: OfflineViewProps) {
+  const snapshots = saved.map((s) => applyPending(s, ops))
   if (snapshots.length === 0) {
     return (
       <Chrome snap={null} active={null}>
@@ -616,7 +637,7 @@ export function OfflineView({ route, orgSlug, snapshots }: OfflineViewProps) {
     }
     return (
       <Chrome snap={null} active="record">
-        <HomeView snapshots={snapshots} />
+        <HomeView snapshots={snapshots} ops={ops} />
       </Chrome>
     )
   }
@@ -626,7 +647,7 @@ export function OfflineView({ route, orgSlug, snapshots }: OfflineViewProps) {
     return (
       <Chrome snap={null} active={null}>
         <NotSaved what="This page" />
-        <HomeView snapshots={snapshots} />
+        <HomeView snapshots={snapshots} ops={ops} />
       </Chrome>
     )
   }

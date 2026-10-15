@@ -23,6 +23,8 @@ import Link from 'next/link'
 import { CellPicker, type PickerScene } from './cell-picker'
 import { MemberPicker, getMemberInitials } from '@/components/member-picker'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
+import { newOpId } from '@/lib/offline/ops'
+import { queueOp } from '@/lib/offline/sync'
 import { X, Plus, Pencil, Trash2, CheckCircle2, Circle, Sprout, LayoutGrid } from 'lucide-react'
 import type { WorkAction } from '@prisma/client'
 import type { ActionResult } from '@/lib/shared/types'
@@ -509,13 +511,27 @@ function ToggleStatusButton({ orgSlug, task }: { orgSlug: string; task: Task }) 
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
+  // Set when the change was saved on the device because there's no connection
+  const [queued, setQueued] = useState<'OPEN' | 'DONE' | null>(null)
+  const status = queued ?? task.status
 
   function handleToggle() {
     setError(null)
+    const next = status === 'OPEN' ? 'DONE' : 'OPEN'
+    const saveOnDevice = async () => {
+      await queueOp({ id: newOpId(), org: orgSlug, createdAt: new Date().toISOString(), kind: 'setTaskStatus', taskId: task.id, status: next })
+      setQueued(next)
+    }
     startTransition(async () => {
-      const next = task.status === 'OPEN' ? 'DONE' : 'OPEN'
-      const result = await setTaskStatus(orgSlug, task.id, next)
+      if (!navigator.onLine) return saveOnDevice()
+      let result
+      try {
+        result = await setTaskStatus(orgSlug, task.id, next)
+      } catch {
+        return saveOnDevice()
+      }
       if (result.success) {
+        setQueued(null)
         router.refresh()
       } else {
         setError(result.error ?? 'Failed to update status.')
@@ -528,17 +544,18 @@ function ToggleStatusButton({ orgSlug, task }: { orgSlug: string; task: Task }) 
       <button
         onClick={handleToggle}
         disabled={isPending}
-        aria-label={task.status === 'OPEN' ? `Mark "${task.title}" done` : `Reopen "${task.title}"`}
-        aria-pressed={task.status === 'DONE'}
+        aria-label={status === 'OPEN' ? `Mark "${task.title}" done` : `Reopen "${task.title}"`}
+        aria-pressed={status === 'DONE'}
         className="shrink-0 text-muted-foreground hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded"
       >
-        {task.status === 'DONE' ? (
+        {status === 'DONE' ? (
           <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
         ) : (
           <Circle className="h-5 w-5" aria-hidden="true" />
         )}
       </button>
       {error && <p className="text-xs text-destructive" role="alert">{error}</p>}
+      {queued && <p className="text-xs text-muted-foreground" role="status">Waiting to send</p>}
     </div>
   )
 }

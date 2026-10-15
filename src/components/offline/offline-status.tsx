@@ -1,7 +1,8 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { CloudCheck, CloudOff, RefreshCw } from 'lucide-react'
+import { CloudCheck, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react'
+import { offlineAppHref } from '@/lib/offline/routes'
 import { useOfflineStatus } from '@/lib/offline/sync'
 import { cn } from '@/lib/utils'
 
@@ -16,9 +17,9 @@ export function timeAgo(iso: string, now: number): string {
   return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
-/** Footer note on the offline copy: when it was saved, or that the app is offline. */
+/** Footer note on the offline copy: when it was saved, that the app is offline, or changes waiting to send. */
 export function OfflineStatusChip({ className }: { className?: string }) {
-  const { online, syncing, syncedAt } = useOfflineStatus()
+  const { online, syncing, syncedAt, unsent, refused } = useOfflineStatus()
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -26,11 +27,33 @@ export function OfflineStatusChip({ className }: { className?: string }) {
     return () => window.clearInterval(t)
   }, [])
 
+  const changes = (n: number) => `${n} change${n === 1 ? '' : 's'}`
+
+  if (refused > 0) {
+    return (
+      <a
+        href={offlineAppHref('/records')}
+        className={cn('flex items-center gap-1 font-medium text-destructive underline underline-offset-2', className)}
+        role="status"
+      >
+        <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
+        {changes(refused)} not saved
+      </a>
+    )
+  }
   if (!online) {
     return (
       <p className={cn('flex items-center gap-1 font-medium text-foreground', className)} role="status">
         <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />
-        Offline
+        Offline{unsent > 0 && ` · ${changes(unsent)} waiting to send`}
+      </p>
+    )
+  }
+  if (unsent > 0) {
+    return (
+      <p className={cn('flex items-center gap-1', className)} role="status">
+        <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
+        {changes(unsent)} waiting to send
       </p>
     )
   }

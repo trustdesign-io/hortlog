@@ -1,5 +1,15 @@
 import { useSyncExternalStore } from 'react'
-import { deleteOfflineStore, listSnapshots, offlineStoreAvailable, pruneSnapshots, putSnapshot } from './db'
+import {
+  deleteOfflineStore,
+  deleteOutboxOp,
+  listOutbox,
+  listSnapshots,
+  offlineStoreAvailable,
+  pruneSnapshots,
+  putOutboxOp,
+  putSnapshot,
+} from './db'
+import type { OpResult, OutboxOp, SyncOpInput } from './ops'
 import { SNAPSHOT_VERSION, snapshotImageUrls, type OrgSnapshot } from './types'
 
 /** Browser-only: keeps the device's offline copy of each organisation up to date. */
@@ -10,9 +20,13 @@ export interface OfflineStatus {
   /** When the oldest of this member's saved copies was last refreshed */
   syncedAt: string | null
   failed: boolean
+  /** Changes made on this device waiting to be sent */
+  unsent: number
+  /** Changes the server refused, which the member should look at */
+  refused: number
 }
 
-const INITIAL: OfflineStatus = { online: true, syncing: false, syncedAt: null, failed: false }
+const INITIAL: OfflineStatus = { online: true, syncing: false, syncedAt: null, failed: false, unsent: 0, refused: 0 }
 let status: OfflineStatus = INITIAL
 const listeners = new Set<() => void>()
 
@@ -96,6 +110,81 @@ export async function loadSavedStatus(): Promise<OrgSnapshot[]> {
   const saved = await listSnapshots().catch(() => [] as OrgSnapshot[])
   setStatus({ syncedAt: oldestSync(saved) })
   return saved
+}
+
+// ─── Outbox ──────────────────────────────────────────────────────────────────
+
+/** Fired on window whenever the outbox changes, so open pages can redraw. */
+export const OUTBOX_EVENT = 'hortlog-outbox'
+
+export async function refreshOutboxStatus(): Promise<OutboxOp[]> {
+  const ops = await listOutbox().catch(() => [] as OutboxOp[])
+  setStatus({ unsent: ops.filter((o) => !o.error).length, refused: ops.filter((o) => o.error).length })
+  window.dispatchEvent(new Event(OUTBOX_EVENT))
+  return ops
+}
+
+/** Save a change on the device, then try to send it straight away. */
+export async function queueOp(op: SyncOpInput): Promise<void> {
+  await putOutboxOp(op)
+  await refreshOutboxStatus()
+  if (navigator.onLine) void flushOutbox()
+}
+
+/** Forget a change the server refused. */
+export async function dismissOp(id: string): Promise<void> {
+  await deleteOutboxOp(id)
+  await refreshOutboxStatus()
+}
+
+let flushing: Promise<boolean> | null = null
+
+/**
+ * Send waiting changes. Applied (or already applied) ones leave the outbox;
+ * refused ones stay, marked, for the member to see; the rest are kept to try
+ * again. Resolves true if anything was applied.
+ */
+export function flushOutbox(): Promise<boolean> {
+  if (flushing) return flushing
+  flushing = (async () => {
+    if (!offlineStoreAvailable()) return false
+    const waiting = (await listOutbox().catch(() => [] as OutboxOp[])).filter((o) => !o.error)
+    if (waiting.length === 0) {
+      await refreshOutboxStatus()
+      return false
+    }
+    let applied = false
+    for (let i = 0; i < waiting.length; i += 100) {
+      const batch = waiting.slice(i, i + 100)
+      let results: OpResult[]
+      try {
+        const res = await fetch('/api/offline-sync', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ops: batch }),
+          cache: 'no-store',
+        })
+        if (!res.ok) break
+        results = ((await res.json()) as { results: OpResult[] }).results
+      } catch {
+        break
+      }
+      for (const r of results) {
+        if (r.status === 'rejected') {
+          const op = batch.find((o) => o.id === r.id)
+          if (op) await putOutboxOp({ ...op, error: r.error })
+        } else {
+          if (r.status === 'applied') applied = true
+          await deleteOutboxOp(r.id)
+        }
+      }
+    }
+    await refreshOutboxStatus()
+    return applied
+  })().finally(() => {
+    flushing = null
+  })
+  return flushing
 }
 
 /** Remove everything saved for offline use from this device. */
