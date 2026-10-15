@@ -6,6 +6,7 @@ import { AuthProvider } from '@/components/auth-provider'
 import { Sidebar } from '@/components/sidebar'
 import { AppFooter } from '@/components/layout/app-footer'
 import { MobilePanelsProvider } from '@/components/layout/mobile-panels'
+import { OfflineSync } from '@/components/offline/offline-sync'
 import { getNameFromMetadata } from '@/lib/auth/name-utils'
 import type { User } from '@prisma/client'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
@@ -96,6 +97,10 @@ export default async function AppLayout({
   return (
     <AuthProvider initialUser={user}>
       <MobilePanelsProvider>
+        <OfflineSync
+          memberOrgSlugs={user.memberships.map((m) => m.organisation.slug)}
+          viewableOrgSlugs={allOrgs?.map((o) => o.slug) ?? []}
+        />
         {/* --utility-h is the weather bar's height when it's shown (see globals.css) */}
         <div className="flex h-dvh overflow-hidden pt-[var(--utility-h)]">
           <a

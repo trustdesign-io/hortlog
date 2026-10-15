@@ -28,6 +28,9 @@ export const metadata: Metadata = {
   },
   description: 'A living record for botanical collections.',
   manifest: '/manifest.webmanifest',
+  icons: { apple: '/apple-touch-icon.png' },
+  // Added to a phone's home screen, hortlog opens full screen and works offline
+  appleWebApp: { capable: true, title: 'hortlog', statusBarStyle: 'default' },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

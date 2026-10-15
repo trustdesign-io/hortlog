@@ -4,6 +4,7 @@ import { useTransition } from 'react'
 import { UserAvatar } from '@/components/user-avatar'
 import { Button } from '@/components/ui/button'
 import { signOut } from '@/lib/actions/auth'
+import { clearOfflineData } from '@/lib/offline/sync'
 import type { User } from '@/types'
 
 interface UserMenuProps {
@@ -21,6 +22,8 @@ export function SignOutButton({ className, size = 'sm', variant = 'ghost' }: Sig
 
   function handleSignOut() {
     startTransition(async () => {
+      // The device's offline copy belongs to this member
+      await clearOfflineData()
       await signOut()
     })
   }
