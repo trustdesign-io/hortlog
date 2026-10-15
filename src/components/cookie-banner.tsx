@@ -58,7 +58,7 @@ export function CookieBanner({ forceOpen = false, onClose }: CookieBannerProps) 
       role="dialog"
       aria-label="Cookie consent"
       aria-modal="false"
-      className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background px-4 py-4 shadow-lg sm:px-6"
+      className="fixed bottom-0 left-0 right-0 z-50 border-t print:hidden border-border bg-background px-4 py-4 shadow-lg sm:px-6"
     >
       <div className="mx-auto flex max-w-5xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <p className="text-sm text-muted-foreground">

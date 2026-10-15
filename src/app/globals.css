@@ -296,3 +296,19 @@
     transform: translateX(-50%);
   }
 }
+
+/* Scene label sheets print edge to edge on A4, one sheet per page, whatever the other pages use */
+@page labels {
+  size: A4;
+  margin: 0;
+}
+
+@media print {
+  .label-sheet {
+    page: labels;
+  }
+
+  .label-sheet + .label-sheet {
+    break-before: page;
+  }
+}

@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Plus } from 'lucide-react'
+import { Plus, Printer } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { publicScenePath } from '@/lib/scene-urls'
@@ -42,7 +42,8 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
+      {/* Phones: buttons stack under the title; wider screens: beside it */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <h1 className="font-heading text-2xl font-medium">Scenes</h1>
           <p className="mt-1 text-sm text-muted-foreground">
@@ -50,10 +51,16 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
           </p>
         </div>
         {canManage && (
-          <Link href={`/${orgSlug}/scenes/new`} className={buttonVariants({ size: 'sm' })}>
-            <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            New scene
-          </Link>
+          <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+            <Link href={`/print/${orgSlug}/scene-labels`} className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+              <Printer className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              Print labels
+            </Link>
+            <Link href={`/${orgSlug}/scenes/new`} className={buttonVariants({ size: 'sm' })}>
+              <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
+              New scene
+            </Link>
+          </div>
         )}
       </div>
 
