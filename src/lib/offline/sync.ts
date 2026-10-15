@@ -128,7 +128,10 @@ export async function refreshOutboxStatus(): Promise<OutboxOp[]> {
 export async function queueOp(op: SyncOpInput): Promise<void> {
   await putOutboxOp(op)
   await refreshOutboxStatus()
-  if (navigator.onLine) void flushOutbox()
+  if (!navigator.onLine) return
+  // Made while a send is under way: send it straight after
+  if (flushing) flushAgain = true
+  else void flushOutbox()
 }
 
 /** Forget a change the server refused. */
@@ -138,6 +141,7 @@ export async function dismissOp(id: string): Promise<void> {
 }
 
 let flushing: Promise<boolean> | null = null
+let flushAgain = false
 
 /**
  * Send waiting changes. Applied (or already applied) ones leave the outbox;
@@ -183,6 +187,10 @@ export function flushOutbox(): Promise<boolean> {
     return applied
   })().finally(() => {
     flushing = null
+    if (flushAgain) {
+      flushAgain = false
+      void flushOutbox()
+    }
   })
   return flushing
 }

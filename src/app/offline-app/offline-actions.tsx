@@ -154,12 +154,31 @@ export function TaskToggle({ task, org }: { task: OfflineTask; org: string }) {
 
 function describeOp(op: OutboxOp, snapshots: OrgSnapshot[]): string {
   const snap = snapshots.find((s) => s.org.slug === op.org)
-  if (op.kind === 'recordWork') {
-    const name = snap?.specimens.find((s) => s.id === op.specimenId)?.species.scientificName ?? 'a plant'
-    return `${WORK_ACTION_LABELS[op.entry.action as keyof typeof WORK_ACTION_LABELS] ?? op.entry.action} – ${name}`
+  const plant = (id: string) => snap?.specimens.find((s) => s.id === id)?.species.scientificName ?? 'a plant'
+  const scene = (id: string) => {
+    const sc = snap?.scenes.find((s) => s.id === id)
+    return sc ? (sc.title ?? sc.name) : 'a scene'
   }
-  const title = snap?.tasks.find((t) => t.id === op.taskId)?.title ?? 'a task'
-  return `${op.status === 'DONE' ? 'Ticked off' : 'Reopened'} – ${title}`
+  switch (op.kind) {
+    case 'recordWork':
+      return `${WORK_ACTION_LABELS[op.entry.action as keyof typeof WORK_ACTION_LABELS] ?? op.entry.action} – ${plant(op.specimenId)}`
+    case 'setTaskStatus': {
+      const title = snap?.tasks.find((t) => t.id === op.taskId)?.title ?? 'a task'
+      return `${op.status === 'DONE' ? 'Ticked off' : 'Reopened'} – ${title}`
+    }
+    case 'createSpecimen':
+      return `New plant – ${op.fieldName ?? snap?.speciesList?.find((s) => s.id === op.speciesId)?.scientificName ?? 'a plant'}`
+    case 'placeSpecimen':
+      return `Placed ${plant(op.specimenId)} – ${scene(op.sceneId)}`
+    case 'unplaceSpecimen':
+      return `Took ${plant(op.specimenId)} off its scene`
+    case 'splitHex':
+      return `${op.split ? 'Split' : 'Merged'} a cell – ${scene(op.sceneId)}`
+    case 'resizeGrid':
+      return `Changed rows or columns – ${scene(op.sceneId)}`
+    case 'updateScene':
+      return `Changed ${scene(op.sceneId)}`
+  }
 }
 
 /** Changes on this device: how many are waiting, and any hortlog refused. */

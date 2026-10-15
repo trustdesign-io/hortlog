@@ -16,7 +16,7 @@ export async function buildOrgSnapshot(
   if (!org) return null
 
   const doneSince = new Date(Date.now() - DONE_TASK_DAYS * 86_400_000)
-  const [specimens, scenes, collections, tasks, records] = await Promise.all([
+  const [specimens, scenes, collections, tasks, records, speciesList] = await Promise.all([
     prisma.specimen.findMany({
       where: { organisationId: org.id },
       orderBy: { species: { commonName: 'asc' } },
@@ -45,8 +45,9 @@ export async function buildOrgSnapshot(
         },
       },
     }),
+    // Managers keep inactive scenes too: they set them up on site
     prisma.scene.findMany({
-      where: { organisationId: org.id, active: true },
+      where: { organisationId: org.id, ...(canManage ? {} : { active: true }) },
       orderBy: { name: 'asc' },
       select: {
         id: true,
@@ -58,6 +59,7 @@ export async function buildOrgSnapshot(
         rowShift: true,
         splitCells: true,
         title: true,
+        active: true,
         perspective: true,
         primaryCollectionId: true,
       },
@@ -99,6 +101,10 @@ export async function buildOrgSnapshot(
         },
       },
     }),
+    // Species to name new plants by when adding them offline
+    canManage
+      ? prisma.species.findMany({ select: { id: true, scientificName: true, commonName: true }, orderBy: { scientificName: 'asc' } })
+      : Promise.resolve(undefined),
   ])
 
   return {
@@ -156,5 +162,6 @@ export async function buildOrgSnapshot(
       firstWorkedDate: r.firstWorkedDate.toISOString(),
       entries: r.logEntries.map((e) => ({ ...e, date: e.date.toISOString() })),
     })),
+    speciesList,
   }
 }

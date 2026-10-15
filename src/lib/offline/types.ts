@@ -27,6 +27,8 @@ export interface OfflineSpecimen {
   gridCell: string | null
   collectionIds: string[]
   species: OfflineSpecies
+  /** Added on this device and not yet sent */
+  pending?: boolean
 }
 
 export interface OfflineScene {
@@ -34,6 +36,10 @@ export interface OfflineScene {
   name: string
   /** Optional on-screen title (missing in older saved copies) */
   title?: string | null
+  /** In use at the venue (missing in older saved copies, which only had active scenes) */
+  active?: boolean
+  /** Changed on this device and not yet sent */
+  pending?: boolean
   slug: string
   shortCode: string
   gridRows: number
@@ -102,6 +108,14 @@ export interface OrgSnapshot {
   tasks: OfflineTask[]
   /** The signed-in member's own records for plants in this organisation */
   myRecords: OfflineWorkRecord[]
+  /** Species already in hortlog, for naming new plants offline (managers only) */
+  speciesList?: OfflineSpeciesOption[]
+}
+
+export interface OfflineSpeciesOption {
+  id: string
+  scientificName: string
+  commonName: string
 }
 
 /** Width the offline pages ask the image optimiser for: one of Next's default image sizes. */

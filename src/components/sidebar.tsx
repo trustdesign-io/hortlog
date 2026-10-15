@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { SignOutButton, UserIdentity, UserMenu } from '@/components/user-menu'
 import { OfflineStatusChip } from '@/components/offline/offline-status'
+import { WorkOfflineLink } from '@/components/offline/work-offline-link'
 import { Logo } from '@/components/layout/logo'
 import { useMobilePanels } from '@/components/layout/mobile-panels'
 import type { TourPanel } from '@/components/tour/tour-steps'
@@ -277,6 +278,7 @@ function YouSection({ user, onNavigate }: YouSectionProps) {
       <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />
       {/* Offline copy: when it was saved, or that the app is offline */}
       <OfflineStatusChip className="mt-3 px-6 text-xs text-muted-foreground" />
+      <WorkOfflineLink className="mt-1 px-6 text-xs text-muted-foreground" />
       {/* Same height as the desktop site footer, so the two read as one bar */}
       <div className="mt-2 flex h-16 items-center border-t">
         <div className="w-full">
@@ -294,6 +296,9 @@ function YouPanel({ user, onNavigate }: YouSectionProps) {
       <div className="border-b pb-5 pt-12">
         <UserIdentity user={user} />
         <OfflineStatusChip className="mt-3 justify-center text-xs text-muted-foreground" />
+        <div className="mt-2 text-center">
+          <WorkOfflineLink className="min-h-11 text-sm text-muted-foreground" />
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto py-3">
         <NavLinks items={youNav} onNavigate={onNavigate} label="Your navigation" />

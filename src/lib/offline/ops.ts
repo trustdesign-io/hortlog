@@ -1,4 +1,6 @@
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
+import { GRID_SIDES, MAX_GRID_OPS, SUB_CELLS, type GridOp } from '@/lib/scene-grid'
+import { MAX_SCENE_TITLE } from '@/lib/scene-title'
 
 /**
  * Changes a member makes without a connection. Each is saved on the device
@@ -35,7 +37,65 @@ export interface SetTaskStatusOp extends OpBase {
   status: 'OPEN' | 'DONE'
 }
 
-export type SyncOpInput = RecordWorkOp | SetTaskStatusOp
+/** A plant added on site. Its id is made on the device so later changes can refer to it. */
+export interface CreateSpecimenOp extends OpBase {
+  kind: 'createSpecimen'
+  specimenId: string
+  /** A species already in hortlog, or null to go by `fieldName` */
+  speciesId: string | null
+  /** Whatever the member called it, for plants not yet identified */
+  fieldName: string | null
+  accessionNumber: string | null
+  notes: string | null
+}
+
+export interface PlaceSpecimenOp extends OpBase {
+  kind: 'placeSpecimen'
+  sceneId: string
+  specimenId: string
+  row: number
+  col: number
+  /** One of a split hex's small cells, or null for the whole hex */
+  sub: number | null
+}
+
+export interface UnplaceSpecimenOp extends OpBase {
+  kind: 'unplaceSpecimen'
+  specimenId: string
+}
+
+export interface SplitHexOp extends OpBase {
+  kind: 'splitHex'
+  sceneId: string
+  row: number
+  col: number
+  split: boolean
+}
+
+export interface ResizeGridOp extends OpBase {
+  kind: 'resizeGrid'
+  sceneId: string
+  steps: GridOp[]
+}
+
+export interface UpdateSceneOp extends OpBase {
+  kind: 'updateScene'
+  sceneId: string
+  active?: boolean
+  /** null clears it */
+  title?: string | null
+}
+
+/** Changes sent to /api/offline-sync */
+export type SyncOpInput =
+  | RecordWorkOp
+  | SetTaskStatusOp
+  | CreateSpecimenOp
+  | PlaceSpecimenOp
+  | UnplaceSpecimenOp
+  | SplitHexOp
+  | ResizeGridOp
+  | UpdateSceneOp
 
 /** An op as kept in the outbox; `error` is set when the server refused it. */
 export type OutboxOp = SyncOpInput & { error?: string }
@@ -92,9 +152,87 @@ export function parseOp(raw: unknown): SyncOpInput | null {
     return { id, org, createdAt, kind: 'setTaskStatus', taskId, status: o.status }
   }
 
+  const base = { id, org, createdAt }
+  const intIn = (v: unknown, min: number, max: number): v is number =>
+    typeof v === 'number' && Number.isInteger(v) && v >= min && v <= max
+
+  if (o.kind === 'createSpecimen') {
+    const specimenId = typeof o.specimenId === 'string' && isDeviceId(o.specimenId) ? o.specimenId : null
+    const speciesId = str(o.speciesId, 64)
+    const fieldName = str(o.fieldName, 120)
+    if (!specimenId || (!speciesId && !fieldName)) return null
+    return {
+      ...base,
+      kind: 'createSpecimen',
+      specimenId,
+      speciesId,
+      fieldName,
+      accessionNumber: str(o.accessionNumber, 60),
+      notes: str(o.notes),
+    }
+  }
+
+  if (o.kind === 'placeSpecimen') {
+    const sceneId = str(o.sceneId, 64)
+    const specimenId = str(o.specimenId, 64)
+    const sub = o.sub === null || o.sub === undefined ? null : o.sub
+    if (!sceneId || !specimenId || !intIn(o.row, 0, 99) || !intIn(o.col, 0, 99)) return null
+    if (sub !== null && !intIn(sub, 0, SUB_CELLS - 1)) return null
+    return { ...base, kind: 'placeSpecimen', sceneId, specimenId, row: o.row, col: o.col, sub }
+  }
+
+  if (o.kind === 'unplaceSpecimen') {
+    const specimenId = str(o.specimenId, 64)
+    return specimenId ? { ...base, kind: 'unplaceSpecimen', specimenId } : null
+  }
+
+  if (o.kind === 'splitHex') {
+    const sceneId = str(o.sceneId, 64)
+    if (!sceneId || !intIn(o.row, 0, 99) || !intIn(o.col, 0, 99) || typeof o.split !== 'boolean') return null
+    return { ...base, kind: 'splitHex', sceneId, row: o.row, col: o.col, split: o.split }
+  }
+
+  if (o.kind === 'resizeGrid') {
+    const sceneId = str(o.sceneId, 64)
+    const steps = Array.isArray(o.steps) ? (o.steps as GridOp[]) : null
+    const valid =
+      steps !== null &&
+      steps.length > 0 &&
+      steps.length <= MAX_GRID_OPS &&
+      steps.every((st) => GRID_SIDES.includes(st?.side) && (st.delta === 1 || st.delta === -1))
+    if (!sceneId || !valid) return null
+    return { ...base, kind: 'resizeGrid', sceneId, steps: steps.map((st) => ({ side: st.side, delta: st.delta })) }
+  }
+
+  if (o.kind === 'updateScene') {
+    const sceneId = str(o.sceneId, 64)
+    if (!sceneId) return null
+    const op: UpdateSceneOp = { ...base, kind: 'updateScene', sceneId }
+    if (typeof o.active === 'boolean') op.active = o.active
+    if (o.title === null) op.title = null
+    else if (typeof o.title === 'string') {
+      const t = o.title.trim().replace(/\s+/g, ' ')
+      if (t.length > MAX_SCENE_TITLE) return null
+      op.title = t || null
+    }
+    return op
+  }
+
   return null
 }
 
 export function newOpId(): string {
   return crypto.randomUUID()
+}
+
+const ID_CHARS = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+/** A cuid-shaped id made on the device, for a plant added offline. */
+export function newDeviceId(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(24))
+  return 'c' + Array.from(bytes, (b) => ID_CHARS[b % ID_CHARS.length]).join('')
+}
+
+export function isDeviceId(id: string): boolean {
+  return /^c[a-z0-9]{24}$/.test(id)
 }
