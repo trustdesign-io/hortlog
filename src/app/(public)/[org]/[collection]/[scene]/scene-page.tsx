@@ -15,7 +15,7 @@ export async function sceneMetadata(orgSlug: string, collectionSlug: string | nu
   const data = await resolveScene(orgSlug, collectionSlug, sceneSlug)
   if (!data) return {}
 
-  const title = `${data.scene.name} — ${data.org.name}`
+  const title = `${data.scene.title ?? data.scene.name} — ${data.org.name}`
   const description = `Browse specimens in the ${data.scene.name} scene from ${data.org.name}.`
   const canonical = publicScenePath(orgSlug, data.scene.slug, data.collection?.slug ?? null)
 
@@ -53,7 +53,7 @@ export const resolveScene = cache(async function resolveScene(
       organisationId: org.id,
       primaryCollectionId: collection?.id ?? null,
     },
-    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true, rowShift: true, splitCells: true, perspective: true, active: true },
+    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true, rowShift: true, splitCells: true, perspective: true, active: true, title: true },
   })
   if (!scene) return null
 
@@ -127,8 +127,9 @@ export async function ScenePage({
         </p>
         <div className="flex flex-wrap items-start justify-between gap-3 mt-1">
           <div>
-            <h1 className="font-heading text-2xl font-medium">{scene.name}</h1>
+            <h1 className="font-heading text-2xl font-medium">{scene.title ?? scene.name}</h1>
             <p className="mt-1 text-sm text-muted-foreground">
+              {scene.title && `${scene.name} · `}
               {specimens.length} {specimens.length === 1 ? 'specimen' : 'specimens'}
             </p>
           </div>

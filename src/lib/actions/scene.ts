@@ -17,6 +17,7 @@ import {
   type GridOp,
 } from '@/lib/scene-grid'
 import { DEFAULT_PERSPECTIVE, parsePerspective } from '@/lib/scene-perspective'
+import { MAX_SCENE_TITLE, parseSceneTitle } from '@/lib/scene-title'
 import type { ActionResult } from '@/lib/shared/types'
 
 const SLUG_PATTERN = /^[a-z0-9-]+$/
@@ -452,6 +453,8 @@ export async function updateScene(
   }
 
   const primaryCollectionId = (formData.get('primaryCollectionId') as string | null)?.trim() || null
+  const parsedTitle = parseSceneTitle(formData.get('title'))
+  if (!parsedTitle.ok) return { success: false, error: `Titles can be up to ${MAX_SCENE_TITLE} characters.` }
   const perspectiveRaw = formData.get('perspective') as string | null
   const perspective = perspectiveRaw === null ? undefined : parsePerspective(perspectiveRaw)
   if (perspectiveRaw !== null && !perspective) {
@@ -475,7 +478,12 @@ export async function updateScene(
   try {
     await prisma.scene.update({
       where: { id: scene.id },
-      data: { primaryCollectionId, perspective: perspective ?? undefined },
+      data: {
+        primaryCollectionId,
+        perspective: perspective ?? undefined,
+        // Only change the title when the form has the field
+        ...(formData.has('title') ? { title: parsedTitle.title } : {}),
+      },
     })
   } catch (err) {
     console.error('[updateScene] error:', err)
@@ -484,6 +492,7 @@ export async function updateScene(
 
   revalidatePath(`/${orgSlug}/scenes`)
   revalidatePath(`/${orgSlug}/scenes/${sceneId}`, 'layout')
+  revalidatePath(`/${orgSlug}`)
   return { success: true }
 }
 

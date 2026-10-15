@@ -17,7 +17,7 @@ export function timeAgo(iso: string, now: number): string {
   return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
-/** Footer note on the offline copy: when it was saved, that the app is offline, or changes waiting to send. */
+/** Note on the offline copy, shown with the member's details: when it was saved, that the app is offline, or changes waiting to send. */
 export function OfflineStatusChip({ className }: { className?: string }) {
   const { online, syncing, syncedAt, unsent, refused } = useOfflineStatus()
   const [now, setNow] = useState(() => Date.now())

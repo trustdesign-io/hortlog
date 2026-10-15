@@ -299,11 +299,8 @@ export function GridEditor({
     <>
       <div className="mb-4">
         <GridSizeControls
-          orgSlug={orgSlug}
-          sceneId={sceneId}
           rows={rows}
           cols={cols}
-          perspective={perspective}
           onResize={handleResize}
           resizeError={resizeError}
         />

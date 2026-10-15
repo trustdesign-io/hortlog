@@ -1,6 +1,8 @@
 import type { ReactNode } from 'react'
 import { Header } from '@/components/layout/header'
 import { Footer } from '@/components/layout/footer'
+import { AppFooter } from '@/components/layout/app-footer'
+import { PublicFooter } from '@/components/layout/public-footer'
 import { getCurrentUser } from '@/lib/auth/current-user'
 
 const LEGAL = { heading: 'Legal', links: [{ label: 'Privacy', href: '/privacy' }] }
@@ -19,7 +21,8 @@ const SIGNED_OUT_COLUMNS = [
 const SIGNED_IN_COLUMNS = [{ heading: 'Product', links: [{ label: 'My record', href: '/records' }] }, LEGAL]
 
 export default async function PublicLayout({ children }: { children: ReactNode }) {
-  const signedIn = (await getCurrentUser()) !== null
+  const user = await getCurrentUser()
+  const signedIn = user !== null
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -32,7 +35,10 @@ export default async function PublicLayout({ children }: { children: ReactNode }
       </a>
       <Header signedIn={signedIn} />
       <main id="main-content" className="flex-1">{children}</main>
-      <Footer navColumns={signedIn ? SIGNED_IN_COLUMNS : SIGNED_OUT_COLUMNS} tagline="A living record for botanical collections." />
+      <PublicFooter
+        full={<Footer navColumns={signedIn ? SIGNED_IN_COLUMNS : SIGNED_OUT_COLUMNS} tagline="A living record for botanical collections." />}
+        slim={<AppFooter user={user} className="h-14 px-4" />}
+      />
     </div>
   )
 }

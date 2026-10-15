@@ -3,15 +3,33 @@
 import { Plus, X } from 'lucide-react'
 import { HexFocusRing, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { Button } from '@/components/ui/button'
-import { ScientificName } from '@/components/ui/scientific-name'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { HEX_HEIGHT_RATIO } from '@/lib/hex-grid'
 import { cellKey, SUB_CELL_NAMES, SUB_CELLS } from '@/lib/scene-grid'
 import type { PlacedSpecimen } from './grid-cells'
 
-/** Width of the enlarged hex, so each small cell is big enough to tap and read. */
-const ZOOM_WIDTH = 'min(20rem, calc(100vw - 4rem))'
+/**
+ * Width of the enlarged hex: big enough to tap and read each small cell, and
+ * small enough that the whole panel fits a phone screen without scrolling.
+ */
+const ZOOM_WIDTH = 'min(100%, 20rem, calc((100dvh - 17rem) * 0.866))'
+
+/** Takes a plant off the grid; drawn over its cell in the enlarged hex. */
+function RemoveButton({ plant, onRemove }: { plant: PlacedSpecimen; onRemove: (p: PlacedSpecimen) => void }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onRemove(plant)}
+      aria-label={`Remove ${plant.scientificName} from the grid`}
+      className="absolute left-1/2 top-[12%] z-10 flex h-11 w-11 -translate-x-1/2 items-center justify-center text-muted-foreground hover:text-destructive focus-visible:outline-none"
+    >
+      <span className="flex h-7 w-7 items-center justify-center rounded-full bg-background/90 shadow-sm">
+        <X className="h-4 w-4" aria-hidden="true" />
+      </span>
+    </button>
+  )
+}
 
 interface HexSheetProps {
   hex: { row: number; col: number } | null
@@ -48,7 +66,7 @@ export function HexSheet({ hex, isSplit, plants, onOpenChange, onSplit, onPick, 
           </SheetDescription>
         </SheetHeader>
 
-        <div className="space-y-6 px-4 pb-6">
+        <div className="space-y-5 px-4 pb-6">
           <div className="relative mx-auto" style={{ width: ZOOM_WIDTH, aspectRatio: `1 / ${HEX_HEIGHT_RATIO}` }}>
             {isSplit ? (
               <HexSubCells
@@ -56,9 +74,10 @@ export function HexSheet({ hex, isSplit, plants, onOpenChange, onSplit, onPick, 
                   const plant = plants[cellKey(row, col, sub)]
                   const where = SUB_CELL_NAMES[sub]
                   return plant ? (
-                    <div key={sub} className="hex-sub bg-muted" style={style} role="img" aria-label={`${plant.scientificName}, ${where}`}>
+                    <div key={sub} className="hex-sub bg-muted" style={style} aria-label={`${plant.scientificName}, ${where}`} role="group">
                       <SpecimenImage imageUrl={plant.thumbnailUrl} alt="" fill sizes="110px" className="object-cover" />
                       <HexPlantLabel scientificName={plant.scientificName} />
+                      <RemoveButton plant={plant} onRemove={onRemove} />
                     </div>
                   ) : (
                     <button
@@ -82,6 +101,7 @@ export function HexSheet({ hex, isSplit, plants, onOpenChange, onSplit, onPick, 
                   <>
                     <SpecimenImage imageUrl={whole.thumbnailUrl} alt="" fill sizes="320px" className="object-cover" />
                     <HexPlantLabel scientificName={whole.scientificName} />
+                    <RemoveButton plant={whole} onRemove={onRemove} />
                   </>
                 ) : (
                   <HexOutline className="text-border" />
@@ -89,31 +109,6 @@ export function HexSheet({ hex, isSplit, plants, onOpenChange, onSplit, onPick, 
               </div>
             )}
           </div>
-
-          {(isSplit ? inSubs : whole ? [whole] : []).length > 0 && (
-            <ul className="divide-y rounded-xl border bg-card">
-              {(isSplit ? inSubs : [whole]).map((p) => (
-                <li key={p.id} className="flex items-center gap-3 py-1.5 pl-3 pr-1">
-                  <div className="min-w-0 flex-1">
-                    <ScientificName className="block truncate text-sm">{p.scientificName}</ScientificName>
-                    <p className="truncate text-xs text-muted-foreground">
-                      {[p.commonName, isSplit ? SUB_CELL_NAMES[Number(p.gridCell.split(':')[1])] : null].filter(Boolean).join(' · ')}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => onRemove(p)}
-                    aria-label={`Remove ${p.scientificName} from the grid`}
-                    className="h-11 w-11 text-muted-foreground hover:text-destructive"
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </Button>
-                </li>
-              ))}
-            </ul>
-          )}
 
           {isSplit ? (
             <div className="space-y-1.5">

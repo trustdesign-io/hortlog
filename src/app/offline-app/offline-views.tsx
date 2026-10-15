@@ -410,7 +410,7 @@ function ScenesView({ snap }: { snap: OrgSnapshot }) {
             return (
               <li key={sc.id}>
                 <a href={`/${snap.org.slug}/scenes/${sc.id}`} className="flex min-h-12 items-center justify-between gap-3 px-4 py-2 hover:bg-muted">
-                  <span className="font-medium">{sc.name}</span>
+                  <span className="font-medium">{sc.title ?? sc.name}</span>
                   <span className="text-sm text-muted-foreground">
                     {count} plant{count === 1 ? '' : 's'}
                   </span>
@@ -429,7 +429,7 @@ function SceneView({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) 
   const tasks = snap.tasks.filter((t) => t.sceneId === scene.id && (t.status === 'OPEN' || t.pending))
   return (
     <>
-      <Title sub={`${plants.length} plant${plants.length === 1 ? '' : 's'}`}>{scene.name}</Title>
+      <Title sub={`${plants.length} plant${plants.length === 1 ? '' : 's'}`}>{scene.title ?? scene.name}</Title>
       <SceneGrid scene={scene} snap={snap} />
       {tasks.length > 0 && (
         <Section title="To do">

@@ -1,21 +1,14 @@
 'use client'
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 import { Minus, Plus } from 'lucide-react'
-import { setScenePerspective } from '@/lib/actions/scene'
 import { Button } from '@/components/ui/button'
-import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { MAX_GRID, MIN_GRID, type GridSide } from '@/lib/scene-grid'
-import type { ScenePerspective } from '@/lib/scene-perspective'
 
 interface GridSizeControlsProps {
-  orgSlug: string
-  sceneId: string
   rows: number
   cols: number
-  perspective: ScenePerspective
   /** Applied on screen straight away; the editor saves clicks in batches. */
   onResize: (side: GridSide, delta: 1 | -1) => void
   resizeError: string | null
@@ -24,37 +17,12 @@ interface GridSizeControlsProps {
 const SIDE_LABELS: Record<GridSide, string> = { top: 'Top', bottom: 'Bottom', left: 'Left', right: 'Right' }
 
 /**
- * Grid shape: perspective, and a row or column added on a chosen side or
- * removed from it if it's empty.
+ * Grid shape: a row or column added on a chosen side or removed from it if
+ * it's empty. Perspective is set on the Details tab.
  */
-export function GridSizeControls({
-  orgSlug,
-  sceneId,
-  rows,
-  cols,
-  perspective,
-  onResize,
-  resizeError,
-}: GridSizeControlsProps) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
+export function GridSizeControls({ rows, cols, onResize, resizeError }: GridSizeControlsProps) {
   const [rowSide, setRowSide] = useState<GridSide>('bottom')
   const [colSide, setColSide] = useState<GridSide>('right')
-  const [view, setView] = useState<string>(perspective)
-
-  function changePerspective(value: string) {
-    setView(value)
-    setError(null)
-    startTransition(async () => {
-      const result = await setScenePerspective(orgSlug, sceneId, value)
-      if (result.success) router.refresh()
-      else {
-        setView(perspective)
-        setError(result.error ?? 'Could not change the perspective.')
-      }
-    })
-  }
 
   const stepper = (
     label: string,
@@ -116,27 +84,12 @@ export function GridSizeControls({
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-        <div className="flex items-center gap-2">
-          <label htmlFor="scene-perspective" className="w-20 text-sm text-muted-foreground">
-            Perspective
-          </label>
-          <NativeSelect
-            id="scene-perspective"
-            value={view}
-            onChange={(e) => changePerspective(e.target.value)}
-            disabled={isPending}
-            className="[&_select]:h-9"
-          >
-            <NativeSelectOption value="BED">Bed</NativeSelectOption>
-            <NativeSelectOption value="WALL">Wall</NativeSelectOption>
-          </NativeSelect>
-        </div>
         {stepper('Rows', 'row', rows, ['top', 'bottom'], rowSide, setRowSide)}
         {stepper('Columns', 'column', cols, ['left', 'right'], colSide, setColSide)}
       </div>
-      {(resizeError ?? error) && (
+      {resizeError && (
         <p className="text-sm text-destructive" role="alert">
-          {resizeError ?? error}
+          {resizeError}
         </p>
       )}
     </div>

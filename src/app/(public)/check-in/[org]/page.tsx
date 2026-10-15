@@ -18,7 +18,7 @@ async function getVenue(slug: string) {
       name: true,
       scenes: {
         where: { active: true },
-        select: { id: true, name: true, slug: true, primaryCollection: { select: { slug: true } }, _count: { select: { specimens: true } } },
+        select: { id: true, name: true, title: true, slug: true, primaryCollection: { select: { slug: true } }, _count: { select: { specimens: true } } },
         orderBy: { name: 'asc' },
       },
     },
@@ -64,7 +64,10 @@ export default async function VenueCheckInPage({ params }: PageProps) {
                 href={publicScenePath(venue.slug, s.slug, s.primaryCollection?.slug ?? null)}
                 className="flex min-h-12 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
               >
-                <span className="min-w-0 flex-1 font-medium">{s.name}</span>
+                <span className="min-w-0 flex-1 font-medium">
+                  {s.title ?? s.name}
+                  {s.title && <span className="block text-xs font-normal text-muted-foreground">{s.name}</span>}
+                </span>
                 <span className="shrink-0 text-sm text-muted-foreground">
                   {s._count.specimens} plant{s._count.specimens === 1 ? '' : 's'}
                 </span>

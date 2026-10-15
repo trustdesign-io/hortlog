@@ -198,6 +198,8 @@ model Scene {
   rowShift    Int              @default(0)
   /// Hexes ("row,col") split into seven smaller cells; plants in them are at "row,col:0"–"row,col:6"
   splitCells  String[]         @default([])
+  /// Optional title shown on screen beside the name; never printed on the QR label
+  title       String?
   /// In use at the venue. Pre-made scenes (with labels printed ahead) start inactive.
   active      Boolean          @default(true)
   shortCode   String           @unique
