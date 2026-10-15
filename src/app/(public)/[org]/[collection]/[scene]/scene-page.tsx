@@ -72,8 +72,8 @@ export async function ScenePage({
   sceneSlug: string
   rawTab: string | undefined
 }) {
-  // 'grid' is the old name for the layout tab; links to it still work
-  const tab = rawTab === 'layout' || rawTab === 'grid' ? 'layout' : 'list'
+  // Layout unless the list is asked for
+  const tab = rawTab === 'list' ? 'list' : 'layout'
 
   const data = await resolveScene(orgSlug, collectionSlug, sceneSlug)
   if (!data) return notFound()
