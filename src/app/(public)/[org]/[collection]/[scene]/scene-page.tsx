@@ -53,7 +53,7 @@ export const resolveScene = cache(async function resolveScene(
       organisationId: org.id,
       primaryCollectionId: collection?.id ?? null,
     },
-    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true, rowShift: true, splitCells: true, perspective: true },
+    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true, rowShift: true, splitCells: true, perspective: true, active: true },
   })
   if (!scene) return null
 
@@ -78,6 +78,20 @@ export async function ScenePage({
   if (!data) return notFound()
 
   const { org, collection, scene } = data
+
+  // A label printed ahead for a scene that isn't in use yet
+  if (!scene.active) {
+    return (
+      <div className="mx-auto max-w-2xl px-4 py-6 sm:px-6">
+        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{org.name}</p>
+        <h1 className="mt-1 font-heading text-2xl font-medium">{scene.name}</h1>
+        <p className="mt-6 text-muted-foreground">This spot is still being planted up. There&rsquo;s plenty more to see around the garden.</p>
+        <Link href={`/check-in/${org.slug}`} className="mt-4 inline-block text-sm font-medium underline underline-offset-2">
+          See the garden&rsquo;s scenes
+        </Link>
+      </div>
+    )
+  }
 
   const specimens = await prisma.specimen.findMany({
     where: { sceneId: scene.id, organisationId: org.id },

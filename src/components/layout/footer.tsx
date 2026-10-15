@@ -60,7 +60,8 @@ export function Footer({
 
   return (
     <footer className={cn('border-t border-border bg-background', className)}>
-      <div className="mx-auto max-w-7xl px-4 md:px-6 py-12">
+      {/* Full width of the screen, edge to edge */}
+      <div className="w-full px-4 pt-12 md:px-6">
         {/* Top row: logo + nav columns */}
         <div className="grid grid-cols-2 gap-8 md:grid-cols-[1fr_repeat(3,auto)] lg:gap-12">
           {/* Brand */}
@@ -110,12 +111,13 @@ export function Footer({
           ))}
         </div>
 
-        {/* Bottom row: copyright */}
-        <div className="mt-10 pt-6 border-t border-border flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-muted-foreground">
-            &copy; {year} {COPYRIGHT_HOLDER}. All rights reserved.
-          </p>
-        </div>
+      </div>
+
+      {/* Bottom row: copyright, its rule running the full width */}
+      <div className="mt-10 flex flex-col gap-2 border-t border-border px-4 py-6 sm:flex-row sm:items-center sm:justify-between md:px-6">
+        <p className="text-xs text-muted-foreground">
+          &copy; {year} {COPYRIGHT_HOLDER}. All rights reserved.
+        </p>
       </div>
     </footer>
   )

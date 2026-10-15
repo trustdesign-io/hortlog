@@ -22,7 +22,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
       perspective: true,
       organisationId: true,
       primaryCollectionId: true,
-      primaryCollection: { select: { name: true, slug: true } },
+      active: true, primaryCollection: { select: { name: true, slug: true } },
       _count: { select: { specimens: true } },
     },
   })
@@ -41,6 +41,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
         sceneId={scene.id}
         name={scene.name}
         collectionName={scene.primaryCollection?.name ?? null}
+        isActive={scene.active}
         publicPath={publicScenePath(orgSlug, scene.slug, scene.primaryCollection?.slug ?? null)}
         active="details"
       />

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * Creates "Scene 001" … "Scene NNN" for an organisation, each with an empty
- * grid and a unique short code, ready to print QR labels for. Safe to run
+ * grid and a unique short code, ready to print QR labels for. They start
+ * inactive and are switched on as they come into use. Safe to run
  * again: scenes that already exist (by slug) are skipped.
  *
  *   node --env-file=.env.local scripts/generate-scenes.mjs <org-slug> [count=70]          # dry run
@@ -46,8 +47,8 @@ try {
     let created = 0
     for (const s of plan) {
       const r = await client.query(
-        `INSERT INTO "Scene" (id, name, slug, "shortCode", "organisationId", "updatedAt")
-         VALUES ($1, $2, $3, $4, $5, now())
+        `INSERT INTO "Scene" (id, name, slug, "shortCode", "organisationId", active, "updatedAt")
+         VALUES ($1, $2, $3, $4, $5, false, now())
          ON CONFLICT (slug, "organisationId") DO NOTHING`,
         [newId(), s.name, s.slug, s.shortCode, org.id],
       )

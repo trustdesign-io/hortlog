@@ -46,7 +46,7 @@ export async function buildOrgSnapshot(
       },
     }),
     prisma.scene.findMany({
-      where: { organisationId: org.id },
+      where: { organisationId: org.id, active: true },
       orderBy: { name: 'asc' },
       select: {
         id: true,

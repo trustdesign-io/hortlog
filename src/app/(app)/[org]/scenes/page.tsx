@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { Plus, Printer } from 'lucide-react'
+import { ChevronRight, Plus, Printer } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { publicScenePath } from '@/lib/scene-urls'
@@ -35,10 +35,47 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
       shortCode: true,
       gridRows: true,
       gridCols: true,
+      active: true,
       primaryCollection: { select: { name: true, slug: true } },
       _count: { select: { specimens: true } },
     },
   })
+  const activeScenes = scenes.filter((s) => s.active)
+  const inactiveScenes = scenes.filter((s) => !s.active)
+
+  const sceneList = (list: typeof scenes) => (
+    <div className="rounded-xl border bg-card overflow-hidden">
+      <ul role="list">
+        {list.map((v) => (
+          <li key={v.id} className="border-b last:border-0">
+            <Link
+              // Members see the scene as it is displayed; managers open the editor
+              href={
+                canManage
+                  ? `/${orgSlug}/scenes/${v.id}/edit`
+                  : publicScenePath(orgSlug, v.slug, v.primaryCollection?.slug ?? null)
+              }
+              className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium">{v.name}</p>
+                <p className="text-xs text-muted-foreground">
+                  {v.gridRows}×{v.gridCols} grid ·{' '}
+                  {v._count.specimens} specimen{v._count.specimens === 1 ? '' : 's'}
+                  {v.primaryCollection && ` · ${v.primaryCollection.name}`}
+                </p>
+              </div>
+              <div className="shrink-0 flex items-center gap-2">
+                <Badge variant="outline" className="font-mono text-xs">
+                  {v.shortCode}
+                </Badge>
+              </div>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
 
   return (
     <div className="space-y-6">
@@ -64,40 +101,23 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
         )}
       </div>
 
-      {scenes.length === 0 ? (
-        <EmptyState message="No scenes yet." hint={canManage ? 'Use New scene to add the first one.' : null} />
+      {activeScenes.length === 0 ? (
+        <EmptyState
+          message={inactiveScenes.length ? 'No active scenes yet.' : 'No scenes yet.'}
+          hint={canManage ? (inactiveScenes.length ? 'Open an inactive scene below and switch it to Active.' : 'Use New scene to add the first one.') : null}
+        />
       ) : (
-        <div className="rounded-xl border bg-card overflow-hidden">
-          <ul role="list">
-            {scenes.map((v) => (
-              <li key={v.id} className="border-b last:border-0">
-                <Link
-                  // Members see the scene as it is displayed; managers open the editor
-                  href={
-                    canManage
-                      ? `/${orgSlug}/scenes/${v.id}/edit`
-                      : publicScenePath(orgSlug, v.slug, v.primaryCollection?.slug ?? null)
-                  }
-                  className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium">{v.name}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {v.gridRows}×{v.gridCols} grid ·{' '}
-                      {v._count.specimens} specimen{v._count.specimens === 1 ? '' : 's'}
-                      {v.primaryCollection && ` · ${v.primaryCollection.name}`}
-                    </p>
-                  </div>
-                  <div className="shrink-0 flex items-center gap-2">
-                    <Badge variant="outline" className="font-mono text-xs">
-                      {v.shortCode}
-                    </Badge>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+        sceneList(activeScenes)
+      )}
+
+      {canManage && inactiveScenes.length > 0 && (
+        <details className="group space-y-3">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground [&::-webkit-details-marker]:hidden">
+            <ChevronRight className="h-4 w-4 transition-transform group-open:rotate-90" aria-hidden="true" />
+            Inactive scenes ({inactiveScenes.length})
+          </summary>
+          {sceneList(inactiveScenes)}
+        </details>
       )}
     </div>
   )

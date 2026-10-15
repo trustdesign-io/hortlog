@@ -23,9 +23,11 @@ export default async function OrgPage({ params }: OrgPageProps) {
     where: { slug: orgSlug },
     include: {
       _count: {
-        select: { specimens: true, scenes: true, collections: true },
+        // Only scenes in use at the venue count
+        select: { specimens: true, scenes: { where: { active: true } }, collections: true },
       },
       scenes: {
+        where: { active: true },
         orderBy: { updatedAt: 'desc' },
         take: 5,
         include: {
