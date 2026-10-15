@@ -102,6 +102,7 @@ export default async function HomePage() {
       {/* Hero */}
       <main>
         <HeroSection
+          contentAlign="start"
           backgroundMedia={{
             type: 'image',
             src: '/images/landing/care-wide.png',
@@ -119,14 +120,14 @@ export default async function HomePage() {
             </h1>
           }
           body={
-            <p className="text-lg text-white mb-10 max-w-xl mx-auto">
+            <p className="text-lg text-white mb-10 max-w-xl mx-auto md:mx-0">
               hortlog gives every specimen its own page — identification, provenance,
               conservation status — readable from a QR code at the vantage point,
               however far back the plant is planted.
             </p>
           }
           actions={
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
               <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }), 'w-full text-white sm:w-auto')}>
                 Sign up
               </Link>

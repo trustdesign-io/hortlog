@@ -32,6 +32,8 @@ interface HeroSectionProps {
   body: ReactNode
   actions: ReactNode
   backgroundMedia?: HeroMedia
+  /** 'start' keeps the text off the right of the image from md up (e.g. a face) */
+  contentAlign?: 'center' | 'start'
   className?: string
 }
 
@@ -40,6 +42,7 @@ export function HeroSection({
   body,
   actions,
   backgroundMedia,
+  contentAlign = 'center',
   className,
 }: HeroSectionProps) {
   const hasMedia = !!backgroundMedia
@@ -110,17 +113,33 @@ export function HeroSection({
       )}
 
       {/* Content */}
-      <div
-        className={cn(
-          'relative z-10 w-full px-6',
-          'max-w-3xl mx-auto text-center',
-          hasMedia && 'text-white',
-        )}
-      >
-        {heading}
-        {body}
-        {actions}
-      </div>
+      {contentAlign === 'start' ? (
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-6 md:px-10">
+          <div
+            className={cn(
+              'mx-auto max-w-3xl text-center',
+              'md:mx-0 md:max-w-md md:text-left lg:max-w-lg',
+              hasMedia && 'text-white',
+            )}
+          >
+            {heading}
+            {body}
+            {actions}
+          </div>
+        </div>
+      ) : (
+        <div
+          className={cn(
+            'relative z-10 w-full px-6',
+            'max-w-3xl mx-auto text-center',
+            hasMedia && 'text-white',
+          )}
+        >
+          {heading}
+          {body}
+          {actions}
+        </div>
+      )}
     </section>
   )
 }
