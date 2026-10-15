@@ -1,9 +1,8 @@
 'use client'
 
-import { useEffect, useState, useTransition } from 'react'
-import QRCode from 'qrcode'
+import { useMemo, useState, useTransition } from 'react'
 import { regenerateShortCode } from '@/lib/actions/scene'
-import { labelSvg, QR_MARGIN } from '@/lib/qr-label'
+import { labelUrl, stickerSvg } from '@/lib/sticker-label'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -25,7 +24,8 @@ interface QRPanelProps {
   siteUrl: string
 }
 
-const QR_OPTIONS = { margin: QR_MARGIN, color: { dark: '#000000', light: '#ffffff' } }
+/** Pixels for the downloaded PNG: 25 mm at 600 dpi. */
+const PNG_PX = 591
 
 function download(href: string, filename: string) {
   const a = document.createElement('a')
@@ -34,43 +34,31 @@ function download(href: string, filename: string) {
   a.click()
 }
 
-/** The printable label: the code with a white border and the scene name beneath. */
+/** The printable 25 × 25 mm label: hortlog.com, the code, then the scene name. */
 export function QRPanel({ orgSlug, sceneId, sceneName, sceneSlug, shortCode, siteUrl }: QRPanelProps) {
-  const url = `${siteUrl}/v/${shortCode}`
-  const [label, setLabel] = useState<string | null>(null)
+  const url = labelUrl(siteUrl, shortCode)
+  const label = useMemo(() => stickerSvg({ url, name: sceneName, cutLine: true }), [url, sceneName])
   const [regenOpen, setRegenOpen] = useState(false)
   const [regenError, setRegenError] = useState<string | null>(null)
   const [isRegenerating, startRegenTransition] = useTransition()
 
-  useEffect(() => {
-    let cancelled = false
-    QRCode.toString(url, { type: 'svg', ...QR_OPTIONS }).then((qr) => {
-      if (!cancelled) setLabel(labelSvg(qr, sceneName))
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [url, sceneName])
-
-  const labelDataUrl = label ? `data:image/svg+xml;charset=utf-8,${encodeURIComponent(label)}` : null
+  const labelDataUrl = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(label)}`
   const filename = `hortlog-${sceneSlug}-qr`
 
   function downloadSvg() {
-    if (!label) return
     const href = URL.createObjectURL(new Blob([label], { type: 'image/svg+xml' }))
     download(href, `${filename}.svg`)
     URL.revokeObjectURL(href)
   }
 
   function downloadPng() {
-    if (!labelDataUrl) return
     // Draw the same label onto a canvas so the PNG matches the SVG exactly
     const img = new Image()
     img.onload = () => {
       const canvas = document.createElement('canvas')
-      canvas.width = img.naturalWidth
-      canvas.height = img.naturalHeight
-      canvas.getContext('2d')?.drawImage(img, 0, 0)
+      canvas.width = PNG_PX
+      canvas.height = PNG_PX
+      canvas.getContext('2d')?.drawImage(img, 0, 0, PNG_PX, PNG_PX)
       download(canvas.toDataURL('image/png'), `${filename}.png`)
     }
     img.src = labelDataUrl
@@ -92,26 +80,26 @@ export function QRPanel({ orgSlug, sceneId, sceneName, sceneSlug, shortCode, sit
       <h2 className="font-heading text-base font-medium">QR code</h2>
 
       <div className="flex flex-col items-center gap-3">
-        {labelDataUrl ? (
-          /* eslint-disable-next-line @next/next/no-img-element */
-          <img
-            src={labelDataUrl}
-            alt={`QR code for ${url}, labelled ${sceneName}`}
-            width={220}
-            className="h-auto w-[220px] rounded-lg border"
-          />
-        ) : (
-          <div className="h-[250px] w-[220px] animate-pulse rounded-lg bg-muted" />
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={labelDataUrl}
+          alt={`QR code for ${url}, labelled ${sceneName}`}
+          width={220}
+          height={220}
+          className="h-[220px] w-[220px] rounded-lg border"
+        />
         <p className="text-center font-mono text-xs text-muted-foreground">{url}</p>
+        <p className="text-center text-xs text-muted-foreground">
+          Prints at 25 × 25 mm. Downloads are true size (SVG) or 600 dpi (PNG).
+        </p>
       </div>
 
       <div className="flex flex-wrap gap-2">
-        <Button variant="outline" size="sm" onClick={downloadSvg} disabled={!label}>
+        <Button variant="outline" size="sm" onClick={downloadSvg} >
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
           SVG
         </Button>
-        <Button variant="outline" size="sm" onClick={downloadPng} disabled={!label}>
+        <Button variant="outline" size="sm" onClick={downloadPng} >
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
           PNG
         </Button>
