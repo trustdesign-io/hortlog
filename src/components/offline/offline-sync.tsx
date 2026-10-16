@@ -40,13 +40,13 @@ export function OfflineSync({ memberOrgSlugs, viewableOrgSlugs }: OfflineSyncPro
 
     async function refreshIfStale() {
       if (!navigator.onLine || cancelled) return
-      // Send changes made offline first, so the fresh copy includes them
-      const sent = await flushOutbox()
+      // Send changes made offline first (this refreshes the copies they went into)
+      await flushOutbox()
       const saved = await loadSavedStatus()
       const savedSlugs = new Set(saved.map((s) => s.org.slug))
       const oldest = Math.min(...saved.map((s) => Date.parse(s.syncedAt)))
       const missing = orgs.some((o) => !savedSlugs.has(o))
-      if (sent || missing || !(Date.now() - oldest < REFRESH_MS)) await syncOrgs(orgs)
+      if (missing || !(Date.now() - oldest < REFRESH_MS)) await syncOrgs(orgs)
     }
 
     function onOnline() {
