@@ -30,9 +30,11 @@ interface PublicSceneGridProps {
   rowShift: number
   /** Hexes split into seven smaller cells */
   splitCells?: string[]
+  /** Hexes outside the bed's outline: not drawn */
+  blockedCells?: string[]
 }
 
-export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, rowShift, splitCells = [] }: PublicSceneGridProps) {
+export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, rowShift, splitCells = [], blockedCells = [] }: PublicSceneGridProps) {
   const box = useRef<HTMLDivElement>(null)
   // Fit the grid to the space left on screen, so it shows whole without scrolling
   const fitted = useFittedGrid(box, rows, cols, perspective, CELL_WIDTH_REM * PX_PER_REM)
@@ -79,6 +81,7 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
         cellWidth={cellWidth}
         tiltDeg={tilt}
         rowShift={rowShift}
+        hiddenCells={blockedCells}
         renderCell={(row, col, style) => {
           const cell = `${row},${col}`
           const specimen = cellMap[cell]

@@ -4,12 +4,24 @@ import { AvatarCard } from './avatar-card'
 import { PasswordCard } from './password-card'
 import { PublicRecordCard } from './public-record-card'
 import { PlantCreditCard } from './plant-credit-card'
+import { ApiKeysCard } from './api-keys-card'
+import { prisma } from '@/lib/prisma'
+import { hasCapability } from '@/lib/auth/capabilities'
 import { suggestUsername } from '@/lib/public-record'
 
 export const metadata = { title: 'Account settings' }
 
 export default async function SettingsPage() {
   const user = await requireAuth()
+  // Keys are for laying out scenes, so only for people who can edit them
+  const editsScenes = user.isAdmin || user.memberships.some((m) => hasCapability(m.role, 'can_edit_scene'))
+  const keys = editsScenes
+    ? await prisma.apiKey.findMany({
+        where: { userId: user.id },
+        orderBy: { createdAt: 'desc' },
+        select: { id: true, name: true, prefix: true, createdAt: true, lastUsedAt: true },
+      })
+    : []
 
   return (
     <div className="space-y-6">
@@ -28,6 +40,11 @@ export default async function SettingsPage() {
         recordShowNotes={user.recordShowNotes}
       />
       <PlantCreditCard creditOnPlants={user.creditOnPlants} />
+      {editsScenes && (
+        <ApiKeysCard
+          keys={keys.map((k) => ({ ...k, createdAt: k.createdAt.toISOString(), lastUsedAt: k.lastUsedAt?.toISOString() ?? null }))}
+        />
+      )}
       <PasswordCard />
     </div>
   )

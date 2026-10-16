@@ -51,6 +51,8 @@ export async function PUT(req: Request, { params }: RouteParams) {
   }
   try {
     await saveScenePhoto(scene.orgId, scene.sceneId, bytes, type)
+    // A new photo: the scene is waiting to be laid out from it again
+    await prisma.scene.update({ where: { id: scene.sceneId }, data: { photoTakenAt: new Date() } })
   } catch {
     return NextResponse.json({ error: 'The photo couldn’t be saved. Try again.' }, { status: 500, headers: NO_STORE })
   }

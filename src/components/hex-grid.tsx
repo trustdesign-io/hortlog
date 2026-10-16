@@ -15,6 +15,8 @@ interface HexGridProps extends Omit<HTMLAttributes<HTMLDivElement>, 'children' |
   /** Each cell must apply the given style and the `hex-cell` class. */
   renderCell: (row: number, col: number, style: CSSProperties) => ReactNode
   rowProps?: (row: number) => HTMLAttributes<HTMLDivElement>
+  /** Hexes ("row,col") not drawn at all, e.g. outside the bed's outline */
+  hiddenCells?: string[]
 }
 
 /**
@@ -30,13 +32,17 @@ export function HexGrid({
   rowShift = 0,
   renderCell,
   rowProps,
+  hiddenCells,
   ...containerProps
 }: HexGridProps) {
+  const hidden = new Set(hiddenCells)
   return (
     <div {...containerProps} style={hexGridStyle(rows, cols, cellWidth, tiltDeg)}>
       {Array.from({ length: rows }, (_, row) => (
         <div key={row} {...rowProps?.(row)} style={{ display: 'contents' }}>
-          {Array.from({ length: cols }, (_, col) => renderCell(row, col, hexCellStyle(row, col, rows, cols, tiltDeg, rowShift)))}
+          {Array.from({ length: cols }, (_, col) =>
+            hidden.has(`${row},${col}`) ? null : renderCell(row, col, hexCellStyle(row, col, rows, cols, tiltDeg, rowShift)),
+          )}
         </div>
       ))}
     </div>

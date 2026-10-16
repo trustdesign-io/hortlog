@@ -8,6 +8,7 @@ import { requireOrgAccess } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
 import {
   cellKey,
+  cellsInGrid,
   GRID_SIDES,
   gridResizeError,
   hexOf,
@@ -306,6 +307,50 @@ export async function setHexSplit(
 }
 
 /**
+ * Marks a hex as outside the bed (not drawn for visitors) or back inside it.
+ * A hex with plants in it stays in the bed.
+ */
+export async function setHexOutside(
+  orgSlug: string,
+  sceneId: string,
+  row: number,
+  col: number,
+  outside: boolean,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+  const scene = await prisma.scene.findFirst({
+    where: { id: sceneId, organisation: { slug: orgSlug } },
+    select: { id: true, gridRows: true, gridCols: true, splitCells: true, blockedCells: true },
+  })
+  if (!scene) return { success: false, error: 'Scene not found.' }
+  if (!Number.isInteger(row) || !Number.isInteger(col) || row < 0 || col < 0 || row >= scene.gridRows || col >= scene.gridCols) {
+    return { success: false, error: 'That cell is outside the grid.' }
+  }
+  const hex = cellKey(row, col)
+  if (outside) {
+    const planted = (
+      await prisma.specimen.findMany({ where: { sceneId: scene.id, gridCell: { startsWith: hex } }, select: { gridCell: true } })
+    ).some((s) => hexOf(s.gridCell) === hex)
+    if (planted) return { success: false, error: 'Take the plants out of this cell first.' }
+  }
+  try {
+    await prisma.scene.update({
+      where: { id: scene.id },
+      data: outside
+        ? { blockedCells: [...scene.blockedCells.filter((c) => c !== hex), hex], splitCells: scene.splitCells.filter((c) => c !== hex) }
+        : { blockedCells: scene.blockedCells.filter((c) => c !== hex) },
+    })
+  } catch (err) {
+    console.error('[setHexOutside] error:', err)
+    return { success: false, error: 'Failed to change the cell. Please try again.' }
+  }
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}`, 'layout')
+  revalidatePath('/[org]/[collection]/[scene]', 'page')
+  revalidatePath('/[org]/scene/[scene]', 'page')
+  return { success: true }
+}
+
+/**
  * Adds or removes rows and columns on any side, in order, as one save. Plants
  * and task targets are renumbered so everything stays where it was on the ground.
  */
@@ -330,6 +375,7 @@ export async function resizeSceneGrid(
       gridCols: true,
       rowShift: true,
       splitCells: true,
+      blockedCells: true,
       specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true } },
       tasks: { where: { NOT: { cells: { isEmpty: true } } }, select: { id: true, cells: true } },
     },
@@ -365,6 +411,8 @@ export async function resizeSceneGrid(
           rowShift,
           // Split hexes move with the plants in them; an emptied edge takes its splits with it
           splitCells: scene.splitCells.map(plan.moveCell).filter((c): c is string => c !== null),
+          // So does the bed's outline
+          blockedCells: cellsInGrid(scene.blockedCells.map(plan.moveCell), rows, cols),
         },
       }),
       ...moved.map((s) => prisma.specimen.update({ where: { id: s.id }, data: { gridCell: s.after } })),

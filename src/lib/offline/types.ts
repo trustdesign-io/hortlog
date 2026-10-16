@@ -47,6 +47,8 @@ export interface OfflineScene {
   rowShift: number
   /** Hexes split into seven smaller cells (missing in copies saved before splitting existed) */
   splitCells?: string[]
+  /** Hexes outside the bed's outline */
+  blockedCells?: string[]
   perspective: 'BED' | 'WALL'
   primaryCollectionId: string | null
 }

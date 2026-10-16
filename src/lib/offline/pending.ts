@@ -1,4 +1,4 @@
-import { cellKey, hexOf, planGridOps } from '@/lib/scene-grid'
+import { cellKey, cellsInGrid, hexOf, planGridOps } from '@/lib/scene-grid'
 import type { OutboxOp } from './ops'
 import type { OfflineScene, OfflineSpecimen, OrgSnapshot } from './types'
 
@@ -157,6 +157,7 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         scene.gridCols = plan.shape.cols
         scene.rowShift = plan.shape.rowShift
         scene.splitCells = (scene.splitCells ?? []).map(plan.moveCell).filter((c): c is string => c !== null)
+        scene.blockedCells = cellsInGrid((scene.blockedCells ?? []).map(plan.moveCell), scene.gridRows, scene.gridCols)
         for (const s of placed) {
           const moved = plan.moveCell(s.gridCell as string)
           if (moved) s.gridCell = moved

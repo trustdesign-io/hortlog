@@ -167,3 +167,11 @@ export function gridResizeError(plan: Extract<GridOpsPlan, { ok: false }>): stri
   const n = plan.blocked.length
   return `Move or remove the ${n} plant${n === 1 ? '' : 's'} in the ${SIDE_NAMES[plan.side]} first.`
 }
+
+/** Hex cells still inside a rows × cols grid (e.g. after a row or column is removed). */
+export function cellsInGrid(cells: (string | null)[], rows: number, cols: number): string[] {
+  return cells.filter((c): c is string => {
+    const p = parseGridCell(c)
+    return p !== null && p.row >= 0 && p.col >= 0 && p.row < rows && p.col < cols
+  })
+}
