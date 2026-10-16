@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useId, useState, type ChangeEvent } from 'react'
-import { Camera, CloudCheck, CloudOff, Loader2 } from 'lucide-react'
+import { Camera, CloudCheck, CloudOff, Image as ImageIcon, Loader2 } from 'lucide-react'
 import {
   getLocalScenePhoto,
   SCENE_PHOTO_EVENT,
@@ -96,7 +96,10 @@ export function ScenePhotoCard({ org, sceneId, className }: ScenePhotoCardProps)
             )}
           </p>
         </div>
-        <label htmlFor={inputId} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'shrink-0 cursor-pointer')}>
+      </div>
+      {/* Take one now, or pick one already on the device (e.g. taken earlier on site) */}
+      <div className="grid grid-cols-2 gap-2">
+        <label htmlFor={inputId} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'cursor-pointer')}>
           {busy ? (
             <Loader2 className="mr-1.5 h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
           ) : (
@@ -104,16 +107,13 @@ export function ScenePhotoCard({ org, sceneId, className }: ScenePhotoCardProps)
           )}
           {src ? 'Retake' : 'Take photo'}
         </label>
-        <input
-          id={inputId}
-          type="file"
-          accept="image/*"
-          capture="environment"
-          className="sr-only"
-          onChange={onPick}
-          disabled={busy}
-        />
+        <label htmlFor={`${inputId}-pick`} className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'cursor-pointer')}>
+          <ImageIcon className="mr-1.5 h-4 w-4" aria-hidden="true" />
+          Choose photo
+        </label>
       </div>
+      <input id={inputId} type="file" accept="image/*" capture="environment" className="sr-only" onChange={onPick} disabled={busy} />
+      <input id={`${inputId}-pick`} type="file" accept="image/*" className="sr-only" onChange={onPick} disabled={busy} />
       {error && (
         <p className="text-sm text-destructive" role="alert">
           {error}
