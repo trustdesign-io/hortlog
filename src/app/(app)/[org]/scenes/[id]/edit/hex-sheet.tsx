@@ -40,6 +40,8 @@ interface HexSheetProps {
   onSplit: (split: boolean) => void
   onPick: (sub: number) => void
   onRemove: (specimen: PlacedSpecimen) => void
+  /** Shrinks a big plant back to its own hex */
+  onShrink?: (specimen: PlacedSpecimen) => void
 }
 
 /**
@@ -47,7 +49,7 @@ interface HexSheetProps {
  * plant moves to the centre); a split hex's cells are arranged here, and it
  * can be merged back once it holds one plant or none.
  */
-export function HexSheet({ hex, isSplit, plants, onOpenChange, onSplit, onPick, onRemove }: HexSheetProps) {
+export function HexSheet({ hex, isSplit, plants, onOpenChange, onSplit, onPick, onRemove, onShrink }: HexSheetProps) {
   const row = hex?.row ?? 0
   const col = hex?.col ?? 0
   const whole = plants[cellKey(row, col)]
@@ -121,6 +123,16 @@ export function HexSheet({ hex, isSplit, plants, onOpenChange, onSplit, onPick, 
                   : inSubs.length === 1
                     ? 'The plant will fill the whole cell.'
                     : 'The seven small cells become one.'}
+              </p>
+            </div>
+          ) : whole?.extraCells?.length && onShrink ? (
+            <div className="space-y-1.5">
+              <Button type="button" variant="outline" onClick={() => onShrink(whole)} className="w-full">
+                Only this cell
+              </Button>
+              <p className="text-xs text-muted-foreground">
+                This plant also covers {whole.extraCells.length} other cell{whole.extraCells.length === 1 ? '' : 's'}. Shrink it back to
+                this one to use them for something else.
               </p>
             </div>
           ) : (

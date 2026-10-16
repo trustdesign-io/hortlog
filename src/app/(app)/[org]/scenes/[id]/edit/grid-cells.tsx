@@ -11,6 +11,8 @@ export interface PlacedSpecimen {
   commonName: string
   scientificName: string
   thumbnailUrl: string | null
+  /** More hexes a big plant covers */
+  extraCells?: string[]
 }
 
 interface CellProps {
@@ -48,6 +50,33 @@ export const EmptyCell = forwardRef<HTMLButtonElement, EmptyCellProps>(function 
       <span className="hex-shape flex items-center justify-center bg-card group-hover:bg-muted">
         <HexOutline className="text-border group-hover:text-primary/50" />
         <Plus className="relative h-5 w-5" aria-hidden="true" />
+      </span>
+    </button>
+  )
+})
+
+/** A hex a big plant spreads into from its own: shows the plant; opening it opens the plant's own hex. */
+export const SpreadCell = forwardRef<HTMLButtonElement, EmptyCellProps & { specimen: PlacedSpecimen }>(function SpreadCell(
+  { row, col, style, isActive, onClick, onFocus, onKeyDown, specimen },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      tabIndex={isActive ? 0 : -1}
+      className="hex-cell group"
+      style={style}
+      aria-label={`${specimen.scientificName} spreads here, row ${row + 1}, column ${col + 1}. Press Enter for its options.`}
+      role="gridcell"
+      aria-rowindex={row + 1}
+      aria-colindex={col + 1}
+    >
+      <span className="hex-shape block bg-muted group-hover:opacity-80">
+        <SpecimenImage imageUrl={specimen.thumbnailUrl} alt="" fill sizes="120px" className="object-cover opacity-80" />
       </span>
     </button>
   )

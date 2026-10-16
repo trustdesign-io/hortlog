@@ -263,3 +263,25 @@ export async function uploadSpecimenImageAction(
   revalidatePath(`/${orgSlug}/specimens/${specimenId}/edit`)
   return { success: true }
 }
+
+/** Name a plant added as Unidentified (e.g. from a bed photo): set its species, keep everything else. */
+export async function identifySpecimen(orgSlug: string, specimenId: string, speciesId: string): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const species = await prisma.species.findUnique({ where: { id: speciesId }, select: { id: true } })
+  if (!species) return { success: false, error: 'That species wasn’t found. Search again.' }
+  const target = await prisma.specimen.findFirst({
+    where: { id: specimenId, organisation: { slug: orgSlug } },
+    select: { id: true, sceneId: true },
+  })
+  if (!target) return { success: false, error: 'This plant has been removed.' }
+  try {
+    await prisma.specimen.update({ where: { id: target.id }, data: { speciesId: species.id } })
+  } catch (err) {
+    console.error('[identifySpecimen] error:', err)
+    return { success: false, error: 'The name couldn’t be saved. Try again.' }
+  }
+  revalidatePath(`/${orgSlug}`, 'layout')
+  revalidatePath('/[org]/[collection]/[scene]', 'page')
+  revalidatePath('/[org]/scene/[scene]', 'page')
+  return { success: true }
+}

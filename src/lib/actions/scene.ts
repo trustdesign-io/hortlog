@@ -3,6 +3,7 @@
 import { Prisma } from '@prisma/client'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
+import { hexIsSpreadInto, releaseHex } from '@/lib/plant-span'
 import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { toSlug } from '@/lib/utils/slug'
@@ -163,15 +164,17 @@ export async function placeSpecimen(
 
   try {
     await prisma.$transaction([
+      // A big plant spreading into this hex gives it up
+      releaseHex(sceneId, cellKey(row, col)),
       // Evict any current occupant of this cell
       prisma.specimen.updateMany({
         where: { sceneId, gridCell: cell, id: { not: specimenId } },
-        data: { sceneId: null, gridCell: null },
+        data: { sceneId: null, gridCell: null, extraCells: [] },
       }),
       // Place (or move) the specimen into this cell
       prisma.specimen.update({
         where: { id: specimenId, organisationId: org.id },
-        data: { sceneId, gridCell: cell },
+        data: { sceneId, gridCell: cell, extraCells: [] },
       }),
     ])
   } catch (err) {
@@ -180,6 +183,24 @@ export async function placeSpecimen(
   }
 
   revalidatePath(`/${orgSlug}/scenes/${sceneId}/edit`)
+  return { success: true }
+}
+
+/** A big plant goes back to covering only its own hex. */
+export async function shrinkPlantSpread(orgSlug: string, sceneId: string, specimenId: string): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_scene')
+  try {
+    await prisma.specimen.updateMany({
+      where: { id: specimenId, sceneId, organisation: { slug: orgSlug } },
+      data: { extraCells: [] },
+    })
+  } catch (err) {
+    console.error('[shrinkPlantSpread] error:', err)
+    return { success: false, error: 'Failed to change the plant. Please try again.' }
+  }
+  revalidatePath(`/${orgSlug}/scenes/${sceneId}`, 'layout')
+  revalidatePath('/[org]/[collection]/[scene]', 'page')
+  revalidatePath('/[org]/scene/[scene]', 'page')
   return { success: true }
 }
 
@@ -233,7 +254,7 @@ export async function removeSpecimenFromCell(
   try {
     await prisma.specimen.update({
       where: { id: specimenId, organisationId: org.id, sceneId },
-      data: { sceneId: null, gridCell: null },
+      data: { sceneId: null, gridCell: null, extraCells: [] },
     })
   } catch (err) {
     console.error('[removeSpecimenFromCell] error:', err)
@@ -284,6 +305,7 @@ export async function setHexSplit(
 
   try {
     await prisma.$transaction([
+      ...(split ? [releaseHex(scene.id, hex)] : []),
       prisma.scene.update({
         where: { id: scene.id },
         data: { splitCells: split ? [...scene.splitCells, hex] : scene.splitCells.filter((c) => c !== hex) },
@@ -331,7 +353,7 @@ export async function setHexOutside(
     const planted = (
       await prisma.specimen.findMany({ where: { sceneId: scene.id, gridCell: { startsWith: hex } }, select: { gridCell: true } })
     ).some((s) => hexOf(s.gridCell) === hex)
-    if (planted) return { success: false, error: 'Take the plants out of this cell first.' }
+    if (planted || (await hexIsSpreadInto(scene.id, hex))) return { success: false, error: 'Take the plants out of this cell first.' }
   }
   try {
     await prisma.scene.update({
@@ -376,7 +398,7 @@ export async function resizeSceneGrid(
       rowShift: true,
       splitCells: true,
       blockedCells: true,
-      specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true } },
+      specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true, extraCells: true } },
       tasks: { where: { NOT: { cells: { isEmpty: true } } }, select: { id: true, cells: true } },
     },
   })
@@ -385,14 +407,21 @@ export async function resizeSceneGrid(
   const plan = planGridOps(
     { rows: scene.gridRows, cols: scene.gridCols, rowShift: scene.rowShift },
     ops,
-    scene.specimens.map((s) => s.gridCell),
+    // A big plant's spread counts as taken too
+    scene.specimens.flatMap((s) => [s.gridCell, ...s.extraCells]),
   )
   if (!plan.ok) return { success: false, error: gridResizeError(plan) }
 
   const { rows, cols, rowShift } = plan.shape
   const moved = scene.specimens
-    .map((s) => ({ id: s.id, before: s.gridCell as string, after: plan.moveCell(s.gridCell as string) }))
-    .filter((s) => s.after !== s.before)
+    .map((s) => ({
+      id: s.id,
+      before: s.gridCell as string,
+      after: plan.moveCell(s.gridCell as string),
+      extraBefore: s.extraCells,
+      extraAfter: cellsInGrid(s.extraCells.map(plan.moveCell), rows, cols),
+    }))
+    .filter((s) => s.after !== s.before || s.extraAfter.join('|') !== s.extraBefore.join('|'))
   const tasks = scene.tasks
     .map((t) => ({
       id: t.id,
@@ -415,7 +444,7 @@ export async function resizeSceneGrid(
           blockedCells: cellsInGrid(scene.blockedCells.map(plan.moveCell), rows, cols),
         },
       }),
-      ...moved.map((s) => prisma.specimen.update({ where: { id: s.id }, data: { gridCell: s.after } })),
+      ...moved.map((s) => prisma.specimen.update({ where: { id: s.id }, data: { gridCell: s.after, extraCells: s.extraAfter } })),
       ...tasks.map((t) => prisma.task.update({ where: { id: t.id }, data: { cells: t.after } })),
     ])
   } catch (err) {
@@ -556,7 +585,7 @@ export async function deleteScene(orgSlug: string, sceneId: string): Promise<Act
 
   try {
     await prisma.$transaction([
-      prisma.specimen.updateMany({ where: { sceneId: scene.id }, data: { sceneId: null, gridCell: null } }),
+      prisma.specimen.updateMany({ where: { sceneId: scene.id }, data: { sceneId: null, gridCell: null, extraCells: [] } }),
       prisma.scene.delete({ where: { id: scene.id } }),
     ])
   } catch (err) {

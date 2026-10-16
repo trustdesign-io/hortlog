@@ -1,7 +1,7 @@
 'use client'
 
 import { useOptimistic, useTransition, useState, useCallback, useRef, useEffect } from 'react'
-import { placeSpecimen, removeSpecimenFromCell, resizeSceneGrid, setHexOutside, setHexSplit } from '@/lib/actions/scene'
+import { placeSpecimen, removeSpecimenFromCell, resizeSceneGrid, setHexOutside, setHexSplit, shrinkPlantSpread } from '@/lib/actions/scene'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Input } from '@/components/ui/input'
 import {
@@ -21,6 +21,7 @@ import {
   cellKey,
   cellLabel,
   cellsInGrid,
+  parseGridCell,
   gridResizeError,
   hexOf,
   planGridOps,
@@ -29,7 +30,7 @@ import {
   type GridSide,
 } from '@/lib/scene-grid'
 import { Button } from '@/components/ui/button'
-import { EmptyCell, FilledCell, OutsideCell, SplitCell, type PlacedSpecimen } from './grid-cells'
+import { EmptyCell, FilledCell, OutsideCell, SplitCell, SpreadCell, type PlacedSpecimen } from './grid-cells'
 import { HexSheet } from './hex-sheet'
 import { GridSizeControls } from './grid-size-controls'
 
@@ -69,6 +70,7 @@ type OptimisticAction =
   | { type: 'place'; cell: string; specimen: PlacedSpecimen }
   | { type: 'remove'; cell: string }
   | { type: 'move'; from: string; to: string }
+  | { type: 'shrink'; cell: string }
 
 interface GridEditorProps {
   orgSlug: string
@@ -132,6 +134,10 @@ export function GridEditor({
         next[action.to] = { ...specimen, gridCell: action.to }
         return next
       }
+      if (action.type === 'shrink') {
+        const plant = state[action.cell]
+        return plant ? { ...state, [action.cell]: { ...plant, extraCells: [] } } : state
+      }
       const next = { ...state }
       delete next[action.cell]
       return next
@@ -147,6 +153,9 @@ export function GridEditor({
     (state, { hex, outside }) => (outside ? [...state.filter((c) => c !== hex), hex] : state.filter((c) => c !== hex)),
   )
   const blockedSet = new Set(optimisticBlocked)
+  // Hexes big plants spread into, and the plant's own hex for each
+  const spreadHome = new Map<string, PlacedSpecimen>()
+  for (const p of Object.values(optimisticGrid)) for (const x of p.extraCells ?? []) spreadHome.set(x, p)
   const [hexSheet, setHexSheet] = useState<{ row: number; col: number } | null>(null)
 
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -210,7 +219,7 @@ export function GridEditor({
   useEffect(() => () => void savePending(), [savePending])
 
   function handleResize(side: GridSide, delta: 1 | -1) {
-    const plan = planGridOps(shape, [{ side, delta }], Object.keys(optimisticGrid))
+    const plan = planGridOps(shape, [{ side, delta }], [...Object.keys(optimisticGrid), ...spreadHome.keys()])
     if (!plan.ok) {
       setResizeError(gridResizeError(plan))
       return
@@ -219,7 +228,8 @@ export function GridEditor({
     const grid: GridState = {}
     for (const [cell, specimen] of Object.entries(optimisticGrid)) {
       const moved = plan.moveCell(cell)
-      if (moved) grid[moved] = { ...specimen, gridCell: moved }
+      const extraCells = cellsInGrid((specimen.extraCells ?? []).map(plan.moveCell), plan.shape.rows, plan.shape.cols)
+      if (moved) grid[moved] = { ...specimen, gridCell: moved, extraCells }
     }
     const splits = optimisticSplits.map(plan.moveCell).filter((c): c is string => c !== null)
     const outside = cellsInGrid(optimisticBlocked.map(plan.moveCell), plan.shape.rows, plan.shape.cols)
@@ -309,6 +319,16 @@ export function GridEditor({
     })
   }
 
+  function handleShrink(specimen: PlacedSpecimen) {
+    startTransition(async () => {
+      dispatch({ type: 'shrink', cell: specimen.gridCell })
+      await savePending()
+      const result = await shrinkPlantSpread(orgSlug, sceneId, specimen.id)
+      if (!result.success) setResizeError(result.error ?? 'Could not change the plant.')
+      releaseLayout()
+    })
+  }
+
   function handleRemove(specimen: PlacedSpecimen) {
     const cell = specimen.gridCell
     startTransition(async () => {
@@ -349,6 +369,25 @@ export function GridEditor({
             const setRef = (el: HTMLElement | null) => {
               if (el) cellRefs.current.set(cell, el)
               else cellRefs.current.delete(cell)
+            }
+
+            const spreadOf = placed ? undefined : spreadHome.get(cell)
+            if (spreadOf) {
+              const home = parseGridCell(spreadOf.gridCell)
+              return (
+                <SpreadCell
+                  key={cell}
+                  row={row}
+                  col={col}
+                  style={style}
+                  specimen={spreadOf}
+                  isActive={isActive}
+                  onClick={() => home && setHexSheet({ row: home.row, col: home.col })}
+                  onFocus={() => setActiveCell({ row, col })}
+                  onKeyDown={(e) => handleCellKeyDown(e, row, col)}
+                  ref={setRef}
+                />
+              )
             }
 
             if (blockedSet.has(cell)) {
@@ -528,6 +567,7 @@ export function GridEditor({
           openPicker(hexSheet.row, hexSheet.col, sub)
         }}
         onRemove={(specimen) => handleRemove(specimen)}
+        onShrink={(specimen) => handleShrink(specimen)}
       />
     </>
   )

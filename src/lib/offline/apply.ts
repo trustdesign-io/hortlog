@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { hasCapability, type Capability } from '@/lib/auth/capabilities'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 import { syncTaskCare } from '@/lib/task-care'
+import { releaseHex } from '@/lib/plant-span'
 import { ensureWorkRecord, WORK_RECORD_SPECIMEN_SELECT } from '@/lib/work-record-db'
 import { cellKey, cellsInGrid, gridResizeError, hexOf, planGridOps, SUB_CELLS } from '@/lib/scene-grid'
 import { toSlug } from '@/lib/utils/slug'
@@ -265,11 +266,12 @@ async function applyPlaceSpecimen(user: UserWithMemberships, op: PlaceSpecimenOp
   }
 
   await once(op, user.id, async (tx) => {
+    await releaseHex(scene.id, hex, tx)
     await tx.specimen.updateMany({
       where: { sceneId: scene.id, gridCell: cell, id: { not: specimen.id } },
-      data: { sceneId: null, gridCell: null },
+      data: { sceneId: null, gridCell: null, extraCells: [] },
     })
-    await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: scene.id, gridCell: cell } })
+    await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: scene.id, gridCell: cell, extraCells: [] } })
   })
   return applied(op.id)
 }
@@ -282,7 +284,7 @@ async function applyUnplaceSpecimen(user: UserWithMemberships, op: UnplaceSpecim
   })
   if (!specimen) return rejected(op.id, 'This plant has been removed.')
   await once(op, user.id, async (tx) => {
-    await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: null, gridCell: null } })
+    await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: null, gridCell: null, extraCells: [] } })
   })
   return applied(op.id)
 }
@@ -304,6 +306,7 @@ async function applySplitHex(user: UserWithMemberships, op: SplitHexOp): Promise
   if (!op.split && inHex.length > 1) return rejected(op.id, 'That cell holds more than one plant, so it can’t be merged.')
 
   await once(op, user.id, async (tx) => {
+    if (op.split) await releaseHex(scene.id, hex, tx)
     await tx.scene.update({
       where: { id: scene.id },
       data: { splitCells: op.split ? [...scene.splitCells, hex] : scene.splitCells.filter((c) => c !== hex) },
@@ -326,7 +329,7 @@ async function applyResizeGrid(user: UserWithMemberships, op: ResizeGridOp): Pro
       rowShift: true,
       splitCells: true,
       blockedCells: true,
-      specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true } },
+      specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true, extraCells: true } },
       tasks: { where: { NOT: { cells: { isEmpty: true } } }, select: { id: true, cells: true } },
     },
   })
@@ -334,7 +337,8 @@ async function applyResizeGrid(user: UserWithMemberships, op: ResizeGridOp): Pro
   const plan = planGridOps(
     { rows: scene.gridRows, cols: scene.gridCols, rowShift: scene.rowShift },
     op.steps,
-    scene.specimens.map((s) => s.gridCell),
+    // A big plant's spread counts as taken too
+    scene.specimens.flatMap((s) => [s.gridCell, ...s.extraCells]),
   )
   if (!plan.ok) return rejected(op.id, gridResizeError(plan))
 
@@ -351,7 +355,10 @@ async function applyResizeGrid(user: UserWithMemberships, op: ResizeGridOp): Pro
     })
     for (const s of scene.specimens) {
       const after = plan.moveCell(s.gridCell as string)
-      if (after !== s.gridCell) await tx.specimen.update({ where: { id: s.id }, data: { gridCell: after } })
+      const extra = cellsInGrid(s.extraCells.map(plan.moveCell), plan.shape.rows, plan.shape.cols)
+      if (after !== s.gridCell || extra.join('|') !== s.extraCells.join('|')) {
+        await tx.specimen.update({ where: { id: s.id }, data: { gridCell: after, extraCells: extra } })
+      }
     }
     for (const t of scene.tasks) {
       const after = t.cells.map(plan.moveCell).filter((c): c is string => c !== null)

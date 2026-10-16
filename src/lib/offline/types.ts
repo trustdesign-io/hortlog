@@ -25,6 +25,8 @@ export interface OfflineSpecimen {
   imageUrl: string | null
   sceneId: string | null
   gridCell: string | null
+  /** More hexes a big plant covers */
+  extraCells?: string[]
   collectionIds: string[]
   species: OfflineSpecies
   /** Added on this device and not yet sent */

@@ -29,6 +29,7 @@ export async function buildOrgSnapshot(
         imageUrl: true,
         sceneId: true,
         gridCell: true,
+        extraCells: true,
         collections: { select: { collectionId: true } },
         species: {
           select: {
@@ -122,6 +123,7 @@ export async function buildOrgSnapshot(
       imageUrl: s.imageUrl,
       sceneId: s.sceneId,
       gridCell: s.gridCell,
+      extraCells: s.extraCells,
       collectionIds: s.collections.map((c) => c.collectionId),
       species: {
         commonName: s.species.commonName,

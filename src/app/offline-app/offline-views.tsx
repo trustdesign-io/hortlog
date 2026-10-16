@@ -135,10 +135,12 @@ function RecordEntries({ record }: { record: OfflineWorkRecord }) {
 
 function SceneGrid({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) {
   const byCell = new Map<string, OfflineSpecimen>()
+  const spread = new Map<string, OfflineSpecimen>()
   const split = new Set(scene.splitCells ?? [])
   for (const s of snap.specimens) {
     if (s.sceneId !== scene.id || !s.gridCell) continue
     byCell.set(s.gridCell, s)
+    for (const x of s.extraCells ?? []) spread.set(x, s)
     if (s.gridCell.includes(':')) split.add(hexOf(s.gridCell) ?? '')
   }
   if (scene.gridRows <= 0 || scene.gridCols <= 0) return null
@@ -184,6 +186,23 @@ function SceneGrid({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) 
                   />
                 </span>
               </div>
+            )
+          }
+          const spreadOf = spread.get(cell)
+          if (!s && spreadOf) {
+            return (
+              <a
+                key={cell}
+                href={`/${snap.org.slug}/specimens/${spreadOf.id}`}
+                className="hex-cell group"
+                style={style}
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <span className="hex-shape relative block bg-muted group-hover:opacity-80">
+                  <Photo src={specimenPhoto(spreadOf)} className="absolute inset-0 h-full w-full" />
+                </span>
+              </a>
             )
           }
           if (s) {
