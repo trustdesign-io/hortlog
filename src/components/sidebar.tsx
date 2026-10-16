@@ -45,12 +45,12 @@ interface NavItem {
   tourId?: string
 }
 
-function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
+export function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
   return [
     { href: `/${orgSlug}`, label: 'Overview', icon: LayoutDashboard, tourId: 'org-overview' },
     { href: `/${orgSlug}/todo`, label: 'To do', icon: CheckSquare, tourId: 'org-todo' },
     // Specimens has no tour step — it's a data-dense list page, not a concept to introduce
-    { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf },
+    { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf, tourId: 'org-specimens' },
     { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen, tourId: 'org-collections' },
     { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3, tourId: 'org-scenes' },
     { href: `/${orgSlug}/team`, label: 'Team', icon: UsersRound, tourId: 'org-team' },
@@ -70,7 +70,7 @@ function canManageOrg(user: UserWithMemberships, orgSlug: string): boolean {
 }
 
 /** Everything about the signed-in person, grouped at the foot of the sidebar. */
-const youNav: NavItem[] = [
+export const youNav: NavItem[] = [
   { href: '/records', label: 'My record', icon: ClipboardList, tourId: 'my-record' },
   { href: '/settings', label: 'Account', icon: Settings, tourId: 'account-settings' },
 ]
