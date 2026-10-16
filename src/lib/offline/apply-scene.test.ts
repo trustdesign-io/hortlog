@@ -16,6 +16,7 @@ vi.mock('@/lib/prisma', () => ({
 }))
 vi.mock('@/lib/work-record-db', () => ({ ensureWorkRecord: vi.fn(), WORK_RECORD_SPECIMEN_SELECT: {} }))
 vi.mock('@/lib/task-care', () => ({ syncTaskCare: vi.fn() }))
+vi.mock('@/lib/plant-span', () => ({ releaseHex: vi.fn() }))
 vi.mock('@/lib/species-catalogue', async () => {
   const real = await vi.importActual<typeof import('@/lib/species-catalogue')>('@/lib/species-catalogue')
   return { labelName: real.labelName, searchCatalogue, addFromCatalogue }
@@ -102,9 +103,9 @@ describe('placing and laying out offline', () => {
     await applyOps(manager, [{ ...base(2), kind: 'placeSpecimen', sceneId: 'sc1', specimenId: newId, row: 1, col: 1, sub: 3 }])
     expect(specimen.updateMany).toHaveBeenCalledWith({
       where: { sceneId: 'sc1', gridCell: '1,1:3', id: { not: newId } },
-      data: { sceneId: null, gridCell: null },
+      data: { sceneId: null, gridCell: null, extraCells: [] },
     })
-    expect(specimen.update).toHaveBeenCalledWith({ where: { id: newId }, data: { sceneId: 'sc1', gridCell: '1,1:3' } })
+    expect(specimen.update).toHaveBeenCalledWith({ where: { id: newId }, data: { sceneId: 'sc1', gridCell: '1,1:3', extraCells: [] } })
   })
 
   it('puts a whole-cell placement into a free small cell if the hex was split meanwhile', async () => {

@@ -314,6 +314,11 @@ model Specimen {
   notes           String?
   imageUrl        String?
   gridCell        String? // e.g. "2,3" (row,col)
+  /// More whole hexes ("row,col") a big plant covers, besides gridCell
+  extraCells      String[] @default([])
+  /// Where the plant is on its scene's bed photo, 0–1 from the left and top
+  photoX          Float?
+  photoY          Float?
   latitude        Float?
   longitude       Float?
   createdAt       DateTime @default(now())

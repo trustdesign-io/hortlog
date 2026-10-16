@@ -103,15 +103,19 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         const s = findSpecimen(op.specimenId)
         if (!s) break
         const cell = cellKey(op.row, op.col, op.sub)
-        // The cell's current plant comes off the grid, as on the server
+        const hex = cellKey(op.row, op.col)
+        // The cell's current plant comes off the grid, and a big plant gives up the hex, as on the server
         for (const other of specimens) {
-          if (other.id !== s.id && other.sceneId === op.sceneId && other.gridCell === cell) {
+          if (other.id === s.id || other.sceneId !== op.sceneId) continue
+          if (other.gridCell === cell) {
             other.sceneId = null
             other.gridCell = null
-          }
+            other.extraCells = []
+          } else if (other.extraCells?.includes(hex)) other.extraCells = other.extraCells.filter((c) => c !== hex)
         }
         s.sceneId = op.sceneId
         s.gridCell = cell
+        s.extraCells = []
         s.pending = true
         break
       }
@@ -121,6 +125,7 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         if (!s) break
         s.sceneId = null
         s.gridCell = null
+        s.extraCells = []
         s.pending = true
         break
       }
@@ -133,6 +138,7 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         const inHex = inScene(scene.id).filter((s) => hexOf(s.gridCell) === hex)
         if (op.split) {
           if (!split.includes(hex)) scene.splitCells = [...split, hex]
+          for (const s of inScene(scene.id)) if (s.extraCells?.includes(hex)) s.extraCells = s.extraCells.filter((c) => c !== hex)
           for (const s of inHex) if (s.gridCell === hex) s.gridCell = cellKey(op.row, op.col, 0)
         } else {
           if (inHex.length > 1) break
@@ -150,7 +156,7 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         const plan = planGridOps(
           { rows: scene.gridRows, cols: scene.gridCols, rowShift: scene.rowShift },
           op.steps,
-          placed.map((s) => s.gridCell),
+          placed.flatMap((s) => [s.gridCell, ...(s.extraCells ?? [])]),
         )
         if (!plan.ok) break
         scene.gridRows = plan.shape.rows
@@ -160,6 +166,7 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         scene.blockedCells = cellsInGrid((scene.blockedCells ?? []).map(plan.moveCell), scene.gridRows, scene.gridCols)
         for (const s of placed) {
           const moved = plan.moveCell(s.gridCell as string)
+          if (s.extraCells?.length) s.extraCells = cellsInGrid(s.extraCells.map(plan.moveCell), scene.gridRows, scene.gridCols)
           if (moved) s.gridCell = moved
           else {
             s.sceneId = null

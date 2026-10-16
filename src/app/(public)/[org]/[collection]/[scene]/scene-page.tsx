@@ -100,6 +100,7 @@ export async function ScenePage({
       slug: true,
       accessionNumber: true,
       gridCell: true,
+      extraCells: true,
       imageUrl: true,
       species: {
         select: {
@@ -163,6 +164,7 @@ export async function ScenePage({
                 id: s.id,
                 slug: s.slug,
                 gridCell: s.gridCell,
+                extraCells: s.extraCells,
                 commonName: s.species.commonName,
                 scientificName: s.species.scientificName,
                 thumbnailUrl: s.imageUrl ?? s.species.photoUrl,

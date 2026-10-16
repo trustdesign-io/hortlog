@@ -15,7 +15,7 @@ import { HEX_HEIGHT_RATIO } from '@/lib/hex-grid'
 import { newDeviceId, newOpId, type SyncOpInput } from '@/lib/offline/ops'
 import { queueOp } from '@/lib/offline/sync'
 import { specimenPhoto, type OfflineScene, type OfflineSpecimen, type OrgSnapshot } from '@/lib/offline/types'
-import { cellKey, gridResizeError, hexOf, planGridOps, SUB_CELL_NAMES, type GridSide } from '@/lib/scene-grid'
+import { cellKey, gridResizeError, hexOf, parseGridCell, planGridOps, SUB_CELL_NAMES, type GridSide } from '@/lib/scene-grid'
 import { MAX_SCENE_TITLE } from '@/lib/scene-title'
 import { sceneTilt } from '@/lib/scene-perspective'
 import { cn } from '@/lib/utils'
@@ -59,6 +59,8 @@ export function OfflineSceneEditor({ scene, snap }: { scene: OfflineScene; snap:
 
   const placed = useMemo(() => snap.specimens.filter((s) => s.sceneId === scene.id && s.gridCell), [snap.specimens, scene.id])
   const byCell = useMemo(() => new Map(placed.map((s) => [s.gridCell as string, s])), [placed])
+  // Hexes a big plant spreads into, beyond its own
+  const spread = useMemo(() => new Map(placed.flatMap((s) => (s.extraCells ?? []).map((x) => [x, s] as const))), [placed])
   const split = useMemo(() => new Set(scene.splitCells ?? []), [scene.splitCells])
 
   function queue(op: SyncOpInput) {
@@ -69,7 +71,7 @@ export function OfflineSceneEditor({ scene, snap }: { scene: OfflineScene; snap:
     const plan = planGridOps(
       { rows: scene.gridRows, cols: scene.gridCols, rowShift: scene.rowShift },
       [{ side, delta }],
-      placed.map((s) => s.gridCell),
+      placed.flatMap((s) => [s.gridCell, ...(s.extraCells ?? [])]),
     )
     if (!plan.ok) return setError(gridResizeError(plan))
     setError(null)
@@ -126,6 +128,24 @@ export function OfflineSceneEditor({ scene, snap }: { scene: OfflineScene; snap:
               )
             }
             const plant = byCell.get(key)
+            const spreadOf = plant ? undefined : spread.get(key)
+            const home = spreadOf ? parseGridCell(spreadOf.gridCell) : null
+            if (spreadOf && home) {
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setHex({ row: home.row, col: home.col })}
+                  className="hex-cell group"
+                  style={style}
+                  aria-label={`${name(spreadOf)} spreads here, row ${row + 1}, column ${col + 1}`}
+                >
+                  <span className="hex-shape block bg-muted">
+                    <Photo src={specimenPhoto(spreadOf)} className="absolute inset-0 h-full w-full opacity-80" />
+                  </span>
+                </button>
+              )
+            }
             const isSplit = split.has(key)
             const label = isSplit
               ? `Split cell, row ${row + 1}, column ${col + 1}`

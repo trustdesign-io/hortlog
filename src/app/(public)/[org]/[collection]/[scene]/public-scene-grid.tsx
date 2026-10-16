@@ -16,6 +16,8 @@ interface GridSpecimen {
   id: string
   slug: string
   gridCell: string
+  /** More hexes a big plant covers */
+  extraCells?: string[]
   commonName: string
   scientificName: string
   thumbnailUrl: string | null
@@ -59,8 +61,11 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
 
   const cellMap: Record<string, GridSpecimen> = {}
   const split = new Set(splitCells)
+  // Hexes a big plant spreads into, beyond its own
+  const spread: Record<string, GridSpecimen> = {}
   for (const s of specimens) {
     cellMap[s.gridCell] = s
+    for (const x of s.extraCells ?? []) spread[x] = s
     if (s.gridCell.includes(':')) split.add(hexOf(s.gridCell) ?? '')
   }
 
@@ -115,6 +120,25 @@ export function PublicSceneGrid({ rows, cols, specimens, basePath, perspective, 
                   />
                 </span>
               </button>
+            )
+          }
+
+          const spreadOf = spread[cell]
+          if (!specimen && spreadOf) {
+            // More of a plant named in another hex; one link per plant is enough for screen readers
+            return (
+              <Link
+                key={cell}
+                href={`${basePath}/${spreadOf.slug}`}
+                className="hex-cell group"
+                style={style}
+                aria-hidden="true"
+                tabIndex={-1}
+              >
+                <span className="hex-shape block bg-muted group-hover:opacity-80">
+                  <SpecimenImage imageUrl={spreadOf.thumbnailUrl} alt="" fill sizes="120px" className="object-cover" />
+                </span>
+              </Link>
             )
           }
 

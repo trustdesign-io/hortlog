@@ -19,9 +19,9 @@ describe('planPhotoLayout', () => {
     if (!r.ok) return
     expect(r.plan).toMatchObject({ rows: 3, cols: 5, rowShift: 0, blockedCells: ['0,0', '0,4'], splitCells: ['2,3'] })
     expect(r.plan.plants).toEqual([
-      { row: 1, col: 1, sub: null, name: 'Agave americana', note: 'back left' },
-      { row: 2, col: 3, sub: 1, name: 'Small grey rosette', note: null },
-      { row: 2, col: 3, sub: 4, name: 'Plant 3', note: null },
+      { row: 1, col: 1, sub: null, name: 'Agave americana', note: 'back left', extraCells: [], photo: null },
+      { row: 2, col: 3, sub: 1, name: 'Small grey rosette', note: null, extraCells: [], photo: null },
+      { row: 2, col: 3, sub: 4, name: 'Plant 3', note: null, extraCells: [], photo: null },
     ])
   })
 
@@ -57,5 +57,30 @@ describe('planPhotoLayout', () => {
   it('rejects grid sizes out of range', () => {
     expect(planPhotoLayout(empty, [], { rows: 0, cols: 3 }).ok).toBe(false)
     expect(planPhotoLayout(empty, [], { rows: 21, cols: 3 }).ok).toBe(false)
+  })
+
+  it('lets a big plant cover more hexes, which nothing else can use', () => {
+    const r = planPhotoLayout(empty, [], {
+      rows: 3,
+      cols: 3,
+      plants: [{ cell: '1,1', name: 'Big agave', cells: ['1,2', '2,1'], photo: [0.4, 0.6] }],
+    })
+    expect(r.ok && r.plan.plants[0]).toMatchObject({ extraCells: ['1,2', '2,1'], photo: [0.4, 0.6] })
+    const clash = planPhotoLayout(empty, [], {
+      rows: 3,
+      cols: 3,
+      plants: [
+        { cell: '1,1', name: 'Big agave', cells: ['1,2'] },
+        { cell: '1,2:3', name: 'Tucked in' },
+      ],
+    })
+    expect(clash.ok).toBe(false)
+    const existingSpread = planPhotoLayout(empty, [{ id: 'a', cell: '0,0', name: 'A', extraCells: ['0,1'] }], {
+      rows: 3,
+      cols: 3,
+      plants: [{ cell: '0,1', name: 'B' }],
+    })
+    expect(existingSpread.ok).toBe(false)
+    expect(planPhotoLayout(empty, [], { rows: 3, cols: 3, plants: [{ cell: '0,0', name: 'A', photo: [2, 0] }] }).ok).toBe(false)
   })
 })

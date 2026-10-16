@@ -28,7 +28,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
       id: true,
       splitCells: true,
       organisation: { select: { slug: true } },
-      specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true, notes: true, species: { select: { scientificName: true, slug: true } } } },
+      specimens: {
+        where: { gridCell: { not: null } },
+        select: { id: true, gridCell: true, extraCells: true, notes: true, species: { select: { scientificName: true, slug: true } } },
+      },
     },
   })
   if (!scene) return NextResponse.json({ error: 'No such scene, or you can’t edit it.' }, { status: 404, headers: NO_STORE })
@@ -40,7 +43,12 @@ export async function PUT(req: Request, { params }: RouteParams) {
     return NextResponse.json({ error: 'Send the layout as JSON.' }, { status: 400, headers: NO_STORE })
   }
 
-  const existing = scene.specimens.map((s) => ({ id: s.id, cell: s.gridCell as string, name: plantName(s.species, s.notes).name }))
+  const existing = scene.specimens.map((s) => ({
+    id: s.id,
+    cell: s.gridCell as string,
+    extraCells: s.extraCells,
+    name: plantName(s.species, s.notes).name,
+  }))
   const result = planPhotoLayout(scene, existing, body)
   if (!result.ok) return NextResponse.json({ error: 'The layout wasn’t saved.', problems: result.errors }, { status: 422, headers: NO_STORE })
   const { plan } = result
@@ -60,8 +68,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
   // Plants go through the same path as ones added offline, so typed names are looked up the same way
   const org = scene.organisation.slug
   const now = new Date().toISOString()
+  const extras: { specimenId: string; extraCells: string[]; photo: [number, number] | null }[] = []
   const ops: SyncOpInput[] = plan.plants.flatMap((p) => {
     const specimenId = newDeviceId()
+    extras.push({ specimenId, extraCells: p.extraCells, photo: p.photo })
     return [
       {
         kind: 'createSpecimen',
@@ -81,6 +91,17 @@ export async function PUT(req: Request, { params }: RouteParams) {
   const refused = results.filter((r) => r.status === 'rejected')
   const createIds = new Set(ops.filter((o) => o.kind === 'createSpecimen').map((o) => o.id))
   const added = results.filter((r) => createIds.has(r.id) && r.status !== 'rejected').length
+
+  // Spread and photo spot, for the plants that made it in
+  for (const x of extras) {
+    if (x.extraCells.length === 0 && !x.photo) continue
+    await prisma.specimen
+      .updateMany({
+        where: { id: x.specimenId, sceneId: scene.id },
+        data: { extraCells: x.extraCells, photoX: x.photo?.[0] ?? null, photoY: x.photo?.[1] ?? null },
+      })
+      .catch(() => {})
+  }
 
   revalidatePath(`/${org}`, 'layout')
   const [updated] = await claudeScenes(user, new URL(req.url).origin, { sceneId: scene.id })
