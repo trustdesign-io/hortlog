@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { GridEditor } from './grid-editor'
+import { ScenePhotoCard } from '@/components/scene-photo-card'
 import { SceneHeader } from '../scene-header'
 import { publicScenePath } from '@/lib/scene-urls'
 
@@ -94,6 +95,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
           thumbnailUrl: s.imageUrl ?? s.species.photoUrl,
         }))}
       />
+      <ScenePhotoCard org={orgSlug} sceneId={scene.id} />
     </div>
   )
 }

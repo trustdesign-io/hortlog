@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { signOut } from '@/lib/actions/auth'
 import { listOutbox } from '@/lib/offline/db'
 import { isUnsent } from '@/lib/offline/ops'
+import { countUnsentScenePhotos, sendScenePhotos } from '@/lib/offline/scene-photos'
 import { clearOfflineData, flushOutbox } from '@/lib/offline/sync'
 import type { User } from '@/types'
 
@@ -25,7 +26,9 @@ export function SignOutButton({ className, size = 'sm', variant = 'ghost' }: Sig
   function handleSignOut() {
     startTransition(async () => {
       // Changes made offline are lost on sign-out, so send them first
-      const unsent = (await flushOutbox().then(() => listOutbox()).catch(() => [])).filter(isUnsent).length
+      const unsent =
+        (await flushOutbox().then(() => listOutbox()).catch(() => [])).filter(isUnsent).length +
+        (await sendScenePhotos().then(countUnsentScenePhotos).catch(() => 0))
       if (
         unsent > 0 &&
         !window.confirm(

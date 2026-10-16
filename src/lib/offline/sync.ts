@@ -9,6 +9,7 @@ import {
   putOutboxOp,
   putSnapshot,
 } from './db'
+import { sendScenePhotos } from './scene-photos'
 import { isUnsent, type OpResult, type OutboxOp, type SyncOpInput } from './ops'
 import { SNAPSHOT_VERSION, snapshotImageUrls, type OrgSnapshot } from './types'
 
@@ -209,6 +210,8 @@ export function flushOutbox(): Promise<boolean> {
   if (flushing) return flushing
   flushing = (async () => {
     if (!offlineStoreAvailable()) return false
+    // Bed photos go separately; they don't hold up the changes
+    void sendScenePhotos()
     const waiting = (await listOutbox().catch(() => [] as OutboxOp[])).filter(isUnsent)
     if (waiting.length === 0) {
       await refreshOutboxStatus()

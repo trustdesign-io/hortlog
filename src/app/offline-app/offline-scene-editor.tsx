@@ -4,6 +4,7 @@ import { useMemo, useRef, useState, type FormEvent } from 'react'
 import { Plus, X } from 'lucide-react'
 import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { Button } from '@/components/ui/button'
+import { ScenePhotoCard } from '@/components/scene-photo-card'
 import { Label } from '@/components/ui/label'
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '@/components/ui/sheet'
 import { Switch } from '@/components/ui/switch'
@@ -161,6 +162,8 @@ export function OfflineSceneEditor({ scene, snap }: { scene: OfflineScene; snap:
           }}
         />
       </div>
+
+      <ScenePhotoCard org={org} sceneId={scene.id} />
 
       {/* One hex: split it, merge it, take plants off, or fill its small cells */}
       <Sheet open={openHex !== null} onOpenChange={(open) => !open && setHex(null)}>
