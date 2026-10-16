@@ -16,8 +16,13 @@ const KEEP = [STATIC_CACHE, ASSET_CACHE, SHELL_CACHE, IMAGE_CACHE]
 const OFFLINE_APP = '/offline-app'
 const STATIC_ASSETS = ['/offline.html']
 const MAX_ASSETS = 400
-/** A page that hasn't started arriving after this long goes to the offline app. */
+/**
+ * A page that hasn't started arriving after this long goes to the offline app:
+ * quickly when the device says it has no connection, more patiently when it
+ * says it has one (a slow page shouldn't throw someone out of the live site).
+ */
 const NAV_TIMEOUT_MS = 8000
+const NAV_TIMEOUT_ONLINE_MS = 15000
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -253,7 +258,8 @@ async function hasShell() {
 
 function toOfflineApp(request) {
   const url = new URL(request.url)
-  return Response.redirect(`${OFFLINE_APP}?path=${encodeURIComponent(url.pathname + url.search)}`, 302)
+  // auto=1: sent here by the worker, not by choice, so the app goes back once hortlog answers
+  return Response.redirect(`${OFFLINE_APP}?path=${encodeURIComponent(url.pathname + url.search)}&auto=1`, 302)
 }
 
 async function offlineFallback() {
@@ -292,7 +298,8 @@ async function handleFetch(request) {
   // in which case members with a saved copy get the offline app
   const network = fetch(request)
   network.catch(() => {}) // handled below; this stops an unhandled rejection after a timeout
-  const timedOut = new Promise((resolve) => setTimeout(() => resolve('timeout'), NAV_TIMEOUT_MS))
+  const wait = self.navigator.onLine ? NAV_TIMEOUT_ONLINE_MS : NAV_TIMEOUT_MS
+  const timedOut = new Promise((resolve) => setTimeout(() => resolve('timeout'), wait))
   try {
     const first = await Promise.race([network, timedOut])
     if (first !== 'timeout') return first

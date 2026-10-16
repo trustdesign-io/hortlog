@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { CloudCheck, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react'
+import { CloudCheck, CloudOff, RefreshCw, TriangleAlert, X } from 'lucide-react'
 import { offlineAppHref } from '@/lib/offline/routes'
 import { useOfflineStatus } from '@/lib/offline/sync'
 import { cn } from '@/lib/utils'
@@ -77,6 +77,57 @@ export function OfflineCard({ className }: { className?: string }) {
       >
         {refused > 0 ? 'Review' : 'Work offline'}
       </a>
+    </div>
+  )
+}
+
+/**
+ * The offline card, kept in the bottom-right corner of every app page: a small
+ * round button showing the status, which opens the full card.
+ */
+export function FloatingOfflineCard() {
+  const { online, syncing, syncedAt, unsent, refused } = useOfflineStatus()
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [open])
+
+  const Icon = refused > 0 ? TriangleAlert : !online ? CloudOff : unsent > 0 || syncing ? RefreshCw : syncedAt ? CloudCheck : CloudOff
+  const count = refused > 0 ? refused : unsent
+  const label = refused > 0 ? `${refused} change${refused === 1 ? '' : 's'} not saved` : !online ? 'Offline' : unsent > 0 ? `${unsent} change${unsent === 1 ? '' : 's'} waiting` : syncedAt ? 'Saved for offline' : 'Not saved for offline'
+
+  return (
+    <div className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] right-4 z-40 flex flex-col items-end gap-2 print:hidden">
+      {open && (
+        <div className="w-72 max-w-[calc(100vw-2rem)] shadow-lg">
+          <OfflineCard />
+        </div>
+      )}
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        aria-label={open ? 'Close offline status' : `${label}. Show offline status`}
+        className={cn(
+          'relative flex h-12 w-12 items-center justify-center rounded-full border bg-card shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+          refused > 0 ? 'text-destructive' : 'text-primary',
+        )}
+      >
+        {open ? (
+          <X className="h-5 w-5" aria-hidden="true" />
+        ) : (
+          <Icon className={cn('h-5 w-5', syncing && 'animate-spin motion-reduce:animate-none')} aria-hidden="true" />
+        )}
+        {!open && count > 0 && (
+          <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-[0.65rem] font-semibold text-primary-foreground" aria-hidden="true">
+            {count}
+          </span>
+        )}
+      </button>
     </div>
   )
 }
