@@ -16,21 +16,9 @@ export interface TourStep {
   role?: 'member' | 'manager' | 'admin'
 }
 
+// In the order they appear: the sidebar from top to bottom on desktop, which on
+// mobile is the menu panel, then the You panel
 export const TOUR_STEPS: TourStep[] = [
-  {
-    tourId: 'my-record',
-    panel: 'you',
-    title: 'My record',
-    description:
-      'Your personal horticultural work record — a log of every specimen you have worked with across all your gardens. Visitors, employers, and anyone with the link can read it.',
-  },
-  {
-    tourId: 'account-settings',
-    title: 'Account settings',
-    description:
-      'Change your name, email, password, and profile picture. You can also make your public work record searchable here.',
-    panel: 'you',
-  },
   {
     tourId: 'org-switcher',
     title: 'Organisation switcher',
@@ -46,6 +34,20 @@ export const TOUR_STEPS: TourStep[] = [
     panel: 'nav',
   },
   {
+    tourId: 'org-todo',
+    title: 'To do',
+    description:
+      'Tasks for the team — watering, pruning, propagation. Assign them to members and track progress here.',
+    panel: 'nav',
+  },
+  {
+    tourId: 'org-specimens',
+    title: 'Specimens',
+    description:
+      'Every plant in the garden, each with its own page: identification, conservation status, care and who has worked with it.',
+    panel: 'nav',
+  },
+  {
     tourId: 'org-collections',
     title: 'Collections',
     description:
@@ -57,13 +59,6 @@ export const TOUR_STEPS: TourStep[] = [
     title: 'Scenes',
     description:
       'A scene is one viewpoint in the garden — a bed, a corner, or a glasshouse. Attach a QR code to the vantage point and visitors can browse every specimen from where they stand.',
-    panel: 'nav',
-  },
-  {
-    tourId: 'org-todo',
-    title: 'To do',
-    description:
-      'Tasks for the team — watering, pruning, propagation. Assign them to members and track progress here.',
     panel: 'nav',
   },
   {
@@ -88,5 +83,19 @@ export const TOUR_STEPS: TourStep[] = [
       'Platform administration — all organisations, all users, and the shared species catalogue. Only platform admins can see this section.',
     panel: 'nav',
     role: 'admin',
+  },
+  {
+    tourId: 'my-record',
+    panel: 'you',
+    title: 'My record',
+    description:
+      'Your personal horticultural work record — a log of every specimen you have worked with across all your gardens. Visitors, employers, and anyone with the link can read it.',
+  },
+  {
+    tourId: 'account-settings',
+    title: 'Account settings',
+    description:
+      'Change your name, email, password, and profile picture. You can also make your public work record searchable here.',
+    panel: 'you',
   },
 ]
