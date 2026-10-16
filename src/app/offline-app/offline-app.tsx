@@ -4,12 +4,15 @@ import { useCallback, useEffect, useState, useSyncExternalStore, type MouseEvent
 import { CloudOff, Wifi } from 'lucide-react'
 import { listOutbox, listSnapshots, offlineStoreAvailable } from '@/lib/offline/db'
 import type { OutboxOp } from '@/lib/offline/ops'
-import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, SNAPSHOTS_EVENT } from '@/lib/offline/sync'
+import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, SNAPSHOTS_EVENT, useOfflineStatus } from '@/lib/offline/sync'
 import { offlineAppHref, resolveOfflineRoute, type OfflineRoute } from '@/lib/offline/routes'
 import type { OrgSnapshot } from '@/lib/offline/types'
 import { timeAgo } from '@/components/offline/offline-status'
 import { OfflineView } from './offline-views'
 import { cn } from '@/lib/utils'
+
+/** A full page load: the offline app isn't part of the live app's routing */
+const SIGN_IN_PATH = '/sign-in'
 
 function currentPath(): string {
   const p = new URLSearchParams(window.location.search).get('path')
@@ -53,6 +56,7 @@ async function loadSnapshots(): Promise<OrgSnapshot[]> {
 export function OfflineApp() {
   const path = useSyncExternalStore(subscribePath, currentPath, () => null)
   const online = useSyncExternalStore(subscribeOnline, () => navigator.onLine, () => true)
+  const { signedOut, unsent } = useOfflineStatus()
   const [saved, setSaved] = useState<{ snapshots: OrgSnapshot[]; loadedAt: number } | null>(null)
   const [ops, setOps] = useState<OutboxOp[]>([])
 
@@ -131,10 +135,23 @@ export function OfflineApp() {
         {online ? (
           <>
             <Wifi className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span className="min-w-0 flex-1">You&rsquo;re back online.</span>
-            <a href={path} data-live="" className="shrink-0 font-medium underline underline-offset-2">
-              Open the live page
-            </a>
+            {signedOut ? (
+              <>
+                <span className="min-w-0 flex-1">
+                  You&rsquo;re signed out.{unsent > 0 ? ' Your changes are kept here until you sign in.' : ''}
+                </span>
+                <a href={SIGN_IN_PATH} data-live="" className="shrink-0 font-medium underline underline-offset-2">
+                  {unsent > 0 ? 'Sign in to send' : 'Sign in'}
+                </a>
+              </>
+            ) : (
+              <>
+                <span className="min-w-0 flex-1">You&rsquo;re back online.</span>
+                <a href={path} data-live="" className="shrink-0 font-medium underline underline-offset-2">
+                  Open the live page
+                </a>
+              </>
+            )}
           </>
         ) : (
           <>
