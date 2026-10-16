@@ -197,6 +197,10 @@ self.addEventListener('fetch', (event) => {
   // API and auth routes should never be served from cache
   if (parsed.pathname.startsWith('/api/') || parsed.pathname.startsWith('/auth/')) return
 
+  // In-app page data (React Server Components): straight to the network, no detour
+  // through the caches. Offline, the app falls back to a full page load, handled below.
+  if (request.headers.get('RSC') === '1' || parsed.searchParams.has('_rsc')) return
+
   if (parsed.pathname.startsWith('/_next/static/')) {
     event.respondWith(cacheFirst(request, ASSET_CACHE))
     return

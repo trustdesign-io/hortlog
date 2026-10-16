@@ -1,3 +1,5 @@
+import { cache } from 'react'
+import type { User as AuthUser } from '@supabase/supabase-js'
 import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { getNameFromMetadata } from './name-utils'
@@ -26,14 +28,25 @@ const WITH_MEMBERSHIPS = {
   },
 }
 
+/**
+ * The signed-in Supabase user, checked once per request however many layouts
+ * and pages ask (each check is a call to the sign-in service).
+ */
+export const getAuthUser = cache(async (): Promise<AuthUser | null> => {
+  const supabase = await createClient()
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  return user
+})
+
 /** A user with their memberships, by id (for API keys, which act as their owner). */
 export function getUserWithMemberships(id: string): Promise<UserWithMemberships | null> {
   return prisma.user.findUnique({ where: { id }, include: WITH_MEMBERSHIPS })
 }
 
-export async function getCurrentUser(): Promise<UserWithMemberships | null> {
-  const supabase = await createClient()
-  const { data: { user: authUser } } = await supabase.auth.getUser()
+export const getCurrentUser = cache(async (): Promise<UserWithMemberships | null> => {
+  const authUser = await getAuthUser()
 
   if (!authUser) return null
 
@@ -74,4 +87,4 @@ export async function getCurrentUser(): Promise<UserWithMemberships | null> {
   }
 
   return dbUser
-}
+})
