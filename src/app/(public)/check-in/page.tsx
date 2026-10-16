@@ -16,7 +16,7 @@ export default async function CheckInPage() {
   })
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
+    <div data-daylight="" className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
       <div>
         <h1 className="font-heading text-3xl font-medium">Check in</h1>
         <p className="mt-2 text-muted-foreground">Choose the garden you&rsquo;re visiting.</p>

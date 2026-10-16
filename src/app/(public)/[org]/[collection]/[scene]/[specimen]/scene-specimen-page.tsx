@@ -132,6 +132,8 @@ export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, sp
 
   return (
     <>
+      {/* Visitor page, read outdoors: always light */}
+      <span data-daylight="" hidden />
       <GaEvent name="specimen_view" params={{ specimen_slug: specimenSlug, org: orgSlug }} />
       <script
         type="application/ld+json"

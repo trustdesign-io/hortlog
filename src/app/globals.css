@@ -2,7 +2,8 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Visitor pages (data-daylight) are always light: dark: styles stand down there */
+@custom-variant dark (&:is(.dark *):not(:root:has([data-daylight]) *));
 
 @theme {
   --font-sans: var(--font-figtree), system-ui, sans-serif;
@@ -119,6 +120,35 @@
   --border: #C2D4BA;
   --input: #C2D4BA;
   --ring: #2B5A32;
+}
+
+/* Daylight: a garden's visitor pages (scenes, plants, check-in) are read
+   outdoors, so they're always light and high-contrast, whatever the app's
+   theme. Any page containing [data-daylight] switches the whole document. */
+:root:has([data-daylight]) {
+  color-scheme: light;
+  --background: #F4F3EA;
+  --foreground: #16201A;
+  --card: #FFFFFB;
+  --card-foreground: #16201A;
+  --popover: #FFFFFB;
+  --popover-foreground: #16201A;
+  --primary: #2B5A32;
+  --primary-foreground: #F5F5EC;
+  --secondary: #E3ECDB;
+  --secondary-foreground: #16201A;
+  --muted: #E3ECDB;
+  --muted-foreground: #4A5D4D;
+  --accent: #E3ECDB;
+  --accent-foreground: #2B5A32;
+  --destructive: #A84A22;
+  --border: #D3DECB;
+  --input: #D3DECB;
+  --ring: #2B5A32;
+}
+/* The theme switch does nothing on these pages, so it isn't offered */
+:root:has([data-daylight]) [data-theme-toggle] {
+  display: none;
 }
 
 /* ── driver.js tour overrides — use the --tour blue, not the brand green ─── */

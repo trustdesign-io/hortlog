@@ -37,7 +37,7 @@ export default async function PublicLayout({ children }: { children: ReactNode }
       <main id="main-content" className="flex-1">{children}</main>
       <PublicFooter
         full={<Footer navColumns={signedIn ? SIGNED_IN_COLUMNS : SIGNED_OUT_COLUMNS} tagline="A living record for botanical collections." />}
-        slim={<AppFooter user={user} className="h-14 px-4" />}
+        slim={<AppFooter user={user} className="h-14 px-4" madeWith />}
       />
     </div>
   )

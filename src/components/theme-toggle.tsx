@@ -17,6 +17,7 @@ export function ThemeToggle() {
       variant="ghost"
       size="icon"
       aria-label="Switch between light and dark mode"
+      data-theme-toggle=""
       onClick={() => setTheme(resolvedTheme === 'dark' ? 'light' : 'dark')}
     >
       <Sun className="hidden h-4 w-4 dark:block" aria-hidden="true" />
