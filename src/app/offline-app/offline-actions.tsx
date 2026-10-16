@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
-import { newOpId, type OutboxOp } from '@/lib/offline/ops'
+import { isUnsent, newOpId, type OutboxOp } from '@/lib/offline/ops'
 import { dismissOp, queueOp } from '@/lib/offline/sync'
 import type { OfflineTask, OrgSnapshot } from '@/lib/offline/types'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
@@ -184,8 +184,8 @@ function describeOp(op: OutboxOp, snapshots: OrgSnapshot[]): string {
 /** Changes on this device: how many are waiting, and any hortlog refused. */
 export function OutboxList({ ops, snapshots }: { ops: OutboxOp[]; snapshots: OrgSnapshot[] }) {
   const refused = ops.filter((o) => o.error)
-  const waiting = ops.length - refused.length
-  if (ops.length === 0) return null
+  const waiting = ops.filter(isUnsent).length
+  if (waiting === 0 && refused.length === 0) return null
   return (
     <section className="space-y-3">
       <h2 className="font-heading text-lg font-semibold">Changes on this device</h2>

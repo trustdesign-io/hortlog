@@ -97,8 +97,18 @@ export type SyncOpInput =
   | ResizeGridOp
   | UpdateSceneOp
 
-/** An op as kept in the outbox; `error` is set when the server refused it. */
-export type OutboxOp = SyncOpInput & { error?: string }
+/**
+ * An op as kept in the outbox. `error` is set when the server refused it.
+ * `sentAt` is set once the server has applied it: it stays (and stays shown)
+ * until a saved copy fetched after that includes it, so nothing done offline
+ * vanishes from the screen in between.
+ */
+export type OutboxOp = SyncOpInput & { error?: string; sentAt?: string }
+
+/** Still to be sent: not refused, not yet applied by the server */
+export function isUnsent(op: OutboxOp): boolean {
+  return !op.error && !op.sentAt
+}
 
 export type OpResult =
   | { id: string; status: 'applied' | 'duplicate' }

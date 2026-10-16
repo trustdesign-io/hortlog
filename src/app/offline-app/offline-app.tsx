@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore, type MouseEvent
 import { CloudOff, Wifi } from 'lucide-react'
 import { listOutbox, listSnapshots, offlineStoreAvailable } from '@/lib/offline/db'
 import type { OutboxOp } from '@/lib/offline/ops'
-import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, syncOrgs } from '@/lib/offline/sync'
+import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, SNAPSHOTS_EVENT } from '@/lib/offline/sync'
 import { offlineAppHref, resolveOfflineRoute, type OfflineRoute } from '@/lib/offline/routes'
 import type { OrgSnapshot } from '@/lib/offline/types'
 import { timeAgo } from '@/components/offline/offline-status'
@@ -70,25 +70,30 @@ export function OfflineApp() {
         return snapshots
       })
 
-    // Back online: send what was done here, then refresh the saved copy
-    async function sendAndRefresh() {
-      if (!navigator.onLine) return
-      const sent = await flushOutbox()
-      if (sent) {
-        const slugs = (await loadSnapshots()).map((s) => s.org.slug)
-        await syncOrgs(slugs)
-        await reloadSnapshots()
-      }
+    // A fresh copy arrived: load it with the outbox in one go, so changes it
+    // now includes stop being laid on top at the same moment
+    const reloadAll = () =>
+      void Promise.all([loadSnapshots(), listOutbox().catch(() => [] as OutboxOp[])]).then(([snapshots, o]) => {
+        if (cancelled) return
+        setSaved({ snapshots, loadedAt: Date.now() })
+        setOps(o)
+      })
+
+    // Back online: send what was done here (which then refreshes the saved copy)
+    function sendAndRefresh() {
+      if (navigator.onLine) void flushOutbox()
     }
 
     void reloadSnapshots()
     void refreshOutboxStatus()
     void sendAndRefresh()
     window.addEventListener(OUTBOX_EVENT, reloadOps)
+    window.addEventListener(SNAPSHOTS_EVENT, reloadAll)
     window.addEventListener('online', sendAndRefresh)
     return () => {
       cancelled = true
       window.removeEventListener(OUTBOX_EVENT, reloadOps)
+      window.removeEventListener(SNAPSHOTS_EVENT, reloadAll)
       window.removeEventListener('online', sendAndRefresh)
     }
   }, [])
