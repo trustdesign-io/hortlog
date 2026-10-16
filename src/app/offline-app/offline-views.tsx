@@ -152,6 +152,7 @@ function SceneGrid({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) 
         cellWidth={`${CELL_WIDTH_REM * sceneCellScale(scene.gridRows, tilt)}rem`}
         tiltDeg={tilt}
         rowShift={scene.rowShift}
+        hiddenCells={scene.blockedCells}
         renderCell={(row, col, style) => {
           const cell = `${row},${col}`
           const s = byCell.get(cell)

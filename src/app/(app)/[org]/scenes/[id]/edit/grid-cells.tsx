@@ -53,6 +53,33 @@ export const EmptyCell = forwardRef<HTMLButtonElement, EmptyCellProps>(function 
   )
 })
 
+/** A hex outside the bed's outline: faint, and hidden from visitors. Opening it offers to bring it back. */
+export const OutsideCell = forwardRef<HTMLButtonElement, EmptyCellProps>(function OutsideCell(
+  { row, col, style, isActive, onClick, onFocus, onKeyDown },
+  ref,
+) {
+  return (
+    <button
+      ref={ref}
+      type="button"
+      onClick={onClick}
+      onFocus={onFocus}
+      onKeyDown={onKeyDown}
+      tabIndex={isActive ? 0 : -1}
+      className="hex-cell group opacity-40 hover:opacity-80"
+      style={style}
+      aria-label={`Outside the bed, row ${row + 1}, column ${col + 1}. Press Enter to include it.`}
+      role="gridcell"
+      aria-rowindex={row + 1}
+      aria-colindex={col + 1}
+    >
+      <span className="hex-shape block">
+        <HexOutline className="text-border" />
+      </span>
+    </button>
+  )
+})
+
 interface FilledCellProps extends CellProps {
   specimen: PlacedSpecimen
   onRemove: () => void

@@ -96,6 +96,7 @@ export function OfflineSceneEditor({ scene, snap }: { scene: OfflineScene; snap:
       )
     : []
 
+  const outside = new Set(scene.blockedCells ?? [])
   return (
     <div className="space-y-5">
       <SceneSettings scene={scene} org={org} onQueue={queue} />
@@ -114,6 +115,16 @@ export function OfflineSceneEditor({ scene, snap }: { scene: OfflineScene; snap:
           rowShift={scene.rowShift}
           renderCell={(row, col, style) => {
             const key = cellKey(row, col)
+            if (outside.has(key)) {
+              // Outside the bed: changed back in the live app
+              return (
+                <span key={key} className="hex-cell opacity-40" style={style} aria-label={`Outside the bed, row ${row + 1}, column ${col + 1}`} role="img">
+                  <span className="hex-shape block">
+                    <HexOutline className="text-border" />
+                  </span>
+                </span>
+              )
+            }
             const plant = byCell.get(key)
             const isSplit = split.has(key)
             const label = isSplit

@@ -31,6 +31,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
       gridCols: true,
       rowShift: true,
       splitCells: true,
+      blockedCells: true,
       active: true, title: true, primaryCollection: { select: { name: true, slug: true } },
     },
   })
@@ -78,6 +79,7 @@ export default async function SceneEditPage({ params }: SceneEditPageProps) {
         gridCols={scene.gridCols}
         rowShift={scene.rowShift}
         splitCells={scene.splitCells}
+        blockedCells={scene.blockedCells}
         perspective={scene.perspective}
         placedSpecimens={placedSpecimens.map((s) => ({
           id: s.id,

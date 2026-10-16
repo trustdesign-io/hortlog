@@ -28,6 +28,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   memberships           Membership[]
+  apiKeys               ApiKey[]
   sceneAssignments      SceneAssignment[]
   sceneAssignmentsGiven SceneAssignment[]  @relation("AssignedBy")
   taskAssignments       TaskAssignee[]     @relation("AssignedTasks")
@@ -202,6 +203,12 @@ model Scene {
   title       String?
   /// In use at the venue. Pre-made scenes (with labels printed ahead) start inactive.
   active      Boolean          @default(true)
+  /// Hexes ("row,col") outside the bed's outline: not drawn, nothing placed there
+  blockedCells String[]        @default([])
+  /// When the latest bed photo was sent (see src/lib/scene-photo.ts)
+  photoTakenAt  DateTime?
+  /// When a layout was last written from that photo (via /api/claude)
+  photoMappedAt DateTime?
   shortCode   String           @unique
   createdAt   DateTime         @default(now())
   updatedAt   DateTime         @updatedAt
@@ -486,6 +493,22 @@ model WorkLogEntryEdit {
 
 /// A change a member made offline and sent later. The id comes from their
 /// device, so sending the same change twice only applies it once.
+/// A personal key for using hortlog's API from elsewhere (e.g. Claude on a computer). Acts as its owner.
+model ApiKey {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name       String
+  /// First characters, shown so the owner can tell keys apart
+  prefix     String
+  /// SHA-256 of the key; the key itself is shown once and never stored
+  hash       String    @unique
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+
+  @@index([userId])
+}
+
 model SyncOp {
   id        String   @id
   kind      String

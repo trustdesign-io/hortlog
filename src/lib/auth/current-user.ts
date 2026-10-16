@@ -19,6 +19,18 @@ export type UserWithMemberships = User & {
  * This handles the gap between sign-up (trigger creates User without name) and
  * first sign-in if the trigger was applied before the name column was added.
  */
+const WITH_MEMBERSHIPS = {
+  memberships: {
+    orderBy: { createdAt: 'asc' as const },
+    include: { organisation: { select: { id: true, slug: true, name: true } } },
+  },
+}
+
+/** A user with their memberships, by id (for API keys, which act as their owner). */
+export function getUserWithMemberships(id: string): Promise<UserWithMemberships | null> {
+  return prisma.user.findUnique({ where: { id }, include: WITH_MEMBERSHIPS })
+}
+
 export async function getCurrentUser(): Promise<UserWithMemberships | null> {
   const supabase = await createClient()
   const { data: { user: authUser } } = await supabase.auth.getUser()

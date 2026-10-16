@@ -1,7 +1,7 @@
 'use client'
 
 import { useOptimistic, useTransition, useState, useCallback, useRef, useEffect } from 'react'
-import { placeSpecimen, removeSpecimenFromCell, resizeSceneGrid, setHexSplit } from '@/lib/actions/scene'
+import { placeSpecimen, removeSpecimenFromCell, resizeSceneGrid, setHexOutside, setHexSplit } from '@/lib/actions/scene'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { Input } from '@/components/ui/input'
 import {
@@ -20,6 +20,7 @@ import { unmeasuredCellWidth, useFittedGrid } from '@/hooks/use-fitted-grid'
 import {
   cellKey,
   cellLabel,
+  cellsInGrid,
   gridResizeError,
   hexOf,
   planGridOps,
@@ -28,7 +29,7 @@ import {
   type GridSide,
 } from '@/lib/scene-grid'
 import { Button } from '@/components/ui/button'
-import { EmptyCell, FilledCell, SplitCell, type PlacedSpecimen } from './grid-cells'
+import { EmptyCell, FilledCell, OutsideCell, SplitCell, type PlacedSpecimen } from './grid-cells'
 import { HexSheet } from './hex-sheet'
 import { GridSizeControls } from './grid-size-controls'
 
@@ -61,6 +62,7 @@ interface LocalLayout {
   shape: GridShape
   grid: GridState
   splitCells: string[]
+  blockedCells: string[]
 }
 
 type OptimisticAction =
@@ -76,6 +78,8 @@ interface GridEditorProps {
   rowShift: number
   /** Hexes split into seven smaller cells */
   splitCells: string[]
+  /** Hexes outside the bed's outline */
+  blockedCells: string[]
   perspective: ScenePerspective
   placedSpecimens: PlacedSpecimen[]
   availableSpecimens: AvailableSpecimen[]
@@ -95,6 +99,7 @@ export function GridEditor({
   gridCols,
   rowShift,
   splitCells,
+  blockedCells,
   perspective,
   placedSpecimens,
   availableSpecimens,
@@ -137,6 +142,11 @@ export function GridEditor({
     (state, { hex, split }) => (split ? [...state.filter((c) => c !== hex), hex] : state.filter((c) => c !== hex)),
   )
   const splitSet = new Set(optimisticSplits)
+  const [optimisticBlocked, setBlockedOptimistic] = useOptimistic<string[], { hex: string; outside: boolean }>(
+    layout?.blockedCells ?? blockedCells,
+    (state, { hex, outside }) => (outside ? [...state.filter((c) => c !== hex), hex] : state.filter((c) => c !== hex)),
+  )
+  const blockedSet = new Set(optimisticBlocked)
   const [hexSheet, setHexSheet] = useState<{ row: number; col: number } | null>(null)
 
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -212,7 +222,8 @@ export function GridEditor({
       if (moved) grid[moved] = { ...specimen, gridCell: moved }
     }
     const splits = optimisticSplits.map(plan.moveCell).filter((c): c is string => c !== null)
-    setLayout({ shape: plan.shape, grid, splitCells: splits })
+    const outside = cellsInGrid(optimisticBlocked.map(plan.moveCell), plan.shape.rows, plan.shape.cols)
+    setLayout({ shape: plan.shape, grid, splitCells: splits, blockedCells: outside })
     queuedOps.current.push({ side, delta })
     scheduleSave()
   }
@@ -285,6 +296,19 @@ export function GridEditor({
     if (!split) setHexSheet(null)
   }
 
+  function handleOutside(row: number, col: number, outside: boolean) {
+    const hex = cellKey(row, col)
+    setResizeError(null)
+    startTransition(async () => {
+      setBlockedOptimistic({ hex, outside })
+      if (outside) setSplitOptimistic({ hex, split: false })
+      await savePending()
+      const result = await setHexOutside(orgSlug, sceneId, row, col, outside)
+      if (!result.success) setResizeError(result.error ?? 'Could not change the cell.')
+      releaseLayout()
+    })
+  }
+
   function handleRemove(specimen: PlacedSpecimen) {
     const cell = specimen.gridCell
     startTransition(async () => {
@@ -325,6 +349,22 @@ export function GridEditor({
             const setRef = (el: HTMLElement | null) => {
               if (el) cellRefs.current.set(cell, el)
               else cellRefs.current.delete(cell)
+            }
+
+            if (blockedSet.has(cell)) {
+              return (
+                <OutsideCell
+                  key={cell}
+                  row={row}
+                  col={col}
+                  style={style}
+                  isActive={isActive}
+                  onClick={() => handleOutside(row, col, false)}
+                  onFocus={() => setActiveCell({ row, col })}
+                  onKeyDown={(e) => handleCellKeyDown(e, row, col)}
+                  ref={setRef}
+                />
+              )
             }
 
             if (splitSet.has(cell)) {
@@ -404,6 +444,19 @@ export function GridEditor({
                 }}
               >
                 Split into 7 smaller cells
+              </Button>
+            )}
+            {pickerCell && pickerCell.sub === null && (
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={() => {
+                  setPickerOpen(false)
+                  handleOutside(pickerCell.row, pickerCell.col, true)
+                }}
+              >
+                Outside the bed
               </Button>
             )}
             <div className="relative">

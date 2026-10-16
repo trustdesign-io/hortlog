@@ -53,7 +53,7 @@ export const resolveScene = cache(async function resolveScene(
       organisationId: org.id,
       primaryCollectionId: collection?.id ?? null,
     },
-    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true, rowShift: true, splitCells: true, perspective: true, active: true, title: true },
+    select: { id: true, name: true, slug: true, gridRows: true, gridCols: true, rowShift: true, splitCells: true, blockedCells: true, perspective: true, active: true, title: true },
   })
   if (!scene) return null
 
@@ -156,6 +156,7 @@ export async function ScenePage({
             perspective={scene.perspective}
             rowShift={scene.rowShift}
             splitCells={scene.splitCells}
+            blockedCells={scene.blockedCells}
             specimens={specimens
               .filter((s): s is typeof s & { gridCell: string } => s.gridCell !== null)
               .map((s) => ({

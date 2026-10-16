@@ -4,7 +4,7 @@ import { hasCapability, type Capability } from '@/lib/auth/capabilities'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 import { syncTaskCare } from '@/lib/task-care'
 import { ensureWorkRecord, WORK_RECORD_SPECIMEN_SELECT } from '@/lib/work-record-db'
-import { cellKey, gridResizeError, hexOf, planGridOps, SUB_CELLS } from '@/lib/scene-grid'
+import { cellKey, cellsInGrid, gridResizeError, hexOf, planGridOps, SUB_CELLS } from '@/lib/scene-grid'
 import { toSlug } from '@/lib/utils/slug'
 import { addFromCatalogue, labelName, searchCatalogue } from '@/lib/species-catalogue'
 import { nameKey } from '@/lib/taxonomy'
@@ -325,6 +325,7 @@ async function applyResizeGrid(user: UserWithMemberships, op: ResizeGridOp): Pro
       gridCols: true,
       rowShift: true,
       splitCells: true,
+      blockedCells: true,
       specimens: { where: { gridCell: { not: null } }, select: { id: true, gridCell: true } },
       tasks: { where: { NOT: { cells: { isEmpty: true } } }, select: { id: true, cells: true } },
     },
@@ -345,6 +346,7 @@ async function applyResizeGrid(user: UserWithMemberships, op: ResizeGridOp): Pro
         gridCols: plan.shape.cols,
         rowShift: plan.shape.rowShift,
         splitCells: scene.splitCells.map(plan.moveCell).filter((c): c is string => c !== null),
+        blockedCells: cellsInGrid(scene.blockedCells.map(plan.moveCell), plan.shape.rows, plan.shape.cols),
       },
     })
     for (const s of scene.specimens) {
