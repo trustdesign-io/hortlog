@@ -16,6 +16,8 @@ vi.mock('./db', () => ({
   deleteOfflineStore: async () => {},
 }))
 
+vi.mock('./scene-photos', () => ({ sendScenePhotos: async () => {} }))
+
 const { flushOutbox, queueOp, SNAPSHOTS_EVENT } = await import('./sync')
 
 const snapshot = { version: SNAPSHOT_VERSION, org: { slug: 'kew' }, syncedAt: new Date().toISOString() } as unknown as OrgSnapshot
