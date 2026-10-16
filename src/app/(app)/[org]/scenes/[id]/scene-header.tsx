@@ -1,9 +1,10 @@
 import Link from 'next/link'
-import { ChevronLeft, ExternalLink } from 'lucide-react'
+import { ChevronLeft } from 'lucide-react'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { PageTabs } from '@/components/page-tabs'
 import { cn } from '@/lib/utils'
 import { SceneActiveToggle } from './scene-active-toggle'
+import { VisitorPreview } from './visitor-preview'
 
 interface SceneHeaderProps {
   orgSlug: string
@@ -42,16 +43,7 @@ export function SceneHeader({ orgSlug, sceneId, name, title, collectionName, act
               <SceneActiveToggle orgSlug={orgSlug} sceneId={sceneId} active={isActive} />
             </div>
           </div>
-          <a
-            href={publicPath}
-            target="_blank"
-            rel="noopener"
-            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'self-start')}
-          >
-            <ExternalLink className="mr-1.5 h-4 w-4" aria-hidden="true" />
-            See what visitors see
-            <span className="sr-only"> (opens in a new tab)</span>
-          </a>
+          <VisitorPreview publicPath={publicPath} />
         </div>
       </div>
       <PageTabs
