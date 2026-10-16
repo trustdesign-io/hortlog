@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
 import { prisma } from '@/lib/prisma'
 import { AuthProvider } from '@/components/auth-provider'
 import { Sidebar } from '@/components/sidebar'
@@ -9,7 +8,7 @@ import { MobilePanelsProvider } from '@/components/layout/mobile-panels'
 import { OfflineSync } from '@/components/offline/offline-sync'
 import { getNameFromMetadata } from '@/lib/auth/name-utils'
 import type { User } from '@prisma/client'
-import type { UserWithMemberships } from '@/lib/auth/current-user'
+import { getAuthUser, getCurrentUser, type UserWithMemberships } from '@/lib/auth/current-user'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -20,10 +19,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode
 }) {
-  const supabase = await createClient()
-  const {
-    data: { user: authUser },
-  } = await supabase.auth.getUser()
+  const authUser = await getAuthUser()
 
   if (!authUser) {
     redirect('/sign-in')
@@ -52,32 +48,42 @@ export default async function AppLayout({
   }
 
   let user: UserWithMemberships = { ...fallbackUser, memberships: [] }
-  try {
-    const dbUser = await prisma.user.upsert({
-      where: { id: authUser.id },
-      create: {
-        id: authUser.id,
-        email: authUser.email!,
-        name: nameFromMeta,
-        avatarUrl: meta?.avatar_url ?? null,
-      },
-      update: {
-        email: authUser.email!,
-        // Never overwrite an existing name with null — only fill when DB name is missing
-        ...(nameFromMeta ? { name: nameFromMeta } : {}),
-        avatarUrl: meta?.avatar_url ?? null,
-      },
-      include: {
-        memberships: {
-          include: {
-            organisation: { select: { id: true, slug: true, name: true } },
+  // Usually already up to date: read it (shared with the page), and only write when something changed
+  const existing = await getCurrentUser().catch(() => null)
+  const upToDate =
+    existing !== null &&
+    existing.email === authUser.email &&
+    existing.avatarUrl === (meta?.avatar_url ?? null) &&
+    (!nameFromMeta || existing.name === nameFromMeta)
+  if (upToDate) user = existing
+  else {
+    try {
+      const dbUser = await prisma.user.upsert({
+        where: { id: authUser.id },
+        create: {
+          id: authUser.id,
+          email: authUser.email!,
+          name: nameFromMeta,
+          avatarUrl: meta?.avatar_url ?? null,
+        },
+        update: {
+          email: authUser.email!,
+          // Never overwrite an existing name with null — only fill when DB name is missing
+          ...(nameFromMeta ? { name: nameFromMeta } : {}),
+          avatarUrl: meta?.avatar_url ?? null,
+        },
+        include: {
+          memberships: {
+            include: {
+              organisation: { select: { id: true, slug: true, name: true } },
+            },
           },
         },
-      },
-    })
-    user = dbUser
-  } catch (err) {
-    console.error('[AppLayout] Failed to upsert user:', err)
+      })
+      user = dbUser
+    } catch (err) {
+      console.error('[AppLayout] Failed to upsert user:', err)
+    }
   }
 
   // Admins see all orgs in the sidebar switcher. Unbounded at current scale;
