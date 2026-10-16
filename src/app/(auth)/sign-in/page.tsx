@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { signInWithEmail } from '@/lib/actions/auth'
+import { WorkOfflineLink } from '@/components/offline/work-offline-link'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { PasswordInput } from '@/components/ui/password-input'
@@ -57,10 +58,11 @@ export default function SignInPage() {
             />
           </div>
         </CardContent>
-        <CardFooter>
+        <CardFooter className="flex-col gap-4">
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? 'Signing in…' : 'Sign in'}
           </Button>
+          <WorkOfflineLink className="w-full" />
         </CardFooter>
       </form>
     </Card>

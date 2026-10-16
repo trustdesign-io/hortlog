@@ -24,9 +24,11 @@ export interface OfflineStatus {
   unsent: number
   /** Changes the server refused, which the member should look at */
   refused: number
+  /** The server said this device is signed out, so changes wait until sign-in */
+  signedOut: boolean
 }
 
-const INITIAL: OfflineStatus = { online: true, syncing: false, syncedAt: null, failed: false, unsent: 0, refused: 0 }
+const INITIAL: OfflineStatus = { online: true, syncing: false, syncedAt: null, failed: false, unsent: 0, refused: 0, signedOut: false }
 let status: OfflineStatus = INITIAL
 const listeners = new Set<() => void>()
 
@@ -224,7 +226,13 @@ export function flushOutbox(): Promise<boolean> {
           body: JSON.stringify({ ops: batch }),
           cache: 'no-store',
         })
+        if (res.status === 401) {
+          // Kept on the device; sent once the member signs in again
+          setStatus({ signedOut: true })
+          break
+        }
         if (!res.ok) break
+        setStatus({ signedOut: false })
         results = ((await res.json()) as { results: OpResult[] }).results
       } catch {
         break
