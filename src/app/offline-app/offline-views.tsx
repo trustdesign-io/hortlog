@@ -1,7 +1,7 @@
 'use client'
 /* eslint-disable @next/next/no-html-link-for-pages -- plain links on purpose: the offline app handles clicks itself and must never ask the server */
 
-import { useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
 import { cellKey, cellLabel, hexOf } from '@/lib/scene-grid'
 import { ScientificName } from '@/components/ui/scientific-name'
@@ -242,6 +242,32 @@ const NAV = [
   ['/todo', 'To do'],
 ] as const
 
+/** Every organisation saved on this device, for the menu on pages that aren't one organisation's */
+export const OfflineOrgs = createContext<{ slug: string; name: string }[]>([])
+
+function OrgNav({ org, active }: { org: { slug: string; name: string }; active: string | null }) {
+  return (
+    <nav aria-label={org.name} className="-mx-4 mt-1 overflow-x-auto px-4 [scrollbar-width:none] sm:-mx-6 sm:px-6">
+      <ul className="flex gap-1">
+        {NAV.map(([suffix, label]) => (
+          <li key={label}>
+            <a
+              href={`/${org.slug}${suffix}`}
+              aria-current={active === suffix ? 'page' : undefined}
+              className={cn(
+                'inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-2 text-sm',
+                active === suffix ? 'border-primary font-medium' : 'border-transparent text-muted-foreground',
+              )}
+            >
+              {label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
 function Chrome({
   snap,
   active,
@@ -251,6 +277,7 @@ function Chrome({
   active: string | null
   children: ReactNode
 }) {
+  const orgs = useContext(OfflineOrgs)
   return (
     <>
       <header className="border-b px-4 pt-3 sm:px-6">
@@ -262,30 +289,14 @@ function Chrome({
             My record
           </a>
         </div>
-        {snap && (
-          <>
-            <p className="mt-2 truncate text-sm font-medium">{snap.org.name}</p>
-            <nav aria-label="Organisation" className="-mx-4 mt-1 overflow-x-auto px-4 [scrollbar-width:none] sm:-mx-6 sm:px-6">
-              <ul className="flex gap-1">
-                {NAV.map(([suffix, label]) => (
-                  <li key={label}>
-                    <a
-                      href={`/${snap.org.slug}${suffix}`}
-                      aria-current={active === suffix ? 'page' : undefined}
-                      className={cn(
-                        'inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-2 text-sm',
-                        active === suffix ? 'border-primary font-medium' : 'border-transparent text-muted-foreground',
-                      )}
-                    >
-                      {label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </nav>
-          </>
-        )}
-        {!snap && <div className="h-3" />}
+        {/* One organisation's page: its menu. Elsewhere (My record): every saved organisation's, so there's always a way on */}
+        {(snap ? [snap.org] : orgs).map((org) => (
+          <div key={org.slug}>
+            <p className="mt-2 truncate text-sm font-medium">{org.name}</p>
+            <OrgNav org={org} active={snap ? active : null} />
+          </div>
+        ))}
+        {!snap && orgs.length === 0 && <div className="h-3" />}
       </header>
       <main className="mx-auto max-w-3xl space-y-8 px-4 py-6 sm:px-6">{children}</main>
     </>

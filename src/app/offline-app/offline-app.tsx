@@ -8,11 +8,44 @@ import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, SNAPSHOTS_E
 import { offlineAppHref, resolveOfflineRoute, type OfflineRoute } from '@/lib/offline/routes'
 import type { OrgSnapshot } from '@/lib/offline/types'
 import { timeAgo } from '@/components/offline/offline-status'
-import { OfflineView } from './offline-views'
+import { OfflineOrgs, OfflineView } from './offline-views'
+import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 
 /** A full page load: the offline app isn't part of the live app's routing */
 const SIGN_IN_PATH = '/sign-in'
+
+/** Don't send someone back more than once a minute, in case the live site keeps timing out */
+const RETURN_KEY = 'hortlog-auto-return'
+const RETURN_GAP_MS = 60_000
+
+/** Sent here automatically (a page didn't load), rather than by choosing "Work offline" */
+function cameAutomatically(): boolean {
+  return new URLSearchParams(window.location.search).get('auto') === '1'
+}
+
+/** Back to the live page if hortlog answers; resolves false if it doesn't, or did so just now. */
+async function returnToLive(path: string): Promise<boolean> {
+  try {
+    const last = Number(sessionStorage.getItem(RETURN_KEY) ?? 0)
+    if (Date.now() - last < RETURN_GAP_MS) return false
+  } catch {
+    // No session storage: still fine to try once
+  }
+  try {
+    const res = await fetch('/api/ping', { cache: 'no-store', signal: AbortSignal.timeout(6000) })
+    if (!res.ok) return false
+  } catch {
+    return false
+  }
+  try {
+    sessionStorage.setItem(RETURN_KEY, String(Date.now()))
+  } catch {
+    // Ignore
+  }
+  window.location.replace(path)
+  return true
+}
 
 function currentPath(): string {
   const p = new URLSearchParams(window.location.search).get('path')
@@ -114,6 +147,17 @@ export function OfflineApp() {
     window.scrollTo(0, 0)
   }, [])
 
+  // Sent here only because a page was slow or the signal dropped: go back as soon as hortlog answers
+  useEffect(() => {
+    if (!cameAutomatically() || signedOut) return
+    const tryReturn = () => {
+      if (navigator.onLine) void returnToLive(currentPath())
+    }
+    tryReturn()
+    window.addEventListener('online', tryReturn)
+    return () => window.removeEventListener('online', tryReturn)
+  }, [signedOut])
+
   if (path === null || saved === null) {
     return <p className="p-6 text-sm text-muted-foreground">Opening the saved copy…</p>
   }
@@ -145,12 +189,7 @@ export function OfflineApp() {
                 </a>
               </>
             ) : (
-              <>
-                <span className="min-w-0 flex-1">You&rsquo;re back online.</span>
-                <a href={path} data-live="" className="shrink-0 font-medium underline underline-offset-2">
-                  Open the live page
-                </a>
-              </>
+              <span className="min-w-0 flex-1">You&rsquo;re online. This is the copy saved on this device.</span>
             )}
           </>
         ) : (
@@ -163,7 +202,17 @@ export function OfflineApp() {
         )}
       </div>
 
-      <OfflineView route={route} orgSlug={orgSlug} snapshots={snapshots} ops={ops} />
+      {online && !signedOut && (
+        <div className="border-b px-4 py-3 sm:px-6">
+          <a href={path} data-live="" className={cn(buttonVariants({ size: 'lg' }), 'w-full')}>
+            Back to the live site
+          </a>
+        </div>
+      )}
+
+      <OfflineOrgs.Provider value={snapshots.map((s) => s.org)}>
+        <OfflineView route={route} orgSlug={orgSlug} snapshots={snapshots} ops={ops} />
+      </OfflineOrgs.Provider>
     </div>
   )
 }

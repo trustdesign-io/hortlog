@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/sidebar'
 import { AppFooter } from '@/components/layout/app-footer'
 import { MobilePanelsProvider } from '@/components/layout/mobile-panels'
 import { OfflineSync } from '@/components/offline/offline-sync'
+import { FloatingOfflineCard } from '@/components/offline/offline-status'
 import { getNameFromMetadata } from '@/lib/auth/name-utils'
 import type { User } from '@prisma/client'
 import { getAuthUser, getCurrentUser, type UserWithMemberships } from '@/lib/auth/current-user'
@@ -103,6 +104,7 @@ export default async function AppLayout({
   return (
     <AuthProvider initialUser={user}>
       <MobilePanelsProvider>
+        <FloatingOfflineCard />
         <OfflineSync
           memberOrgSlugs={user.memberships.map((m) => m.organisation.slug)}
           viewableOrgSlugs={allOrgs?.map((o) => o.slug) ?? []}
