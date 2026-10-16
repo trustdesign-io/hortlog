@@ -92,7 +92,7 @@ export function ScenePhotoCard({ org, sceneId, className }: ScenePhotoCardProps)
                 {status.text}
               </span>
             ) : (
-              'For laying out the grid. Visitors don’t see it.'
+              'For laying out the grid. Visitors see it once plants are marked on it.'
             )}
           </p>
         </div>

@@ -104,6 +104,8 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
 
   return (
     <>
+      {/* Visitor page, read outdoors: always light */}
+      <span data-daylight="" hidden />
       <GaEvent name="specimen_view" params={{ specimen_slug: specimenSlug, org: orgSlug }} />
       <script
         type="application/ld+json"

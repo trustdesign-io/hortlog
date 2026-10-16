@@ -36,7 +36,7 @@ export default async function VenueCheckInPage({ params }: PageProps) {
   if (!venue) return notFound()
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
+    <div data-daylight="" className="mx-auto max-w-2xl space-y-6 px-4 py-8 sm:px-6">
       <div>
         <Link href="/check-in" className="-ml-1 inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ChevronLeft className="mr-0.5 h-4 w-4" aria-hidden="true" />

@@ -23,9 +23,20 @@ async function editableScene(orgSlug: string, sceneId: string): Promise<{ orgId:
   return scene ? { orgId: scene.organisationId, sceneId: scene.id } : null
 }
 
-/** Redirects to the scene's bed photo; 404 if it has none. */
+/**
+ * Redirects to the scene's bed photo; 404 if it has none. Visitors see the
+ * photo of a scene in use; editors also see ones still being set up.
+ */
 export async function GET(_req: Request, { params }: RouteParams) {
   const { org, sceneId } = await params
+  const live = await prisma.scene.findFirst({
+    where: { id: sceneId, active: true, photoTakenAt: { not: null }, organisation: { slug: org } },
+    select: { id: true, organisationId: true },
+  })
+  if (live) {
+    const url = await scenePhotoUrl(live.organisationId, live.id, 6 * 3600)
+    if (url) return NextResponse.redirect(url, { status: 302, headers: { 'Cache-Control': 'public, max-age=300' } })
+  }
   const scene = await editableScene(org, sceneId)
   if (scene === 'signed-out') return NextResponse.json({ error: 'Sign in to see this photo.' }, { status: 401, headers: NO_STORE })
   if (!scene) return NextResponse.json({ error: 'Not found.' }, { status: 404, headers: NO_STORE })
