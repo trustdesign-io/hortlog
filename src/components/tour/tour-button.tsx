@@ -118,6 +118,7 @@ export function TourButton({ user }: TourButtonProps) {
       variant="ghost"
       size="icon"
       aria-label="Take the tour"
+      data-tour-button=""
       data-tour="tour-button"
       onClick={() => void startTour()}
     >
