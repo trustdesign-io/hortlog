@@ -1,10 +1,12 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { usePathname } from 'next/navigation'
 import { CloudCheck, CloudOff, RefreshCw, TriangleAlert } from 'lucide-react'
 import { offlineAppHref } from '@/lib/offline/routes'
 import { useOfflineStatus } from '@/lib/offline/sync'
 import { cn } from '@/lib/utils'
+import { buttonVariants } from '@/components/ui/button-variants'
 
 /** "5 min ago", "2 h ago", "3 days ago" */
 export function timeAgo(iso: string, now: number): string {
@@ -17,9 +19,21 @@ export function timeAgo(iso: string, now: number): string {
   return `${days} day${days === 1 ? '' : 's'} ago`
 }
 
-/** Note on the offline copy, shown with the member's details: when it was saved, that the app is offline, or changes waiting to send. */
-export function OfflineStatusChip({ className }: { className?: string }) {
+interface CardState {
+  Icon: typeof CloudCheck
+  title: string
+  detail: string
+  tone?: 'warning'
+  spin?: boolean
+}
+
+/**
+ * The offline copy, in one small card: whether it's saved (and when), that
+ * the app is offline, or changes waiting; with a way into the saved copy.
+ */
+export function OfflineCard({ className }: { className?: string }) {
   const { online, syncing, syncedAt, unsent, refused } = useOfflineStatus()
+  const pathname = usePathname()
   const [now, setNow] = useState(() => Date.now())
 
   useEffect(() => {
@@ -28,48 +42,41 @@ export function OfflineStatusChip({ className }: { className?: string }) {
   }, [])
 
   const changes = (n: number) => `${n} change${n === 1 ? '' : 's'}`
+  const state: CardState =
+    refused > 0
+      ? { Icon: TriangleAlert, title: `${changes(refused)} not saved`, detail: 'Review them in the saved copy', tone: 'warning' }
+      : !online
+        ? { Icon: CloudOff, title: 'Offline', detail: unsent > 0 ? `${changes(unsent)} waiting to send` : 'Using the saved copy' }
+        : unsent > 0
+          ? { Icon: RefreshCw, title: `${changes(unsent)} waiting`, detail: 'Sending as the signal allows' }
+          : syncedAt
+            ? { Icon: CloudCheck, title: 'Saved for offline', detail: timeAgo(syncedAt, now) }
+            : syncing
+              ? { Icon: RefreshCw, title: 'Saving for offline', detail: 'This takes a moment', spin: true }
+              : { Icon: CloudOff, title: 'Not saved for offline', detail: 'Saves when there’s signal' }
 
-  if (refused > 0) {
-    return (
-      <a
-        href={offlineAppHref('/records')}
-        className={cn('flex items-center gap-1 font-medium text-destructive underline underline-offset-2', className)}
-        role="status"
-      >
-        <TriangleAlert className="h-3.5 w-3.5" aria-hidden="true" />
-        {changes(refused)} not saved
-      </a>
-    )
-  }
-  if (!online) {
-    return (
-      <p className={cn('flex items-center gap-1 font-medium text-foreground', className)} role="status">
-        <CloudOff className="h-3.5 w-3.5" aria-hidden="true" />
-        Offline{unsent > 0 && ` · ${changes(unsent)} waiting to send`}
-      </p>
-    )
-  }
-  if (unsent > 0) {
-    return (
-      <p className={cn('flex items-center gap-1', className)} role="status">
-        <RefreshCw className="h-3.5 w-3.5" aria-hidden="true" />
-        {changes(unsent)} waiting to send
-      </p>
-    )
-  }
-  if (syncing && !syncedAt) {
-    return (
-      <p className={cn('flex items-center gap-1', className)} role="status">
-        <RefreshCw className="h-3.5 w-3.5 animate-spin motion-reduce:animate-none" aria-hidden="true" />
-        Saving for offline
-      </p>
-    )
-  }
-  if (!syncedAt) return null
+  const { Icon } = state
   return (
-    <p className={cn('flex items-center gap-1', className)} role="status" title="A copy is saved on this device for use offline">
-      <CloudCheck className="h-3.5 w-3.5" aria-hidden="true" />
-      <span>Saved offline {timeAgo(syncedAt, now)}</span>
-    </p>
+    // Narrow places (the sidebar, the You panel): the button sits under the status
+    <div className={cn('flex flex-wrap items-center gap-x-3 gap-y-2.5 rounded-xl border bg-card p-3', className)} role="status">
+      <span
+        className={cn(
+          'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
+          state.tone === 'warning' ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary',
+        )}
+      >
+        <Icon className={cn('h-4 w-4', state.spin && 'animate-spin motion-reduce:animate-none')} aria-hidden="true" />
+      </span>
+      <span className="min-w-0 flex-1 leading-tight">
+        <span className="block truncate text-sm font-medium">{state.title}</span>
+        <span className="block truncate text-xs text-muted-foreground">{state.detail}</span>
+      </span>
+      <a
+        href={offlineAppHref(refused > 0 ? '/records' : pathname)}
+        className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'w-full')}
+      >
+        {refused > 0 ? 'Review' : 'Work offline'}
+      </a>
+    </div>
   )
 }
