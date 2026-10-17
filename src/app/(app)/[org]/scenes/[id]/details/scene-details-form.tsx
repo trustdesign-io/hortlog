@@ -16,7 +16,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import type { ScenePerspective } from '@/lib/scene-perspective'
-import { PerspectiveField } from '../../perspective-field'
 import type { ActionResult } from '@/lib/shared/types'
 import { MAX_SCENE_TITLE } from '@/lib/scene-title'
 
@@ -79,7 +78,6 @@ export function SceneDetailsForm({ orgSlug, scene, collections }: SceneDetailsFo
                 Shown on screen with the name. Not printed on the QR label.
               </p>
             </div>
-            <PerspectiveField defaultValue={scene.perspective} disabled={isPending} />
             {collections.length > 0 && (
               <div className="flex flex-col gap-2">
                 <Label htmlFor="primaryCollectionId">Primary collection</Label>
