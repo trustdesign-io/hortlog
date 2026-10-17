@@ -85,7 +85,7 @@ export function BedPhotoView({ photoUrl, plants, basePath, fallback }: BedPhotoV
               <ChevronRight className="h-4 w-4" aria-hidden="true" />
             </span>
           </Link>
-        ) : (
+        ) : plants.length === 0 ? null : (
           <p className="rounded-2xl border border-dashed px-4 py-3 text-center text-sm text-muted-foreground">
             Tap a number on the photo to see what&rsquo;s growing there.
           </p>

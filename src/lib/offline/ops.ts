@@ -59,6 +59,15 @@ export interface PlaceSpecimenOp extends OpBase {
   sub: number | null
 }
 
+/** A plant marked on its scene's bed photo, 0–1 from the left and top */
+export interface PlaceOnPhotoOp extends OpBase {
+  kind: 'placeOnPhoto'
+  sceneId: string
+  specimenId: string
+  x: number
+  y: number
+}
+
 export interface UnplaceSpecimenOp extends OpBase {
   kind: 'unplaceSpecimen'
   specimenId: string
@@ -92,6 +101,7 @@ export type SyncOpInput =
   | SetTaskStatusOp
   | CreateSpecimenOp
   | PlaceSpecimenOp
+  | PlaceOnPhotoOp
   | UnplaceSpecimenOp
   | SplitHexOp
   | ResizeGridOp
@@ -191,6 +201,14 @@ export function parseOp(raw: unknown): SyncOpInput | null {
     return { ...base, kind: 'placeSpecimen', sceneId, specimenId, row: o.row, col: o.col, sub }
   }
 
+  if (o.kind === 'placeOnPhoto') {
+    const sceneId = str(o.sceneId, 64)
+    const specimenId = str(o.specimenId, 64)
+    const inUnit = (n: unknown): n is number => typeof n === 'number' && Number.isFinite(n) && n >= 0 && n <= 1
+    if (!sceneId || !specimenId || !inUnit(o.x) || !inUnit(o.y)) return null
+    return { ...base, kind: 'placeOnPhoto', sceneId, specimenId, x: o.x, y: o.y }
+  }
+
   if (o.kind === 'unplaceSpecimen') {
     const specimenId = str(o.specimenId, 64)
     return specimenId ? { ...base, kind: 'unplaceSpecimen', specimenId } : null
@@ -245,4 +263,14 @@ export function newDeviceId(): string {
 
 export function isDeviceId(id: string): boolean {
   return /^c[a-z0-9]{24}$/.test(id)
+}
+
+let lastOpTime = 0
+/**
+ * When a change was made, always later than the one before: changes are sent
+ * in this order, so a new plant always goes before it's placed.
+ */
+export function opTime(): string {
+  lastOpTime = Math.max(Date.now(), lastOpTime + 1)
+  return new Date(lastOpTime).toISOString()
 }

@@ -199,6 +199,12 @@ self.addEventListener('fetch', (event) => {
   // Only same-origin GET requests
   if (request.method !== 'GET' || parsed.origin !== self.location.origin) return
 
+  // Bed photos: saved for working on scenes without signal
+  if (parsed.pathname.startsWith('/api/scene-photo/')) {
+    event.respondWith(bedPhotoFetch(request))
+    return
+  }
+
   // API and auth routes should never be served from cache
   if (parsed.pathname.startsWith('/api/') || parsed.pathname.startsWith('/auth/')) return
 
@@ -239,6 +245,22 @@ async function imageFetch(request) {
     return await fetch(request)
   } catch {
     return new Response('', { status: 503 })
+  }
+}
+
+// A versioned bed photo never changes, so the saved one is used first; an
+// unversioned one comes from the network, falling back to any saved version.
+async function bedPhotoFetch(request) {
+  const cache = await caches.open(IMAGE_CACHE)
+  const versioned = new URL(request.url).searchParams.has('v')
+  if (versioned) {
+    const saved = await cache.match(request)
+    if (saved) return saved
+  }
+  try {
+    return await fetch(request)
+  } catch {
+    return (await cache.match(request, { ignoreSearch: true })) ?? new Response('', { status: 503 })
   }
 }
 

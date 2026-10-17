@@ -27,6 +27,9 @@ export interface OfflineSpecimen {
   gridCell: string | null
   /** More hexes a big plant covers */
   extraCells?: string[]
+  /** Where it is on its scene's bed photo, 0–1 from the left and top */
+  photoX?: number | null
+  photoY?: number | null
   collectionIds: string[]
   species: OfflineSpecies
   /** Added on this device and not yet sent */
@@ -51,6 +54,8 @@ export interface OfflineScene {
   splitCells?: string[]
   /** Hexes outside the bed's outline */
   blockedCells?: string[]
+  /** When its bed photo was last sent to hortlog (ISO), or null if it has none */
+  photoVersion?: string | null
   perspective: 'BED' | 'WALL'
   primaryCollectionId: string | null
 }
@@ -139,11 +144,21 @@ export function specimenPhoto(s: OfflineSpecimen): string | null {
 }
 
 /** Every image a snapshot's pages show, as offline image URLs, for saving. */
+/** A scene's bed photo; the version makes a retaken photo a new address, so caches never serve the old one */
+export function bedPhotoUrl(org: string, sceneId: string, version?: string | null): string {
+  const base = `/api/scene-photo/${encodeURIComponent(org)}/${encodeURIComponent(sceneId)}`
+  return version ? `${base}?v=${encodeURIComponent(version)}` : base
+}
+
 export function snapshotImageUrls(s: OrgSnapshot): string[] {
   const urls = new Set<string>()
   for (const sp of s.specimens) {
     const photo = specimenPhoto(sp)
     if (photo) urls.add(offlineImageUrl(photo))
+  }
+  // Bed photos, so scenes can be worked on without signal
+  for (const sc of s.scenes) {
+    if (sc.photoVersion) urls.add(bedPhotoUrl(s.org.slug, sc.id, sc.photoVersion))
   }
   return [...urls]
 }

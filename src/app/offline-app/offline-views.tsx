@@ -2,12 +2,11 @@
 /* eslint-disable @next/next/no-html-link-for-pages -- plain links on purpose: the offline app handles clicks itself and must never ask the server */
 
 import { createContext, useContext, useState, type ReactNode } from 'react'
-import { HexGrid, HexOutline, HexPlantLabel, HexSubCells } from '@/components/hex-grid'
-import { cellKey, cellLabel, hexOf } from '@/lib/scene-grid'
+import { numberedOnPhoto, plantLabel } from '@/components/scene-editor/photo-scene-editor'
 import { ScientificName } from '@/components/ui/scientific-name'
-import { sceneCellScale, sceneTilt } from '@/lib/scene-perspective'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
 import {
+  bedPhotoUrl,
   specimenPhoto,
   type OfflineScene,
   type OfflineSpecimen,
@@ -24,8 +23,6 @@ import { OfflineSceneEditor } from './offline-scene-editor'
 import { cn } from '@/lib/utils'
 import type { WorkAction } from '@prisma/client'
 
-const CELL_WIDTH_REM = 6
-const PX_PER_REM = 16
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })
@@ -133,103 +130,30 @@ function RecordEntries({ record }: { record: OfflineWorkRecord }) {
   )
 }
 
-function SceneGrid({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) {
-  const byCell = new Map<string, OfflineSpecimen>()
-  const spread = new Map<string, OfflineSpecimen>()
-  const split = new Set(scene.splitCells ?? [])
-  for (const s of snap.specimens) {
-    if (s.sceneId !== scene.id || !s.gridCell) continue
-    byCell.set(s.gridCell, s)
-    for (const x of s.extraCells ?? []) spread.set(x, s)
-    if (s.gridCell.includes(':')) split.add(hexOf(s.gridCell) ?? '')
-  }
-  if (scene.gridRows <= 0 || scene.gridCols <= 0) return null
-  const tilt = sceneTilt(scene.perspective, scene.gridRows, CELL_WIDTH_REM * PX_PER_REM)
+function ScenePhoto({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) {
+  const [failed, setFailed] = useState(false)
+  if (!scene.photoVersion || failed) return null
+  const spotted = numberedOnPhoto(snap.specimens.filter((s) => s.sceneId === scene.id))
   return (
-    <div className="overflow-x-auto pb-4" role="region" aria-label="Specimen grid">
-      <HexGrid
-        className="mx-auto"
-        rows={scene.gridRows}
-        cols={scene.gridCols}
-        cellWidth={`${CELL_WIDTH_REM * sceneCellScale(scene.gridRows, tilt)}rem`}
-        tiltDeg={tilt}
-        rowShift={scene.rowShift}
-        hiddenCells={scene.blockedCells}
-        renderCell={(row, col, style) => {
-          const cell = `${row},${col}`
-          const s = byCell.get(cell)
-          if (split.has(cell)) {
-            return (
-              <div key={cell} className="hex-cell" style={style}>
-                <span className="hex-shape block bg-muted/30">
-                  <HexOutline className="text-border/60" />
-                  <HexSubCells
-                    renderSub={(sub, subStyle) => {
-                      const key = cellKey(row, col, sub)
-                      const p = byCell.get(key)
-                      return p ? (
-                        <a
-                          key={key}
-                          href={`/${snap.org.slug}/specimens/${p.id}`}
-                          className="hex-sub bg-muted"
-                          style={subStyle}
-                          aria-label={`${p.species.scientificName}, ${cellLabel(key)}`}
-                        >
-                          <Photo src={specimenPhoto(p)} className="absolute inset-0 h-full w-full" />
-                        </a>
-                      ) : (
-                        <span key={key} className="hex-sub" style={subStyle} aria-hidden="true">
-                          <HexOutline className="text-border/60" />
-                        </span>
-                      )
-                    }}
-                  />
-                </span>
-              </div>
-            )
-          }
-          const spreadOf = spread.get(cell)
-          if (!s && spreadOf) {
-            return (
-              <a
-                key={cell}
-                href={`/${snap.org.slug}/specimens/${spreadOf.id}`}
-                className="hex-cell group"
-                style={style}
-                aria-hidden="true"
-                tabIndex={-1}
-              >
-                <span className="hex-shape relative block bg-muted group-hover:opacity-80">
-                  <Photo src={specimenPhoto(spreadOf)} className="absolute inset-0 h-full w-full" />
-                </span>
-              </a>
-            )
-          }
-          if (s) {
-            return (
-              <a
-                key={cell}
-                href={`/${snap.org.slug}/specimens/${s.id}`}
-                className="hex-cell group"
-                style={style}
-                aria-label={`${s.species.scientificName}, row ${row + 1}, column ${col + 1}`}
-              >
-                <span className="hex-shape relative block bg-muted group-hover:opacity-80">
-                  <Photo src={specimenPhoto(s)} className="absolute inset-0 h-full w-full" />
-                  <HexPlantLabel scientificName={s.species.scientificName} />
-                </span>
-              </a>
-            )
-          }
-          return (
-            <div key={cell} className="hex-cell" style={style} aria-hidden="true">
-              <span className="hex-shape block bg-muted/50">
-                <HexOutline className="text-border/60" />
-              </span>
-            </div>
-          )
-        }}
+    <div className="relative -mx-4 overflow-hidden bg-muted sm:mx-0 sm:rounded-2xl">
+      {/* eslint-disable-next-line @next/next/no-img-element -- saved on the device */}
+      <img
+        src={bedPhotoUrl(snap.org.slug, scene.id, scene.photoVersion)}
+        alt="The bed"
+        className="block h-auto w-full"
+        onError={() => setFailed(true)}
       />
+      {spotted.map((s, i) => (
+        <a
+          key={s.id}
+          href={`/${snap.org.slug}/specimens/${s.id}`}
+          aria-label={`${i + 1}: ${plantLabel(s)}`}
+          className="absolute flex h-9 min-w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/90 bg-white/90 px-1.5 text-sm font-semibold text-[#16201A] shadow-[0_2px_8px_rgba(0,0,0,0.35)]"
+          style={{ left: `${s.photoX * 100}%`, top: `${s.photoY * 100}%` }}
+        >
+          {i + 1}
+        </a>
+      ))}
     </div>
   )
 }
@@ -461,7 +385,7 @@ function SceneView({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) 
         {scene.title ?? scene.name}
       </Title>
       {/* Managers set the scene up here; changes wait on the device until there's a connection */}
-      {snap.user.canManage ? <OfflineSceneEditor scene={scene} snap={snap} /> : <SceneGrid scene={scene} snap={snap} />}
+      {snap.user.canManage ? <OfflineSceneEditor scene={scene} snap={snap} /> : <ScenePhoto scene={scene} snap={snap} />}
       {tasks.length > 0 && (
         <Section title="To do">
           <ul className="space-y-2">
