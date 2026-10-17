@@ -4,8 +4,6 @@ import { prisma } from '@/lib/prisma'
 import { SpecimenDetail, specimenJsonLdString } from '@/app/(public)/specimen-detail'
 import { GaEvent } from '@/components/ga-event'
 import { truncateDescription } from '@/lib/seo'
-import { getCurrentUser } from '@/lib/auth/current-user'
-import { SpecimenWorkHistory } from '@/components/specimen-work-history'
 import { SpecimenCare } from '@/components/specimen-care'
 import { publicScenePath } from '@/lib/scene-urls'
 
@@ -113,14 +111,10 @@ export async function sceneSpecimenMetadata({ orgSlug, collectionSlug, sceneSlug
 }
 
 export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, specimenSlug }: SceneSpecimenArgs) {
-  const [data, currentUser] = await Promise.all([
-    resolveData(orgSlug, collectionSlug, sceneSlug, specimenSlug),
-    getCurrentUser(),
-  ])
+  const data = await resolveData(orgSlug, collectionSlug, sceneSlug, specimenSlug)
   if (!data) return notFound()
 
   const { org, collection, scene, specimen } = data
-  const isMember = currentUser?.memberships.some((m) => m.organisation.slug === orgSlug) ?? false
   const scenePath = publicScenePath(orgSlug, sceneSlug, collectionSlug)
 
   const breadcrumbs = [
@@ -156,10 +150,8 @@ export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, sp
         backHref={scenePath}
         backLabel={scene.title ?? scene.name}
       >
-        <SpecimenCare specimenId={specimen.id} audience={isMember ? 'members' : 'public'} />
-        {isMember && currentUser && (
-          <SpecimenWorkHistory orgSlug={orgSlug} specimenId={specimen.id} userId={currentUser.id} />
-        )}
+        {/* Reached from a scene: always the visitor's view, even for signed-in members */}
+        <SpecimenCare specimenId={specimen.id} audience="public" />
       </SpecimenDetail>
     </>
   )

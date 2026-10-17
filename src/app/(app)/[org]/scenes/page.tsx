@@ -4,6 +4,8 @@ import { ChevronRight, Plus, Printer } from 'lucide-react'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { publicScenePath } from '@/lib/scene-urls'
+import { bedPhotoUrl } from '@/lib/offline/types'
+import { SceneThumb } from './scene-thumb'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { EmptyState } from '@/components/empty-state'
 import { Badge } from '@/components/ui/badge'
@@ -33,8 +35,7 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
       name: true,
       slug: true,
       shortCode: true,
-      gridRows: true,
-      gridCols: true,
+      photoTakenAt: true,
       active: true,
       title: true,
       primaryCollection: { select: { name: true, slug: true } },
@@ -56,15 +57,16 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
                   ? `/${orgSlug}/scenes/${v.id}/edit`
                   : publicScenePath(orgSlug, v.slug, v.primaryCollection?.slug ?? null)
               }
-              className="flex items-start gap-4 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+              className="flex items-center gap-3 px-4 py-3 hover:bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
             >
+              <SceneThumb src={v.photoTakenAt ? bedPhotoUrl(orgSlug, v.id, v.photoTakenAt.toISOString()) : null} />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-medium">
                   {v.name}
                   {v.title && <span className="font-normal text-muted-foreground"> · {v.title}</span>}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {v.gridRows}×{v.gridCols} grid ·{' '}
+                  {v.photoTakenAt ? '' : 'No photo yet · '}
                   {v._count.specimens} specimen{v._count.specimens === 1 ? '' : 's'}
                   {v.primaryCollection && ` · ${v.primaryCollection.name}`}
                 </p>
