@@ -231,6 +231,9 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
           onKeyDown={onKeyDown}
           placeholder="Type a botanical name, e.g. Quercus robur"
           autoComplete="off"
+          // Botanical names: iOS would "correct" Delonix to Demonic
+          autoCorrect="off"
+          autoCapitalize="none"
           spellCheck={false}
           disabled={disabled || isPending}
           className="pl-9"
