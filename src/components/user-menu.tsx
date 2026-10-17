@@ -1,6 +1,7 @@
 'use client'
 
 import { useTransition } from 'react'
+import { useOfflineNav } from '@/components/layout/offline-nav'
 import { UserAvatar } from '@/components/user-avatar'
 import { Button } from '@/components/ui/button'
 import { signOut } from '@/lib/actions/auth'
@@ -22,6 +23,7 @@ interface SignOutButtonProps {
 
 export function SignOutButton({ className, size = 'sm', variant = 'ghost' }: SignOutButtonProps) {
   const [isPending, startTransition] = useTransition()
+  const inOfflineCopy = useOfflineNav() !== null
 
   function handleSignOut() {
     startTransition(async () => {
@@ -44,7 +46,8 @@ export function SignOutButton({ className, size = 'sm', variant = 'ghost' }: Sig
   }
 
   return (
-    <Button variant={variant} size={size} onClick={handleSignOut} disabled={isPending} className={className}>
+    // Signing out needs a connection, so it's greyed out in the offline copy
+    <Button variant={variant} size={size} onClick={handleSignOut} disabled={isPending || inOfflineCopy} className={className}>
       Sign out
     </Button>
   )

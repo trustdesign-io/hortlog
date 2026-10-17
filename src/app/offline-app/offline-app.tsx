@@ -8,7 +8,11 @@ import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, SNAPSHOTS_E
 import { offlineAppHref, resolveOfflineRoute, type OfflineRoute } from '@/lib/offline/routes'
 import type { OrgSnapshot } from '@/lib/offline/types'
 import { timeAgo } from '@/components/offline/offline-status'
-import { OfflineOrgs, OfflineView } from './offline-views'
+import { OfflineView } from './offline-views'
+import { Sidebar } from '@/components/sidebar'
+import { MobilePanelsProvider } from '@/components/layout/mobile-panels'
+import { OfflineNavProvider } from '@/components/layout/offline-nav'
+import type { UserWithMemberships } from '@/lib/auth/current-user'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 
@@ -168,51 +172,69 @@ export function OfflineApp() {
   const syncedAt = oldestSync(snapshots)
 
   return (
-    <div className="min-h-dvh bg-background" onClick={onClick}>
-      <div
-        className={cn(
-          'flex items-center gap-2 px-4 py-2 text-xs sm:px-6',
-          online ? 'bg-primary text-primary-foreground' : 'bg-muted text-foreground',
-        )}
-        role="status"
-      >
-        {online ? (
-          <>
-            <Wifi className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {signedOut ? (
-              <>
+    // The app's own sidebar and menus, as on the live site; pages that need a connection are greyed out
+    <OfflineNavProvider path={path} disabled={needsConnection}>
+      <MobilePanelsProvider>
+        <div className="flex h-dvh overflow-hidden" onClickCapture={onClick}>
+          <Sidebar user={offlineUser(snapshots)} />
+          <div className="flex min-w-0 flex-1 flex-col">
+            <div className="flex flex-1 flex-col overflow-y-auto px-4 pb-6 pt-[4.25rem] sm:px-6 md:p-6">
+              {/* Where this copy stands, and the way back to the live site */}
+              <div
+                className={cn(
+                  'mb-5 flex flex-wrap items-center gap-x-3 gap-y-2 rounded-xl border px-3 py-2 text-sm',
+                  online ? 'border-primary/30 bg-primary/10' : 'bg-muted',
+                )}
+                role="status"
+              >
+                {online ? <Wifi className="h-4 w-4 shrink-0" aria-hidden="true" /> : <CloudOff className="h-4 w-4 shrink-0" aria-hidden="true" />}
                 <span className="min-w-0 flex-1">
-                  You&rsquo;re signed out.{unsent > 0 ? ' Your changes are kept here until you sign in.' : ''}
+                  {!online
+                    ? `Offline: using the copy saved on this device${syncedAt ? ` ${timeAgo(syncedAt, loadedAt)}` : ''}.`
+                    : signedOut
+                      ? `You’re signed out.${unsent > 0 ? ' Your changes are kept here until you sign in.' : ''}`
+                      : 'This is the copy saved on this device.'}
                 </span>
-                <a href={SIGN_IN_PATH} data-live="" className="shrink-0 font-medium underline underline-offset-2">
-                  {unsent > 0 ? 'Sign in to send' : 'Sign in'}
-                </a>
-              </>
-            ) : (
-              <span className="min-w-0 flex-1">You&rsquo;re online. This is the copy saved on this device.</span>
-            )}
-          </>
-        ) : (
-          <>
-            <CloudOff className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span className="min-w-0 flex-1">
-              You&rsquo;re offline.{syncedAt ? ` Showing the copy saved ${timeAgo(syncedAt, loadedAt)}.` : ''}
-            </span>
-          </>
-        )}
-      </div>
-
-      {online && !signedOut && (
-        <div className="border-b px-4 py-3 sm:px-6">
-          <a href={path} data-live="" className={cn(buttonVariants({ size: 'lg' }), 'w-full')}>
-            Back to the live site
-          </a>
+                {online && (
+                  <a
+                    href={signedOut ? SIGN_IN_PATH : path}
+                    data-live=""
+                    className={cn(buttonVariants({ size: 'sm' }), 'shrink-0')}
+                  >
+                    {signedOut ? (unsent > 0 ? 'Sign in to send' : 'Sign in') : 'Back to the live site'}
+                  </a>
+                )}
+              </div>
+              <main className="flex-1">
+                <OfflineView route={route} orgSlug={orgSlug} snapshots={snapshots} ops={ops} />
+              </main>
+            </div>
+          </div>
         </div>
-      )}
-
-      <OfflineOrgs.Provider value={snapshots.map((s) => s.org)}>
-        <OfflineView route={route} orgSlug={orgSlug} snapshots={snapshots} ops={ops} />
-      </OfflineOrgs.Provider>
-    </div>
+      </MobilePanelsProvider>
+    </OfflineNavProvider>
   )
+}
+
+/** Pages the saved copy can't show: greyed out in the menus */
+function needsConnection(href: string): boolean {
+  return resolveOfflineRoute(href).kind === 'unavailable'
+}
+
+/** Enough of the signed-in member, from the saved copies, for the app's menus */
+function offlineUser(snapshots: OrgSnapshot[]): UserWithMemberships {
+  const me = snapshots[0]?.user
+  return {
+    id: me?.id ?? 'offline',
+    name: me?.name ?? null,
+    email: '',
+    avatarUrl: null,
+    isAdmin: false,
+    memberships: snapshots.map((s) => ({
+      role: s.user.canManage ? 'MANAGER' : 'MEMBER',
+      organisation: s.org,
+      organisationId: s.org.id,
+      userId: s.user.id,
+    })),
+  } as unknown as UserWithMemberships
 }
