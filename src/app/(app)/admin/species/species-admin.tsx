@@ -49,13 +49,12 @@ function SpeciesFormFields({ defaultValues, error }: SpeciesFormFieldsProps) {
         </p>
       )}
       <Field>
-        <FieldLabel htmlFor="commonName">Common name *</FieldLabel>
+        <FieldLabel htmlFor="commonName">Common name (optional)</FieldLabel>
         <Input
           id="commonName"
           name="commonName"
-          required
           defaultValue={defaultValues?.commonName}
-          placeholder="e.g. Dog Rose"
+          placeholder="Leave blank if it hasn’t one"
         />
       </Field>
       <Field>
