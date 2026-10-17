@@ -34,7 +34,6 @@ function parseSpeciesForm(formData: FormData): {
   const conservationStatusRaw = (formData.get('conservationStatus') as string | null)?.trim() || null
   const conservationStatus = conservationStatusRaw?.toUpperCase() || null
 
-  if (!commonName) return { error: 'Common name is required.' }
   if (commonName.length > 120) return { error: 'Common name must be 120 characters or fewer.' }
   if (!scientificName) return { error: 'Scientific name is required.' }
   if (scientificName.length > 200) return { error: 'Scientific name must be 200 characters or fewer.' }
@@ -42,7 +41,8 @@ function parseSpeciesForm(formData: FormData): {
     return { error: `Conservation status must be one of: ${CONSERVATION_STATUSES.join(', ')}.` }
   }
 
-  return { commonName, scientificName, family, origin, description, conservationStatus }
+  // Many species have no common name: fall back to the scientific name
+  return { commonName: commonName || scientificName, scientificName, family, origin, description, conservationStatus }
 }
 
 export async function updateSpecies(
