@@ -11,8 +11,9 @@ export const SCENE_READY_EVENT = 'hortlog-scene-ready'
  */
 export function SceneSplash({ sceneId, garden, logoUrl, title }: { sceneId: string; garden: string; logoUrl: string | null; title: string }) {
   const id = `scene-splash-${sceneId}`
-  // Runs before the page is shown: skip the screen if this scene was opened already this visit
-  const script = `try{var k=${JSON.stringify(`hortlog-splash-${sceneId}`)};if(sessionStorage.getItem(k)){var e=document.getElementById(${JSON.stringify(id)});e&&e.remove()}else{sessionStorage.setItem(k,'1')}}catch(e){}`
+  // Runs before the page is shown: hide the screen if this scene was opened already this visit
+  // (hidden, not removed, so React finds the markup it rendered)
+  const script = `try{var k=${JSON.stringify(`hortlog-splash-${sceneId}`)};if(sessionStorage.getItem(k)){var e=document.getElementById(${JSON.stringify(id)});e&&(e.style.display='none')}else{sessionStorage.setItem(k,'1')}}catch(e){}`
   return (
     <>
       <div
