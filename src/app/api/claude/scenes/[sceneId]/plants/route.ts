@@ -23,7 +23,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
   const { sceneId } = await params
 
   const scene = await prisma.scene.findFirst({
-    where: { id: sceneId, organisationId: { in: editableOrgIds(user) } },
+    where: { id: sceneId, organisationId: { in: await editableOrgIds(user) } },
     select: { id: true, organisation: { select: { slug: true } } },
   })
   if (!scene) return NextResponse.json({ error: 'No such scene, or you can’t edit it.' }, { status: 404, headers: NO_STORE })
