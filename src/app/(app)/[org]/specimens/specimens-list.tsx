@@ -96,6 +96,9 @@ export function SpecimensList({
           <Input
             type="search"
             placeholder="Search by name or accession…"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
             defaultValue={initialQuery}
             onChange={handleSearch}
             className="pl-9"

@@ -150,6 +150,9 @@ export function SpeciesBrowser({ species, initialQuery }: SpeciesBrowserProps) {
         <Input
           type="search"
           placeholder="Search by name, scientific name, or family…"
+            autoCorrect="off"
+            autoCapitalize="none"
+            spellCheck={false}
           defaultValue={initialQuery}
           onChange={handleSearch}
           className="pl-9"
