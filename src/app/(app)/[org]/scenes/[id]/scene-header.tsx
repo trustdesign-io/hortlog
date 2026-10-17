@@ -33,16 +33,12 @@ export function SceneHeader({ orgSlug, sceneId, name, title, collectionName, act
           <ChevronLeft className="mr-1 h-4 w-4" aria-hidden="true" />
           Back to scenes
         </Link>
-        {/* Phones: the visitor view link sits under the title; wider screens: beside it */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            {title && <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>}
-            <h1 className="font-heading text-2xl font-medium">{title ?? name}</h1>
-            {collectionName && <p className="mt-1 text-sm text-muted-foreground">{collectionName}</p>}
-            <div className="mt-2">
-              <SceneActiveToggle orgSlug={orgSlug} sceneId={sceneId} active={isActive} />
-            </div>
-          </div>
+        {title && <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{name}</p>}
+        <h1 className="font-heading text-2xl font-medium">{title ?? name}</h1>
+        {collectionName && <p className="mt-1 text-sm text-muted-foreground">{collectionName}</p>}
+        {/* Whether it's live, and how it looks to visitors, side by side */}
+        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+          <SceneActiveToggle orgSlug={orgSlug} sceneId={sceneId} active={isActive} />
           <VisitorPreview publicPath={publicPath} />
         </div>
       </div>

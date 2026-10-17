@@ -45,7 +45,7 @@ export function VisitorPreview({ publicPath }: { publicPath: string }) {
         target="_blank"
         rel="noopener"
         onClick={onClick}
-        className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'self-start')}
+        className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'shrink-0')}
       >
         <ExternalLink className="mr-1.5 h-4 w-4" aria-hidden="true" />
         See what visitors see
