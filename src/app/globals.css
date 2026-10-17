@@ -156,6 +156,27 @@
   display: none !important;
 }
 
+/* A visitor's opening screen for a scene: fades as soon as the photo is
+   ready (scene-splash-done), and on its own after 1.5 s whatever happens */
+.scene-splash {
+  animation: scene-splash-out 0.4s ease 1.5s forwards;
+}
+.scene-splash.scene-splash-done {
+  animation: scene-splash-out 0.35s ease forwards;
+}
+@keyframes scene-splash-out {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .scene-splash,
+  .scene-splash.scene-splash-done {
+    animation-duration: 0.01s;
+  }
+}
+
 /* ── driver.js tour overrides — use the --tour blue, not the brand green ─── */
 .hortlog-tour-popover,
 .driver-popover {
