@@ -58,7 +58,7 @@ export function Header({
 
         {/* Desktop nav */}
         {navLinks.length > 0 && (
-        <nav aria-label="Main navigation" className="hidden md:flex items-center gap-6">
+        <nav aria-label="Main navigation" data-site-menu="" className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -103,6 +103,7 @@ export function Header({
           aria-expanded={mobileOpen}
           aria-controls="mobile-nav"
           onClick={() => setOpenedAtPathname((v) => v === null ? pathname : null)}
+          data-site-menu=""
           className="md:hidden flex items-center justify-center h-9 w-9 rounded-md text-muted-foreground hover:text-foreground hover:bg-accent transition-colors duration-200 cursor-pointer"
         >
           {mobileOpen ? <XIcon size={20} /> : <MenuIcon size={20} />}
@@ -112,6 +113,7 @@ export function Header({
       {/* Mobile nav panel — aria-hidden when closed so AT skips contents */}
       <div
         id="mobile-nav"
+        data-site-menu=""
         aria-hidden={!mobileOpen}
         className={cn(
           'md:hidden border-t border-border bg-background overflow-hidden transition-all duration-200',

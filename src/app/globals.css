@@ -150,6 +150,11 @@
 :root:has([data-daylight]) [data-theme-toggle] {
   display: none;
 }
+/* Visitors don't need the site menu or the app tour */
+:root:has([data-daylight]) [data-site-menu],
+:root:has([data-daylight]) [data-tour-button] {
+  display: none !important;
+}
 
 /* ── driver.js tour overrides — use the --tour blue, not the brand green ─── */
 .hortlog-tour-popover,
