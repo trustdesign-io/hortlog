@@ -1,7 +1,6 @@
 'use client'
-/* eslint-disable @next/next/no-html-link-for-pages -- plain links on purpose: the offline app handles clicks itself and must never ask the server */
 
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { numberedOnPhoto, plantLabel } from '@/components/scene-editor/photo-scene-editor'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
@@ -159,73 +158,18 @@ function ScenePhoto({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot })
   )
 }
 
-const NAV = [
-  ['', 'Overview'],
-  ['/specimens', 'Specimens'],
-  ['/collections', 'Collections'],
-  ['/scenes', 'Scenes'],
-  ['/todo', 'To do'],
-] as const
-
-/** Every organisation saved on this device, for the menu on pages that aren't one organisation's */
-export const OfflineOrgs = createContext<{ slug: string; name: string }[]>([])
-
-function OrgNav({ org, active }: { org: { slug: string; name: string }; active: string | null }) {
-  return (
-    <nav aria-label={org.name} className="-mx-4 mt-1 overflow-x-auto px-4 [scrollbar-width:none] sm:-mx-6 sm:px-6">
-      <ul className="flex gap-1">
-        {NAV.map(([suffix, label]) => (
-          <li key={label}>
-            <a
-              href={`/${org.slug}${suffix}`}
-              aria-current={active === suffix ? 'page' : undefined}
-              className={cn(
-                'inline-flex min-h-11 items-center whitespace-nowrap border-b-2 px-2 text-sm',
-                active === suffix ? 'border-primary font-medium' : 'border-transparent text-muted-foreground',
-              )}
-            >
-              {label}
-            </a>
-          </li>
-        ))}
-      </ul>
-    </nav>
-  )
-}
-
+/**
+ * Each offline page's body. The app's own sidebar and menus are around it (see
+ * offline-app.tsx), so this is just the page area.
+ */
 function Chrome({
-  snap,
-  active,
   children,
 }: {
   snap: OrgSnapshot | null
   active: string | null
   children: ReactNode
 }) {
-  const orgs = useContext(OfflineOrgs)
-  return (
-    <>
-      <header className="border-b px-4 pt-3 sm:px-6">
-        <div className="flex items-center justify-between gap-3">
-          <a href="/records" className="font-heading text-lg font-semibold">
-            hortlog
-          </a>
-          <a href="/records" className={cn('text-sm', active === 'record' ? 'font-medium' : 'text-muted-foreground')}>
-            My record
-          </a>
-        </div>
-        {/* One organisation's page: its menu. Elsewhere (My record): every saved organisation's, so there's always a way on */}
-        {(snap ? [snap.org] : orgs).map((org) => (
-          <div key={org.slug}>
-            <p className="mt-2 truncate text-sm font-medium">{org.name}</p>
-            <OrgNav org={org} active={snap ? active : null} />
-          </div>
-        ))}
-        {!snap && orgs.length === 0 && <div className="h-3" />}
-      </header>
-      <main className="mx-auto max-w-3xl space-y-8 px-4 py-6 sm:px-6">{children}</main>
-    </>
-  )
+  return <div className="space-y-8">{children}</div>
 }
 
 function Title({ children, sub }: { children: ReactNode; sub?: ReactNode }) {

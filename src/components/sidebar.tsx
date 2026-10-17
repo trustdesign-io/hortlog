@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, type ReactNode } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import {
@@ -27,10 +27,55 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/s
 import { SignOutButton, UserIdentity, UserMenu } from '@/components/user-menu'
 import { Logo } from '@/components/layout/logo'
 import { useMobilePanels } from '@/components/layout/mobile-panels'
+import { useOfflineNav } from '@/components/layout/offline-nav'
 import type { TourPanel } from '@/components/tour/tour-steps'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 
 type OrgOption = { id: string; slug: string; name: string }
+
+/** The page the sidebar is showing for: the real address, or the offline copy's */
+function useNavPath(): string {
+  const pathname = usePathname()
+  const offline = useOfflineNav()
+  return offline?.path ?? pathname ?? ''
+}
+
+/** A sidebar link: an ordinary link in the offline copy (which handles them itself), greyed out if it needs a connection */
+function NavAnchor({
+  href,
+  className,
+  children,
+  onClick,
+  ...rest
+}: {
+  href: string
+  className?: string
+  children: ReactNode
+  onClick?: () => void
+  'aria-current'?: 'page'
+  'data-tour'?: string
+}) {
+  const offline = useOfflineNav()
+  if (offline?.disabled(href)) {
+    return (
+      <span aria-disabled="true" title="Needs a connection" className={cn(className, 'pointer-events-none opacity-40')}>
+        {children}
+      </span>
+    )
+  }
+  if (offline) {
+    return (
+      <a href={href} className={className} onClick={onClick} {...rest}>
+        {children}
+      </a>
+    )
+  }
+  return (
+    <Link href={href} prefetch={false} className={className} onClick={onClick} {...rest}>
+      {children}
+    </Link>
+  )
+}
 
 interface SidebarProps {
   user: UserWithMemberships
@@ -87,20 +132,19 @@ interface NavLinksProps {
 }
 
 function NavLinks({ items, onNavigate, label }: NavLinksProps) {
-  const pathname = usePathname()
-  const activeHref = getActiveHref(items, pathname ?? '')
+  const pathname = useNavPath()
+  const activeHref = getActiveHref(items, pathname)
 
   return (
     <nav className="flex flex-col gap-0.5 px-3" aria-label={label ?? 'Navigation'}>
       {items.map((item) => {
         const isActive = item.href === activeHref
         return (
-          <Link
+          <NavAnchor
             key={item.href}
             href={item.href}
-            // Every page here is dynamic; prefetching them all at once on each load
-            // fired a burst of server calls that crowded out form submissions.
-            prefetch={false}
+            // Every page here is dynamic, so links aren't prefetched (see NavAnchor):
+            // prefetching them all at once crowded out form submissions.
             onClick={onNavigate}
             {...(item.tourId ? { 'data-tour': item.tourId } : {})}
             className={cn(
@@ -113,7 +157,7 @@ function NavLinks({ items, onNavigate, label }: NavLinksProps) {
           >
             <item.icon className="h-4 w-4 shrink-0" aria-hidden={true} />
             {item.label}
-          </Link>
+          </NavAnchor>
         )
       })}
     </nav>
@@ -183,9 +227,8 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
               : isAdmin ? 'Admin access' : null
             return (
               <li key={org.id} role="option" aria-selected={org.slug === currentSlug}>
-                <Link
+                <NavAnchor
                   href={`/${org.slug}`}
-                  prefetch={false}
                   onClick={() => setOpen(false)}
                   className={cn(
                     'flex items-center justify-between gap-2 px-3 py-2 text-sm hover:bg-muted transition-colors',
@@ -196,7 +239,7 @@ function OrgSwitcher({ user, currentSlug, allOrgs }: OrgSwitcherProps) {
                   {roleLabel && (
                     <span className="shrink-0 text-xs text-muted-foreground">{roleLabel}</span>
                   )}
-                </Link>
+                </NavAnchor>
               </li>
             )
           })}
@@ -221,7 +264,7 @@ function getKnownSlugs(user: UserWithMemberships, allOrgs: OrgOption[] | undefin
 }
 
 function SidebarContent({ user, onNavigate, allOrgs, includeYou = true }: SidebarContentProps) {
-  const pathname = usePathname()
+  const pathname = useNavPath()
   const knownSlugs = getKnownSlugs(user, allOrgs)
   const orgSlug = resolveOrgSlug(pathname, knownSlugs, user.memberships.map((m) => m.organisation.slug))
   const orgNav = orgSlug ? buildOrgNav(orgSlug, canManageOrg(user, orgSlug)) : []
