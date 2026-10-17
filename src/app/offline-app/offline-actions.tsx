@@ -170,6 +170,8 @@ function describeOp(op: OutboxOp, snapshots: OrgSnapshot[]): string {
       return `New plant – ${op.fieldName ?? snap?.speciesList?.find((s) => s.id === op.speciesId)?.scientificName ?? 'a plant'}`
     case 'placeSpecimen':
       return `Placed ${plant(op.specimenId)} – ${scene(op.sceneId)}`
+    case 'placeOnPhoto':
+      return `Marked ${plant(op.specimenId)} on the photo – ${scene(op.sceneId)}`
     case 'unplaceSpecimen':
       return `Took ${plant(op.specimenId)} off its scene`
     case 'splitHex':

@@ -219,7 +219,7 @@ export async function removeSpecimenFromScene(
   try {
     await prisma.specimen.update({
       where: { id: specimenId, organisationId: org.id },
-      data: { sceneId: null, gridCell: null },
+      data: { sceneId: null, gridCell: null, extraCells: [], photoX: null, photoY: null },
     })
   } catch (err) {
     console.error('[removeSpecimenFromScene] error:', err)

@@ -12,6 +12,7 @@ import { nameKey } from '@/lib/taxonomy'
 import type {
   CreateSpecimenOp,
   OpResult,
+  PlaceOnPhotoOp,
   PlaceSpecimenOp,
   ResizeGridOp,
   SplitHexOp,
@@ -269,7 +270,7 @@ async function applyPlaceSpecimen(user: UserWithMemberships, op: PlaceSpecimenOp
     await releaseHex(scene.id, hex, tx)
     await tx.specimen.updateMany({
       where: { sceneId: scene.id, gridCell: cell, id: { not: specimen.id } },
-      data: { sceneId: null, gridCell: null, extraCells: [] },
+      data: { sceneId: null, gridCell: null, extraCells: [], photoX: null, photoY: null },
     })
     await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: scene.id, gridCell: cell, extraCells: [] } })
   })
@@ -284,7 +285,24 @@ async function applyUnplaceSpecimen(user: UserWithMemberships, op: UnplaceSpecim
   })
   if (!specimen) return rejected(op.id, 'This plant has been removed.')
   await once(op, user.id, async (tx) => {
-    await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: null, gridCell: null, extraCells: [] } })
+    await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: null, gridCell: null, extraCells: [], photoX: null, photoY: null } })
+  })
+  return applied(op.id)
+}
+
+async function applyPlaceOnPhoto(user: UserWithMemberships, op: PlaceOnPhotoOp): Promise<OpResult> {
+  if (!can(user, op.org, 'can_edit_scene')) return rejected(op.id, 'You can no longer change scenes here.')
+  const scene = await sceneFor(op)
+  if (!scene) return rejected(op.id, 'This scene has been deleted.')
+  const specimen = await prisma.specimen.findFirst({
+    where: { id: op.specimenId, organisationId: scene.organisationId },
+    select: { id: true, sceneId: true },
+  })
+  if (!specimen) return rejected(op.id, 'This plant has been removed.')
+  // Coming from another scene: its place there doesn't carry over
+  const moving = specimen.sceneId !== scene.id ? { gridCell: null, extraCells: [] } : {}
+  await once(op, user.id, async (tx) => {
+    await tx.specimen.update({ where: { id: specimen.id }, data: { sceneId: scene.id, photoX: op.x, photoY: op.y, ...moving } })
   })
   return applied(op.id)
 }
@@ -394,6 +412,8 @@ function applyOne(user: UserWithMemberships, op: SyncOpInput): Promise<OpResult>
       return applyCreateSpecimen(user, op)
     case 'placeSpecimen':
       return applyPlaceSpecimen(user, op)
+    case 'placeOnPhoto':
+      return applyPlaceOnPhoto(user, op)
     case 'unplaceSpecimen':
       return applyUnplaceSpecimen(user, op)
     case 'splitHex':

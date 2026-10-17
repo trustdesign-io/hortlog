@@ -1,86 +1,31 @@
 import { describe, expect, it } from 'vitest'
-import { planPhotoLayout } from './photo-layout'
+import { planPhotoPlants } from './photo-layout'
 
-const empty = { splitCells: [] as string[] }
-
-describe('planPhotoLayout', () => {
-  it('plans a new bed: size, outline, plants, small cells split their hex', () => {
-    const r = planPhotoLayout(empty, [], {
-      rows: 3,
-      cols: 5,
-      blockedCells: ['0,0', '0,4'],
+describe('planPhotoPlants', () => {
+  it('takes plants with a name and a spot on the photo', () => {
+    const r = planPhotoPlants({
       plants: [
-        { cell: '1,1', name: 'Agave americana', note: 'back left' },
-        { cell: '2,3:1', name: 'Small grey rosette' },
-        { cell: '2,3:4', name: 'Plant 3' },
+        { name: ' Agave americana ', note: 'back left', photo: [0.2, 0.3] },
+        { name: 'Plant 2', photo: [0, 1] },
       ],
     })
-    expect(r.ok).toBe(true)
-    if (!r.ok) return
-    expect(r.plan).toMatchObject({ rows: 3, cols: 5, rowShift: 0, blockedCells: ['0,0', '0,4'], splitCells: ['2,3'] })
-    expect(r.plan.plants).toEqual([
-      { row: 1, col: 1, sub: null, name: 'Agave americana', note: 'back left', extraCells: [], photo: null },
-      { row: 2, col: 3, sub: 1, name: 'Small grey rosette', note: null, extraCells: [], photo: null },
-      { row: 2, col: 3, sub: 4, name: 'Plant 3', note: null, extraCells: [], photo: null },
-    ])
+    expect(r).toEqual({
+      ok: true,
+      plants: [
+        { name: 'Agave americana', note: 'back left', x: 0.2, y: 0.3 },
+        { name: 'Plant 2', note: null, x: 0, y: 1 },
+      ],
+    })
   })
 
-  it('refuses the whole layout with every problem listed', () => {
-    const r = planPhotoLayout(empty, [], {
-      rows: 2,
-      cols: 2,
-      blockedCells: ['5,5'],
-      plants: [{ cell: '0,0', name: '' }, { cell: '3,0', name: 'Off the grid' }, { cell: '1,1', name: 'A' }, { cell: '1,1', name: 'B' }],
-    })
+  it('refuses the whole request, listing every problem', () => {
+    const r = planPhotoPlants({ plants: [{ name: '', photo: [0.1, 0.1] }, { name: 'Off the photo', photo: [1.2, 0.5] }, { name: 'No spot' }] })
     expect(r.ok).toBe(false)
-    if (r.ok) return
-    expect(r.errors).toHaveLength(4)
+    if (!r.ok) expect(r.errors).toHaveLength(3)
   })
 
-  it('keeps plants already placed inside the bed', () => {
-    const existing = [{ id: 'p', cell: '3,2', name: 'Aloe vera' }]
-    const tooSmall = planPhotoLayout(empty, existing, { rows: 3, cols: 3 })
-    expect(tooSmall.ok).toBe(false)
-    const blocked = planPhotoLayout(empty, existing, { rows: 4, cols: 4, blockedCells: ['3,2'] })
-    expect(blocked.ok).toBe(false)
-    const taken = planPhotoLayout(empty, existing, { rows: 4, cols: 4, plants: [{ cell: '3,2', name: 'New' }] })
-    expect(taken.ok).toBe(false)
-    const fine = planPhotoLayout(empty, existing, { rows: 4, cols: 4, plants: [{ cell: '0,0', name: 'New' }] })
-    expect(fine.ok).toBe(true)
-  })
-
-  it('never mixes a whole-hex plant with small-cell plants', () => {
-    expect(planPhotoLayout(empty, [], { rows: 2, cols: 2, plants: [{ cell: '0,0', name: 'A' }, { cell: '0,0:2', name: 'B' }] }).ok).toBe(false)
-    expect(planPhotoLayout(empty, [{ id: 'x', cell: '0,0:1', name: 'X' }], { rows: 2, cols: 2, plants: [{ cell: '0,0', name: 'A' }] }).ok).toBe(false)
-  })
-
-  it('rejects grid sizes out of range', () => {
-    expect(planPhotoLayout(empty, [], { rows: 0, cols: 3 }).ok).toBe(false)
-    expect(planPhotoLayout(empty, [], { rows: 21, cols: 3 }).ok).toBe(false)
-  })
-
-  it('lets a big plant cover more hexes, which nothing else can use', () => {
-    const r = planPhotoLayout(empty, [], {
-      rows: 3,
-      cols: 3,
-      plants: [{ cell: '1,1', name: 'Big agave', cells: ['1,2', '2,1'], photo: [0.4, 0.6] }],
-    })
-    expect(r.ok && r.plan.plants[0]).toMatchObject({ extraCells: ['1,2', '2,1'], photo: [0.4, 0.6] })
-    const clash = planPhotoLayout(empty, [], {
-      rows: 3,
-      cols: 3,
-      plants: [
-        { cell: '1,1', name: 'Big agave', cells: ['1,2'] },
-        { cell: '1,2:3', name: 'Tucked in' },
-      ],
-    })
-    expect(clash.ok).toBe(false)
-    const existingSpread = planPhotoLayout(empty, [{ id: 'a', cell: '0,0', name: 'A', extraCells: ['0,1'] }], {
-      rows: 3,
-      cols: 3,
-      plants: [{ cell: '0,1', name: 'B' }],
-    })
-    expect(existingSpread.ok).toBe(false)
-    expect(planPhotoLayout(empty, [], { rows: 3, cols: 3, plants: [{ cell: '0,0', name: 'A', photo: [2, 0] }] }).ok).toBe(false)
+  it('needs at least one plant', () => {
+    expect(planPhotoPlants({}).ok).toBe(false)
+    expect(planPhotoPlants({ plants: [] }).ok).toBe(false)
   })
 })

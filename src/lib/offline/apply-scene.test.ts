@@ -103,7 +103,7 @@ describe('placing and laying out offline', () => {
     await applyOps(manager, [{ ...base(2), kind: 'placeSpecimen', sceneId: 'sc1', specimenId: newId, row: 1, col: 1, sub: 3 }])
     expect(specimen.updateMany).toHaveBeenCalledWith({
       where: { sceneId: 'sc1', gridCell: '1,1:3', id: { not: newId } },
-      data: { sceneId: null, gridCell: null, extraCells: [] },
+      data: { sceneId: null, gridCell: null, extraCells: [], photoX: null, photoY: null },
     })
     expect(specimen.update).toHaveBeenCalledWith({ where: { id: newId }, data: { sceneId: 'sc1', gridCell: '1,1:3', extraCells: [] } })
   })

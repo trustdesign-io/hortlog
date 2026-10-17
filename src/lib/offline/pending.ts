@@ -120,12 +120,28 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         break
       }
 
+      case 'placeOnPhoto': {
+        const s = findSpecimen(op.specimenId)
+        if (!s) break
+        if (s.sceneId !== op.sceneId) {
+          s.gridCell = null
+          s.extraCells = []
+        }
+        s.sceneId = op.sceneId
+        s.photoX = op.x
+        s.photoY = op.y
+        s.pending = true
+        break
+      }
+
       case 'unplaceSpecimen': {
         const s = findSpecimen(op.specimenId)
         if (!s) break
         s.sceneId = null
         s.gridCell = null
         s.extraCells = []
+        s.photoX = null
+        s.photoY = null
         s.pending = true
         break
       }

@@ -30,6 +30,8 @@ export async function buildOrgSnapshot(
         sceneId: true,
         gridCell: true,
         extraCells: true,
+        photoX: true,
+        photoY: true,
         collections: { select: { collectionId: true } },
         species: {
           select: {
@@ -60,6 +62,7 @@ export async function buildOrgSnapshot(
         rowShift: true,
         splitCells: true,
         blockedCells: true,
+        photoTakenAt: true,
         title: true,
         active: true,
         perspective: true,
@@ -124,6 +127,8 @@ export async function buildOrgSnapshot(
       sceneId: s.sceneId,
       gridCell: s.gridCell,
       extraCells: s.extraCells,
+      photoX: s.photoX,
+      photoY: s.photoY,
       collectionIds: s.collections.map((c) => c.collectionId),
       species: {
         commonName: s.species.commonName,
@@ -136,7 +141,7 @@ export async function buildOrgSnapshot(
         status: s.species.statusCategory ?? s.species.conservationStatus,
       },
     })),
-    scenes,
+    scenes: scenes.map(({ photoTakenAt, ...s }) => ({ ...s, photoVersion: photoTakenAt?.toISOString() ?? null })),
     collections: collections.map((c) => ({
       id: c.id,
       name: c.name,

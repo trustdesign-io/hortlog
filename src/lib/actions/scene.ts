@@ -169,7 +169,7 @@ export async function placeSpecimen(
       // Evict any current occupant of this cell
       prisma.specimen.updateMany({
         where: { sceneId, gridCell: cell, id: { not: specimenId } },
-        data: { sceneId: null, gridCell: null, extraCells: [] },
+        data: { sceneId: null, gridCell: null, extraCells: [], photoX: null, photoY: null },
       }),
       // Place (or move) the specimen into this cell
       prisma.specimen.update({
@@ -254,7 +254,7 @@ export async function removeSpecimenFromCell(
   try {
     await prisma.specimen.update({
       where: { id: specimenId, organisationId: org.id, sceneId },
-      data: { sceneId: null, gridCell: null, extraCells: [] },
+      data: { sceneId: null, gridCell: null, extraCells: [], photoX: null, photoY: null },
     })
   } catch (err) {
     console.error('[removeSpecimenFromCell] error:', err)
@@ -585,7 +585,7 @@ export async function deleteScene(orgSlug: string, sceneId: string): Promise<Act
 
   try {
     await prisma.$transaction([
-      prisma.specimen.updateMany({ where: { sceneId: scene.id }, data: { sceneId: null, gridCell: null, extraCells: [] } }),
+      prisma.specimen.updateMany({ where: { sceneId: scene.id }, data: { sceneId: null, gridCell: null, extraCells: [], photoX: null, photoY: null } }),
       prisma.scene.delete({ where: { id: scene.id } }),
     ])
   } catch (err) {
