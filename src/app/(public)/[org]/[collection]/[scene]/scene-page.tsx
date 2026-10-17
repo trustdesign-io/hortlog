@@ -169,7 +169,7 @@ export async function ScenePage({
   const listed = [...spotted, ...specimens.filter((s) => !numberOf.has(s.id))];
 
   return (
-    <SceneShell>
+    <SceneShell fill>
       <SceneSplash sceneId={scene.id} logoUrl={org.logoUrl} />
       <GaEvent
         name="view_page_load"
@@ -204,11 +204,22 @@ export async function ScenePage({
 }
 
 /** Visitor pages are read outdoors: always the light, high-contrast theme */
-function SceneShell({ children }: { children: React.ReactNode }) {
+function SceneShell({
+  children,
+  fill = false,
+}: {
+  children: React.ReactNode;
+  /** Use the whole screen below the header, so the plant cards grow into it */
+  fill?: boolean;
+}) {
   return (
     <div
       data-daylight=""
-      className="mx-auto max-w-2xl space-y-4 px-4 pb-10 pt-4 sm:px-6"
+      className={
+        fill
+          ? "mx-auto flex min-h-[calc(100dvh-3.5rem-1px)] max-w-2xl flex-col gap-4 px-4 pb-4 pt-4 sm:px-6"
+          : "mx-auto max-w-2xl space-y-4 px-4 pb-10 pt-4 sm:px-6"
+      }
     >
       {children}
     </div>

@@ -90,7 +90,8 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
   const marked = plants.filter((p) => p.number !== null && p.x !== null && p.y !== null)
 
   return (
-    <div className="space-y-3">
+    // Fills the rest of the screen: the cards take whatever height the photo leaves
+    <div className="flex flex-1 flex-col gap-3">
       {!photoFailed && (
         <div className="relative -mx-4 overflow-hidden bg-muted sm:mx-0 sm:rounded-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element -- photo behind a signed link */}
@@ -118,7 +119,7 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
         </div>
       )}
 
-      <section aria-labelledby="plants-here" className="space-y-2">
+      <section aria-labelledby="plants-here" className="flex flex-1 flex-col gap-2">
         <div className="flex items-end justify-between gap-3">
           <h2 id="plants-here" className="font-heading text-lg">
             Plants here
@@ -154,7 +155,7 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
           ref={track}
           role="list"
           aria-label={current ? `Plants here, showing ${current.commonName}` : 'Plants here'}
-          className="relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:scroll-px-0 sm:px-0"
+          className="relative -mx-4 flex min-h-40 flex-1 snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:scroll-px-0 sm:px-0"
         >
           {plants.map((p, i) => (
             <li
@@ -162,22 +163,28 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
               ref={(el) => {
                 cards.current[i] = el
               }}
-              className="w-[80%] shrink-0 snap-start sm:w-[46%]"
+              className="flex w-[80%] shrink-0 snap-start sm:w-[46%]"
             >
-              {/* Compact, so the photo and the cards fit one screen */}
+              {/* As tall as the screen allows: the plant's picture grows into the space */}
               <Link
                 href={`${basePath}/${p.slug}`}
                 className={cn(
-                  'group flex items-center gap-3 rounded-2xl border bg-card p-2 pr-3 shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  'group flex w-full flex-col overflow-hidden rounded-2xl border bg-card shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                   i === active && 'border-primary shadow-md',
                 )}
               >
-                <span className="relative block h-16 w-16 shrink-0 overflow-hidden rounded-xl bg-muted">
-                  <SpecimenImage imageUrl={p.thumbnailUrl} alt="" fill sizes="64px" className="object-cover" />
+                <span className="relative block min-h-16 flex-1 bg-muted">
+                  <SpecimenImage
+                    imageUrl={p.thumbnailUrl}
+                    alt=""
+                    fill
+                    sizes="(min-width: 640px) 320px, 80vw"
+                    className="object-cover transition-transform group-hover:scale-[1.03]"
+                  />
                   {p.number !== null && (
                     <span
                       className={cn(
-                        'absolute left-1 top-1 flex h-6 min-w-6 items-center justify-center rounded-full px-1 text-xs font-semibold shadow',
+                        'absolute left-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full px-1.5 text-sm font-semibold shadow',
                         i === active ? 'bg-primary text-primary-foreground' : 'bg-white/90 text-[#16201A]',
                       )}
                       aria-hidden="true"
@@ -186,14 +193,16 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
                     </span>
                   )}
                 </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium leading-tight">
-                    {p.number !== null && <span className="sr-only">{p.number}: </span>}
-                    {p.commonName}
+                <span className="flex items-center gap-2 px-3 py-2.5">
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-medium leading-tight">
+                      {p.number !== null && <span className="sr-only">{p.number}: </span>}
+                      {p.commonName}
+                    </span>
+                    <ScientificName className="block truncate text-sm text-muted-foreground">{p.scientificName}</ScientificName>
                   </span>
-                  <ScientificName className="block truncate text-sm text-muted-foreground">{p.scientificName}</ScientificName>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
               </Link>
             </li>
           ))}
