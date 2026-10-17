@@ -180,13 +180,13 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
           {adding.family && <p className="mt-0.5 text-xs text-muted-foreground">{adding.family}</p>}
         </div>
         <div className="flex flex-col gap-2">
-          <Label htmlFor={`${inputId}-common`}>Common name</Label>
+          <Label htmlFor={`${inputId}-common`}>Common name (optional)</Label>
           <Input
             id={`${inputId}-common`}
             value={commonName}
             onChange={(e) => setCommonName(e.target.value)}
             maxLength={120}
-            placeholder="e.g. Snake plant"
+            placeholder="Leave blank if it hasn’t one"
             disabled={isPending}
             autoFocus
           />
@@ -197,7 +197,7 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
           </p>
         )}
         <div className="flex gap-2">
-          <Button type="button" size="sm" onClick={add} disabled={isPending || !commonName.trim()}>
+          <Button type="button" size="sm" onClick={add} disabled={isPending}>
             {isPending ? 'Adding…' : 'Add species'}
           </Button>
           <Button type="button" size="sm" variant="ghost" onClick={() => setAdding(null)} disabled={isPending}>

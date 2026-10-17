@@ -120,8 +120,8 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
   })
   if (existing) return { ok: true, species: existing, existed: true }
 
-  const name = commonName.trim()
-  if (!name) return { ok: false, error: 'Common name is required.' }
+  // Many species have no common name: fall back to the scientific name
+  const name = commonName.trim() || taxon.scientificName
   if (name.length > 120) return { ok: false, error: 'Common name must be 120 characters or fewer.' }
 
   // A free slug: the name, then the name with a number
