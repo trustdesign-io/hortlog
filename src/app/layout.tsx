@@ -1,4 +1,5 @@
 import type { Metadata } from 'next'
+import SPLASH_SCREENS from '@/lib/splash-screens.json'
 import { Fraunces, Figtree } from 'next/font/google'
 import { ThemeProvider } from '@/components/theme-provider'
 import { GAScript } from '@/components/ga-script'
@@ -30,7 +31,8 @@ export const metadata: Metadata = {
   manifest: '/manifest.webmanifest',
   icons: { apple: '/apple-touch-icon.png' },
   // Added to a phone's home screen, hortlog opens full screen and works offline
-  appleWebApp: { capable: true, title: 'hortlog', statusBarStyle: 'default' },
+  // Launch screens for the home-screen app (scripts/generate-splash.mjs)
+  appleWebApp: { capable: true, title: 'hortlog', statusBarStyle: 'default', startupImage: SPLASH_SCREENS },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

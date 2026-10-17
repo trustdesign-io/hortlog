@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Header } from '@/components/layout/header'
+import { PreviewReturnBar } from '@/components/layout/preview-return-bar'
 import { Footer } from '@/components/layout/footer'
 import { AppFooter } from '@/components/layout/app-footer'
 import { PublicFooter } from '@/components/layout/public-footer'
@@ -33,6 +34,7 @@ export default async function PublicLayout({ children }: { children: ReactNode }
       >
         Skip to main content
       </a>
+      <PreviewReturnBar />
       <Header signedIn={signedIn} />
       <main id="main-content" className="flex-1">{children}</main>
       <PublicFooter

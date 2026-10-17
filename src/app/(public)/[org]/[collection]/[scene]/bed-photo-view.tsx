@@ -94,7 +94,7 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
       {!photoFailed && (
         <div className="relative -mx-4 overflow-hidden bg-muted sm:mx-0 sm:rounded-2xl">
           {/* eslint-disable-next-line @next/next/no-img-element -- photo behind a signed link */}
-          <img src={photoUrl} alt="The scene in front of you" className="block h-auto w-full" onError={() => setPhotoFailed(true)} />
+          <img src={photoUrl} alt="The scene in front of you" className="block h-auto w-full" data-scene-photo="" onLoad={() => window.dispatchEvent(new Event('hortlog-scene-ready'))} onError={() => { setPhotoFailed(true); window.dispatchEvent(new Event('hortlog-scene-ready')) }} />
           {marked.map((p) => {
             const i = plants.indexOf(p)
             const on = i === active
@@ -154,7 +154,7 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
           ref={track}
           role="list"
           aria-label={current ? `Plants here, showing ${current.commonName}` : 'Plants here'}
-          className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:scroll-px-0 sm:px-0"
+          className="relative -mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:scroll-px-0 sm:px-0"
         >
           {plants.map((p, i) => (
             <li

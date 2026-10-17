@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { BedPhotoView, type ScenePlant } from "./bed-photo-view";
+import { SceneSplash } from "./scene-splash";
 import { GaEvent } from "@/components/ga-event";
 import { OfflineNotice } from "@/components/offline/offline-notice";
 import { publicScenePath } from "@/lib/scene-urls";
@@ -170,6 +171,12 @@ export async function ScenePage({
 
   return (
     <SceneShell>
+      <SceneSplash
+        sceneId={scene.id}
+        garden={gardenName}
+        logoUrl={org.logoUrl}
+        title={title}
+      />
       <GaEvent
         name="view_page_load"
         params={{ view_id: scene.id, org: orgSlug }}
