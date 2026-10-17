@@ -265,11 +265,11 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Natural interpretation */}
+        {/* Integrated interpretation */}
         <section className="px-6 py-20 bg-card border-t border-border">
           <div className="max-w-2xl mx-auto text-center">
             <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-3">
-              Natural interpretation
+              Integrated interpretation
             </p>
             <h2 className="font-heading text-2xl sm:text-3xl font-medium mb-4">
               Every plant has a story worth telling
