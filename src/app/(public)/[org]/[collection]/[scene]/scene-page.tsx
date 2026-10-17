@@ -4,9 +4,7 @@ import { bedPhotoUrl } from "@/lib/offline/types";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
-import { ScientificName } from "@/components/ui/scientific-name";
-import { SpecimenImage } from "@/components/ui/specimen-image";
-import { BedPhotoView, type SpottedPlant } from "./bed-photo-view";
+import { BedPhotoView, type ScenePlant } from "./bed-photo-view";
 import { GaEvent } from "@/components/ga-event";
 import { OfflineNotice } from "@/components/offline/offline-notice";
 import { publicScenePath } from "@/lib/scene-urls";
@@ -182,8 +180,8 @@ export async function ScenePage({
         title={title}
         intro={
           usePhoto
-            ? "Tap a number on the photo to find out what it is, where it comes from and how it got here."
-            : "Tap a plant below to find out what it is, where it comes from and how it got here."
+            ? "Tap a number on the photo, or swipe through the plants, to find out what each one is, where it comes from and how it got here."
+            : "Swipe through the plants to find out what each one is, where it comes from and how it got here."
         }
         aside={<OfflineNotice />}
       />
@@ -195,68 +193,16 @@ export async function ScenePage({
           scene.photoTakenAt.toISOString(),
         )}
         basePath={basePath}
-        fallback={null}
-        plants={spotted.map((s): SpottedPlant => ({
-          number: numberOf.get(s.id) as number,
+        plants={listed.map((s): ScenePlant => ({
+          number: numberOf.get(s.id) ?? null,
           slug: s.slug,
           commonName: s.species.commonName,
           scientificName: s.species.scientificName,
           thumbnailUrl: s.imageUrl ?? s.species.photoUrl,
-          x: s.photoX as number,
-          y: s.photoY as number,
+          x: s.photoX,
+          y: s.photoY,
         }))}
       />
-
-      <section aria-labelledby="in-this-bed" className="space-y-3">
-        <h2 id="in-this-bed" className="font-heading text-xl">
-          In this bed{" "}
-          <span className="text-base text-muted-foreground">
-            · {specimens.length} {specimens.length === 1 ? "plant" : "plants"}
-          </span>
-        </h2>
-        <ul role="list" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {listed.map((s) => {
-            const n = numberOf.get(s.id);
-            return (
-              <li key={s.id}>
-                <Link
-                  href={`${basePath}/${s.slug}`}
-                  className="group block overflow-hidden rounded-2xl border bg-card shadow-sm transition-shadow hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span className="relative block aspect-square bg-muted">
-                    <SpecimenImage
-                      imageUrl={s.imageUrl ?? s.species.photoUrl}
-                      alt=""
-                      fill
-                      sizes="(min-width: 640px) 220px, 50vw"
-                      className="object-cover transition-transform group-hover:scale-[1.03]"
-                    />
-                    {usePhoto && n !== undefined && (
-                      <span
-                        className="absolute left-2 top-2 flex h-7 min-w-7 items-center justify-center rounded-full bg-white/90 px-1.5 text-xs font-semibold text-[#16201A] shadow"
-                        aria-hidden="true"
-                      >
-                        {n}
-                      </span>
-                    )}
-                  </span>
-                  <span className="block space-y-0.5 p-3">
-                    <span className="block font-medium leading-snug">
-                      {usePhoto && n !== undefined && (
-                        <span className="sr-only">{n}: </span>
-                      )}
-                      {s.species.commonName}
-                    </span>
-                    <ScientificName className="block text-sm leading-snug text-muted-foreground">
-                      {s.species.scientificName}
-                    </ScientificName>
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
     </SceneShell>
   );
 }
