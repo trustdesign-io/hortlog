@@ -155,7 +155,7 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
           ref={track}
           role="list"
           aria-label={current ? `Plants here, showing ${current.commonName}` : 'Plants here'}
-          className="relative -mx-4 flex min-h-40 flex-1 snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:scroll-px-0 sm:px-0"
+          className="relative -mx-4 flex min-h-32 flex-1 snap-x snap-mandatory gap-3 overflow-x-auto scroll-px-4 px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:scroll-px-0 sm:px-0"
         >
           {plants.map((p, i) => (
             <li
