@@ -166,17 +166,11 @@ export async function ScenePage({
         (a.photoX as number) - (b.photoX as number),
     );
   const numberOf = new Map(spotted.map((s, i) => [s.id, i + 1]));
-  const usePhoto = spotted.length > 0;
   const listed = [...spotted, ...specimens.filter((s) => !numberOf.has(s.id))];
 
   return (
     <SceneShell>
-      <SceneSplash
-        sceneId={scene.id}
-        garden={gardenName}
-        logoUrl={org.logoUrl}
-        title={title}
-      />
+      <SceneSplash sceneId={scene.id} logoUrl={org.logoUrl} />
       <GaEvent
         name="view_page_load"
         params={{ view_id: scene.id, org: orgSlug }}
@@ -185,11 +179,6 @@ export async function ScenePage({
         garden={gardenName}
         logoUrl={org.logoUrl}
         title={title}
-        intro={
-          usePhoto
-            ? "Tap a number on the photo, or swipe through the plants, to find out what each one is, where it comes from and how it got here."
-            : "Swipe through the plants to find out what each one is, where it comes from and how it got here."
-        }
         aside={<OfflineNotice />}
       />
 
@@ -219,7 +208,7 @@ function SceneShell({ children }: { children: React.ReactNode }) {
   return (
     <div
       data-daylight=""
-      className="mx-auto max-w-2xl space-y-6 px-4 pb-10 pt-6 sm:px-6"
+      className="mx-auto max-w-2xl space-y-4 px-4 pb-10 pt-4 sm:px-6"
     >
       {children}
     </div>
@@ -240,7 +229,7 @@ function SceneHero({
   aside?: React.ReactNode;
 }) {
   return (
-    <header className="space-y-2">
+    <header className="space-y-1">
       <div className="flex items-center justify-between gap-3">
         <p className="flex min-w-0 items-center gap-2 text-sm font-medium text-primary">
           {logoUrl ? (
@@ -257,7 +246,7 @@ function SceneHero({
         </p>
         {aside}
       </div>
-      <h1 className="font-heading text-3xl leading-tight text-balance sm:text-4xl">
+      <h1 className="font-heading text-2xl leading-tight text-balance sm:text-3xl">
         {title}
       </h1>
       {intro && (
