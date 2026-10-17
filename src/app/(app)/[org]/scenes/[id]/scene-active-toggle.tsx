@@ -28,12 +28,9 @@ export function SceneActiveToggle({ orgSlug, sceneId, active }: { orgSlug: strin
   return (
     <div className="space-y-1">
       <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
-        <Switch checked={on} onCheckedChange={change} disabled={isPending} aria-describedby={`active-${sceneId}`} />
+        <Switch checked={on} onCheckedChange={change} disabled={isPending} />
         <span className="font-medium">{on ? 'Active' : 'Inactive'}</span>
       </label>
-      <p id={`active-${sceneId}`} className="text-xs text-muted-foreground">
-        {on ? 'In use at the venue and counted.' : 'Not in use yet: hidden from visitors and counts.'}
-      </p>
       {error && (
         <p className="text-xs text-destructive" role="alert">
           {error}
