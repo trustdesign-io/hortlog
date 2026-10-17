@@ -173,14 +173,17 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
                   i === active && 'border-primary shadow-md',
                 )}
               >
-                <span className="relative block min-h-16 flex-1 bg-muted">
-                  <SpecimenImage
-                    imageUrl={p.thumbnailUrl}
-                    alt=""
-                    fill
-                    sizes="(min-width: 640px) 320px, 80vw"
-                    className="object-cover transition-transform group-hover:scale-[1.03]"
-                  />
+                <span className="relative block min-h-16 flex-1 overflow-hidden bg-muted">
+                  {/* Out of the flow, so the picture (or the no-photo leaf) never sets the card's height */}
+                  <span className="absolute inset-0 flex items-center justify-center">
+                    <SpecimenImage
+                      imageUrl={p.thumbnailUrl}
+                      alt=""
+                      fill
+                      sizes="(min-width: 640px) 320px, 80vw"
+                      className="object-cover transition-transform group-hover:scale-[1.03]"
+                    />
+                  </span>
                   {p.number !== null && (
                     <span
                       className={cn(
