@@ -225,6 +225,10 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
+  // With a connection, pages load straight from the network, untouched: the
+  // offline app is only for when the device says it has no connection
+  if (request.mode === 'navigate' && self.navigator.onLine) return
+
   event.respondWith(handleFetch(request))
 })
 
