@@ -37,8 +37,10 @@ export interface ClaudeScene {
 }
 
 /** Organisations where this member can edit scenes */
-export function editableOrgIds(user: UserWithMemberships): string[] {
-  return user.memberships.filter((m) => user.isAdmin || hasCapability(m.role, 'can_edit_scene')).map((m) => m.organisation.id)
+export async function editableOrgIds(user: UserWithMemberships): Promise<string[]> {
+  // Platform admins can edit every organisation's scenes, member or not
+  if (user.isAdmin) return (await prisma.organisation.findMany({ select: { id: true } })).map((o) => o.id)
+  return user.memberships.filter((m) => hasCapability(m.role, 'can_edit_scene')).map((m) => m.organisation.id)
 }
 
 /** A placed plant's name: its species, or for unidentified ones the name it was given */
@@ -50,7 +52,7 @@ export function plantName(species: { scientificName: string; slug: string }, not
 
 export async function claudeScenes(user: UserWithMemberships, origin: string, { all = false, sceneId }: { all?: boolean; sceneId?: string } = {}): Promise<ClaudeScene[]> {
   const scenes = await prisma.scene.findMany({
-    where: { organisationId: { in: editableOrgIds(user) }, photoTakenAt: { not: null }, ...(sceneId ? { id: sceneId } : {}) },
+    where: { organisationId: { in: await editableOrgIds(user) }, photoTakenAt: { not: null }, ...(sceneId ? { id: sceneId } : {}) },
     orderBy: { photoTakenAt: 'desc' },
     select: {
       id: true,
