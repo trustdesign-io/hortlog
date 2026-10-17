@@ -9,11 +9,9 @@ import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { PerspectiveField } from '../perspective-field'
 import type { ActionResult } from '@/lib/shared/types'
 
 interface CollectionOption {
@@ -114,54 +112,7 @@ export function CreateSceneForm({ orgSlug, collections }: CreateSceneFormProps) 
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Perspective</CardTitle>
-          <CardDescription>
-            How visitors see the scene: a bed on the ground, or a wall in front of them.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PerspectiveField defaultValue="BED" disabled={isPending} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Grid dimensions</CardTitle>
-          <CardDescription>
-            Set the number of rows and columns for the specimen grid.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 gap-4">
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="gridRows">Rows</Label>
-            <Input
-              id="gridRows"
-              name="gridRows"
-              type="number"
-              min="1"
-              max="20"
-              defaultValue="4"
-              required
-              disabled={isPending}
-            />
-          </div>
-          <div className="flex flex-col gap-2">
-            <Label htmlFor="gridCols">Columns</Label>
-            <Input
-              id="gridCols"
-              name="gridCols"
-              type="number"
-              min="1"
-              max="20"
-              defaultValue="4"
-              required
-              disabled={isPending}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      <p className="text-sm text-muted-foreground">Next, you&rsquo;ll take a photo of the bed and tap each plant on it.</p>
 
       <Button type="submit" disabled={isPending} className="w-full sm:w-auto">
         {isPending ? 'Creating…' : 'Create scene'}
