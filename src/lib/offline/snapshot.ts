@@ -72,7 +72,7 @@ export async function buildOrgSnapshot(
     prisma.collection.findMany({
       where: { organisationId: org.id },
       orderBy: { name: 'asc' },
-      select: { id: true, name: true, slug: true, description: true, type: { select: { name: true } } },
+      select: { id: true, name: true, slug: true, description: true },
     }),
     prisma.task.findMany({
       where: { organisationId: org.id, OR: [{ status: 'OPEN' }, { completedAt: { gte: doneSince } }] },
@@ -147,7 +147,6 @@ export async function buildOrgSnapshot(
       name: c.name,
       slug: c.slug,
       description: c.description,
-      typeName: c.type?.name ?? null,
     })),
     tasks: tasks.map((t) => ({
       id: t.id,

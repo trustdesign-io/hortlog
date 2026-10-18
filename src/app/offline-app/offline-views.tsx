@@ -369,18 +369,12 @@ function SceneView({ scene, snap }: { scene: OfflineScene; snap: OrgSnapshot }) 
 }
 
 function CollectionsView({ snap }: { snap: OrgSnapshot }) {
-  const groups = new Map<string, typeof snap.collections>()
-  for (const c of snap.collections) {
-    const key = c.typeName ?? 'Other'
-    groups.set(key, [...(groups.get(key) ?? []), c])
-  }
-  const ordered = [...groups.entries()].sort(([a], [b]) => (a === 'Other' ? 1 : b === 'Other' ? -1 : a.localeCompare(b)))
+  const list = [...snap.collections].sort((a, b) => a.name.localeCompare(b.name))
   return (
     <>
       <Title sub={`${snap.collections.length} collections`}>Collections</Title>
       {snap.collections.length === 0 && <Empty>No collections yet.</Empty>}
-      {ordered.map(([type, list]) => (
-        <Section key={type} title={type}>
+      {list.length > 0 && (
           <ul className="divide-y rounded-lg border">
             {list.map((c) => {
               const count = snap.specimens.filter((s) => s.collectionIds.includes(c.id)).length
@@ -397,8 +391,7 @@ function CollectionsView({ snap }: { snap: OrgSnapshot }) {
               )
             })}
           </ul>
-        </Section>
-      ))}
+      )}
     </>
   )
 }

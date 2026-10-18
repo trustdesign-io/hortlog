@@ -46,7 +46,7 @@ beforeEach(() => {
   ])
   scene.findMany.mockResolvedValue([])
   species.findMany.mockResolvedValue([{ id: 'sp1', scientificName: 'Rosa', commonName: 'Rose' }])
-  collection.findMany.mockResolvedValue([{ id: 'c1', name: 'Hot', slug: 'hot', description: null, type: { name: 'Location' } }])
+  collection.findMany.mockResolvedValue([{ id: 'c1', name: 'Hot', slug: 'hot', description: null }])
   task.findMany.mockResolvedValue([
     {
       id: 't1',
@@ -87,7 +87,7 @@ describe('buildOrgSnapshot', () => {
     expect(s!.user).toEqual({ id: 'u1', name: 'Ann', canManage: true })
     expect(s!.specimens[0].collectionIds).toEqual(['c1'])
     expect(s!.specimens[0].species.status).toBe('LC')
-    expect(s!.collections[0].typeName).toBe('Location')
+    expect(s!.collections[0].name).toBe('Hot')
     expect(s!.tasks[0]).toMatchObject({ dueDate: day.toISOString(), assignees: ['a@b.c'] })
     expect(s!.myRecords[0].entries[0].date).toBe(day.toISOString())
     expect(JSON.parse(JSON.stringify(s))).toEqual(s)

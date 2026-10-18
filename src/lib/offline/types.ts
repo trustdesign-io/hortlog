@@ -65,7 +65,6 @@ export interface OfflineCollection {
   name: string
   slug: string
   description: string | null
-  typeName: string | null
 }
 
 export interface OfflineTask {
