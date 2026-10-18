@@ -4,7 +4,7 @@ import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { DEFAULT_ROLE_LABELS, roleLabel } from '@/lib/roles'
 import type { Role } from '@/lib/roles'
-import { Search } from 'lucide-react'
+import { Search, Trash2 } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -147,12 +147,22 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                         memberships={u.memberships}
                         allOrgs={orgs}
                       />
-                      {u.id !== user.id && (
+                      {u.id !== user.id ? (
                         <MemberDeleteDialog
                           userId={u.id}
                           userName={u.name ?? u.email}
                           workRecordCount={u._count.workRecords}
                         />
+                      ) : (
+                        // Shown greyed out so the row lines up and it's clear why it's unavailable
+                        <span
+                          role="img"
+                          aria-label="You can’t delete your own account"
+                          title="You can’t delete your own account"
+                          className="inline-flex size-8 items-center justify-center text-muted-foreground opacity-40"
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </span>
                       )}
                     </div>
                   </td>
