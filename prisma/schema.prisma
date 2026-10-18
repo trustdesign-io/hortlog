@@ -64,14 +64,13 @@ model Organisation {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  memberships     Membership[]
-  specimens       Specimen[]
-  scenes          Scene[]
-  collections     Collection[]
-  collectionTypes CollectionType[]
-  locations       Location[]
-  tasks           Task[]
-  workRecords     WorkRecord[]
+  memberships Membership[]
+  specimens   Specimen[]
+  scenes      Scene[]
+  collections Collection[]
+  locations   Location[]
+  tasks       Task[]
+  workRecords WorkRecord[]
 }
 
 model Membership {
@@ -158,29 +157,10 @@ model Collection {
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
-  // Optional kind of collection, defined by the organisation (e.g. Location, Taxonomy)
-  typeId String?
-  type   CollectionType? @relation(fields: [typeId], references: [id], onDelete: SetNull)
-
   specimens     CollectionMembership[]
   primaryScenes Scene[]                @relation("PrimaryCollection")
 
   @@unique([slug, organisationId])
-}
-
-/// A kind of collection an organisation names for itself (e.g. Location, Taxonomy).
-/// Managed on the Collections page; deleting one leaves its collections untyped.
-model CollectionType {
-  id        String   @id @default(cuid())
-  name      String
-  createdAt DateTime @default(now())
-
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
-
-  collections Collection[]
-
-  @@unique([organisationId, name])
 }
 
 // ─── Scenes ────────────────────────────────────────────────────────────────────
