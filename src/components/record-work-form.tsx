@@ -1,10 +1,12 @@
 'use client'
 
-import { useActionState, useEffect, useMemo, useRef } from 'react'
+import { useActionState, useEffect, useMemo, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
+import { MultiMemberPicker } from '@/components/multi-member-picker'
+import type { PickerMember } from '@/components/member-picker'
 import { recordWork } from '@/lib/actions/work-record'
 import { newOpId } from '@/lib/offline/ops'
 import { queueOp } from '@/lib/offline/sync'
@@ -17,11 +19,14 @@ type FormResult = ActionResult | { success: true; queued: true }
 interface RecordWorkFormProps {
   orgSlug: string
   specimenId: string
+  /** Other members of the organisation, to tag as having worked on it too */
+  members?: PickerMember[]
   onSuccess?: () => void
 }
 
-export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFormProps) {
+export function RecordWorkForm({ orgSlug, specimenId, members = [], onSuccess }: RecordWorkFormProps) {
   const formRef = useRef<HTMLFormElement>(null)
+  const [coworkerIds, setCoworkerIds] = useState<string[]>([])
   const boundAction = useMemo(
     () =>
       async (prev: FormResult | null, formData: FormData): Promise<FormResult> => {
@@ -39,7 +44,14 @@ export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFor
               createdAt: new Date().toISOString(),
               kind: 'recordWork',
               specimenId,
-              entry: { action, date, actionNote: field('actionNote'), location: field('location'), text: field('text') },
+              entry: {
+                action,
+                date,
+                actionNote: field('actionNote'),
+                location: field('location'),
+                text: field('text'),
+                coworkerIds: formData.getAll('coworkerId').map(String),
+              },
             })
           } catch {
             return { success: false, error: 'Failed to record work. Please try again.' }
@@ -59,6 +71,13 @@ export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFor
     boundAction,
     null,
   )
+
+  // Clear the people chosen once per successful save
+  const [handled, setHandled] = useState(state)
+  if (state !== handled) {
+    setHandled(state)
+    if (state?.success) setCoworkerIds([])
+  }
 
   const prevSuccess = useRef(false)
   useEffect(() => {
@@ -129,6 +148,22 @@ export function RecordWorkForm({ orgSlug, specimenId, onSuccess }: RecordWorkFor
           disabled={isPending}
         />
       </div>
+
+      {members.length > 0 && (
+        <div className="space-y-1.5">
+          <Label htmlFor="work-coworkers">Worked with (optional)</Label>
+          <MultiMemberPicker
+            id="work-coworkers"
+            name="coworkerId"
+            placeholder="Add someone from the team…"
+            members={members}
+            values={coworkerIds}
+            onChange={setCoworkerIds}
+            disabled={isPending}
+          />
+          <p className="text-xs text-muted-foreground">It shows on their record too. They can remove themselves.</p>
+        </div>
+      )}
 
       {state && !state.success && state.error && (
         <p className="text-sm text-destructive">{state.error}</p>

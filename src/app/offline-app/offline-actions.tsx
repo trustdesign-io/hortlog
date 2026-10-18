@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from 'react'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import { Label } from '@/components/ui/label'
 import { NativeSelect } from '@/components/ui/native-select'
 import { Textarea } from '@/components/ui/textarea'
@@ -111,6 +112,12 @@ export function RecordWorkPanel({ org, specimenId }: { org: string; specimenId: 
       <div className="space-y-1.5">
         <Label htmlFor="off-text">General notes</Label>
         <Textarea id="off-text" name="text" rows={3} placeholder="Observations, conditions, next steps…" />
+      </div>
+      <div className="space-y-1.5">
+        <p className="text-sm font-medium">Worked with (optional)</p>
+        <UnavailableAction reason="Tagging people needs a connection. Add them from the plant’s page once you’re back online." className="flex h-9 w-full items-center rounded-md border border-input px-3 text-sm text-muted-foreground">
+          Add someone from the team…
+        </UnavailableAction>
       </div>
       {error && (
         <p className="text-sm text-destructive" role="alert">

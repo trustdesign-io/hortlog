@@ -30,13 +30,14 @@ model User {
   memberships           Membership[]
   apiKeys               ApiKey[]
   sceneAssignments      SceneAssignment[]
-  sceneAssignmentsGiven SceneAssignment[]  @relation("AssignedBy")
-  taskAssignments       TaskAssignee[]     @relation("AssignedTasks")
-  taskAssignmentsGiven  TaskAssignee[]     @relation("TaskAssignedBy")
-  createdTasks          Task[]             @relation("CreatedTasks")
+  workedWith            WorkLogEntryCoworker[] @relation("WorkedWith")
+  sceneAssignmentsGiven SceneAssignment[]      @relation("AssignedBy")
+  taskAssignments       TaskAssignee[]         @relation("AssignedTasks")
+  taskAssignmentsGiven  TaskAssignee[]         @relation("TaskAssignedBy")
+  createdTasks          Task[]                 @relation("CreatedTasks")
   workRecords           WorkRecord[]
-  workRecordEdits       WorkRecordEdit[]   @relation("WorkRecordEditedBy")
-  workLogEntryEdits     WorkLogEntryEdit[] @relation("WorkLogEntryEditedBy")
+  workRecordEdits       WorkRecordEdit[]       @relation("WorkRecordEditedBy")
+  workLogEntryEdits     WorkLogEntryEdit[]     @relation("WorkLogEntryEditedBy")
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -491,12 +492,29 @@ model WorkLogEntry {
 
   editHistory WorkLogEntryEdit[]
 
+  /// Other members who did this work too, tagged by the person who logged it
+  coworkers WorkLogEntryCoworker[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([workRecordId, date])
   @@index([date])
   @@index([taskId])
+}
+
+/// A member tagged on someone else's work entry ("worked with"). They can remove themselves.
+model WorkLogEntryCoworker {
+  entryId String
+  entry   WorkLogEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation("WorkedWith", fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@id([entryId, userId])
+  @@index([userId])
 }
 
 model WorkRecordEdit {
