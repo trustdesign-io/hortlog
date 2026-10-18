@@ -1,5 +1,6 @@
 import { cache } from "react";
-import { Leaf } from "lucide-react";
+import { ChevronRight, Leaf } from "lucide-react";
+import { locationPath } from "@/lib/locations";
 import { bedPhotoUrl } from "@/lib/offline/types";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -76,11 +77,23 @@ export const resolveScene = cache(async function resolveScene(
       active: true,
       title: true,
       photoTakenAt: true,
+      locationId: true,
     },
   });
   if (!scene) return null;
 
-  return { org, collection, scene };
+  // Where the scene is, outermost first: Conservatory › Arid › Madagascar
+  const places = scene.locationId
+    ? locationPath(
+        await prisma.location.findMany({
+          where: { organisationId: org.id },
+          select: { id: true, name: true, parentId: true },
+        }),
+        scene.locationId,
+      ).map((l) => l.name)
+    : [];
+
+  return { org, collection, scene, places };
 });
 
 export async function ScenePage({
@@ -97,8 +110,9 @@ export async function ScenePage({
   const data = await resolveScene(orgSlug, collectionSlug, sceneSlug);
   if (!data) return notFound();
 
-  const { org, collection, scene } = data;
+  const { org, collection, scene, places } = data;
   const gardenName = collection ? `${org.name} · ${collection.name}` : org.name;
+  const where = places.length > 0 ? <PlaceTrail places={places} /> : undefined;
 
   // A label printed ahead for a scene that isn't in use yet
   if (!scene.active) {
@@ -108,6 +122,7 @@ export async function ScenePage({
           garden={gardenName}
           logoUrl={org.logoUrl}
           title={scene.title ?? "A bed in the making"}
+          where={where}
         />
         <ComingSoon
           orgSlug={org.slug}
@@ -147,7 +162,7 @@ export async function ScenePage({
   if (specimens.length === 0 || scene.photoTakenAt === null) {
     return (
       <SceneShell>
-        <SceneHero garden={gardenName} logoUrl={org.logoUrl} title={title} />
+        <SceneHero garden={gardenName} logoUrl={org.logoUrl} title={title} where={where} />
         <ComingSoon
           orgSlug={org.slug}
           orgName={org.name}
@@ -179,6 +194,7 @@ export async function ScenePage({
         garden={gardenName}
         logoUrl={org.logoUrl}
         title={title}
+        where={where}
         aside={<OfflineNotice />}
       />
 
@@ -232,12 +248,15 @@ function SceneHero({
   title,
   intro,
   aside,
+  where,
 }: {
   garden: string;
   logoUrl: string | null;
   title: string;
   intro?: string;
   aside?: React.ReactNode;
+  /** Where the scene is, under the garden's name */
+  where?: React.ReactNode;
 }) {
   return (
     <header className="space-y-1">
@@ -257,6 +276,7 @@ function SceneHero({
         </p>
         {aside}
       </div>
+      {where}
       <h1 className="font-heading text-2xl leading-tight text-balance sm:text-3xl">
         {title}
       </h1>
@@ -292,5 +312,23 @@ function ComingSoon({
         See what else is growing
       </Link>
     </div>
+  );
+}
+
+/** The places the scene is in, outermost first: Princess of Wales Conservatory › Arid › Madagascar */
+function PlaceTrail({ places }: { places: string[] }) {
+  return (
+    <nav aria-label="Where this is">
+      <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
+        {places.map((name, i) => (
+          <li key={`${i}-${name}`} className="flex items-center gap-1.5">
+            {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />}
+            <span aria-current={i === places.length - 1 ? 'location' : undefined} className={i === places.length - 1 ? 'font-medium text-foreground' : undefined}>
+              {name}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </nav>
   );
 }

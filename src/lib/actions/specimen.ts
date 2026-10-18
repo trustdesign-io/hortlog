@@ -140,6 +140,13 @@ export async function updateSpecimen(
     if (slug === target.slug) slug = (await slugAfterNaming(target, exists.scientificName)) ?? slug
   }
 
+  // Its own place, when it isn't simply its scene's ('' = follow the scene)
+  const locationIdRaw = formData.has('locationId') ? ((formData.get('locationId') as string | null)?.trim() || null) : undefined
+  if (locationIdRaw) {
+    const location = await prisma.location.findFirst({ where: { id: locationIdRaw, organisationId: org.id }, select: { id: true } })
+    if (!location) return { success: false, error: 'Selected place not found.' }
+  }
+
   if (accessionNumber) {
     const existingAccession = await prisma.specimen.findFirst({
       where: { organisationId: org.id, accessionNumber, id: { not: specimenId } },
@@ -166,7 +173,7 @@ export async function updateSpecimen(
     await prisma.$transaction([
       prisma.specimen.update({
         where: { id: specimenId, organisationId: org.id },
-        data: { slug, cultivar, accessionNumber, notes, latitude, longitude, ...(speciesId ? { speciesId } : {}) },
+        data: { slug, cultivar, accessionNumber, notes, latitude, longitude, ...(speciesId ? { speciesId } : {}), ...(locationIdRaw !== undefined ? { locationId: locationIdRaw } : {}) },
       }),
       prisma.collectionMembership.deleteMany({ where: { specimenId } }),
       ...(validCollectionIds.length > 0

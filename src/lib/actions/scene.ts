@@ -552,6 +552,16 @@ export async function updateScene(
     if (!collection) return { success: false, error: 'Selected collection not found.' }
   }
 
+  // Only change the location when the form has the field
+  const locationId = (formData.get('locationId') as string | null)?.trim() || null
+  if (locationId) {
+    const location = await prisma.location.findFirst({
+      where: { id: locationId, organisationId: scene.organisationId },
+      select: { id: true },
+    })
+    if (!location) return { success: false, error: 'Selected location not found.' }
+  }
+
   try {
     await prisma.scene.update({
       where: { id: scene.id },
@@ -560,6 +570,7 @@ export async function updateScene(
         perspective: perspective ?? undefined,
         // Only change the title when the form has the field
         ...(formData.has('title') ? { title: parsedTitle.title } : {}),
+        ...(formData.has('locationId') ? { locationId } : {}),
       },
     })
   } catch (err) {
