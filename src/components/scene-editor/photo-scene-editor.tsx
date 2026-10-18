@@ -14,10 +14,19 @@ import { cn } from '@/lib/utils'
 
 const FIELD = 'flex h-11 w-full rounded-md border border-input bg-background px-3 text-base'
 
-/** What to call a plant here: its species, or for one not yet identified, the name it was given */
+/** The description a not-yet-identified plant was logged with, e.g. "Tall blue agave" */
+export function fieldNote(s: OfflineSpecimen): string | undefined {
+  return /^Field name: (.+)$/m.exec(s.notes ?? '')?.[1]
+}
+
+/**
+ * What to call a plant here: its species, or for one not yet identified,
+ * "Unidentified" first so it can't pass for a real name, then its description.
+ */
 export function plantLabel(s: OfflineSpecimen): string {
   if (s.species.scientificName !== 'Unidentified') return s.species.scientificName
-  return /^Field name: (.+)$/m.exec(s.notes ?? '')?.[1] ?? 'Unidentified plant'
+  const note = fieldNote(s)
+  return note ? `Unidentified · ${note}` : 'Unidentified'
 }
 
 /** Plants marked on the photo, numbered back to front, left to right (as visitors see them) */
@@ -304,9 +313,11 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
           {open && (
             <>
               <SheetHeader>
-                <SheetTitle>{plantLabel(open)}</SheetTitle>
+                <SheetTitle className={cn(open.species.scientificName === 'Unidentified' && 'text-amber-700 dark:text-amber-300')}>
+                  {open.species.scientificName === 'Unidentified' ? 'Unidentified' : plantLabel(open)}
+                </SheetTitle>
                 <SheetDescription>
-                  {open.species.scientificName === 'Unidentified' ? 'Not identified yet' : open.species.commonName}
+                  {open.species.scientificName === 'Unidentified' ? (fieldNote(open) ?? 'Not identified yet') : open.species.commonName}
                   {open.pending && ' · waiting to send'}
                 </SheetDescription>
               </SheetHeader>
