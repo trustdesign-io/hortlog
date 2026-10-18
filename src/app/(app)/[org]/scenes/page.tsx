@@ -7,6 +7,7 @@ import { publicScenePath } from '@/lib/scene-urls'
 import { bedPhotoUrl } from '@/lib/offline/types'
 import { SceneThumb } from './scene-thumb'
 import { buttonVariants } from '@/components/ui/button-variants'
+import { ActionLink } from '@/components/ui/action-link'
 import { EmptyState } from '@/components/empty-state'
 import { Badge } from '@/components/ui/badge'
 
@@ -93,18 +94,24 @@ export default async function ViewsPage({ params }: ViewsPageProps) {
             Grid displays shown on Vantage screens.
           </p>
         </div>
-        {canManage && (
-          <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-            <Link href={`/print/${orgSlug}/scene-labels`} className={buttonVariants({ size: 'sm', variant: 'outline' })}>
-              <Printer className="mr-1.5 h-4 w-4" aria-hidden="true" />
-              Print labels
-            </Link>
-            <Link href={`/${orgSlug}/scenes/new`} className={buttonVariants({ size: 'sm' })}>
-              <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
-              New scene
-            </Link>
-          </div>
-        )}
+        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+          <ActionLink
+            href={`/print/${orgSlug}/scene-labels`}
+            unavailable={canManage ? null : 'Your role can’t print scene labels.'}
+            className={buttonVariants({ size: 'sm', variant: 'outline' })}
+          >
+            <Printer className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Print labels
+          </ActionLink>
+          <ActionLink
+            href={`/${orgSlug}/scenes/new`}
+            unavailable={canManage ? null : 'Your role can’t create scenes.'}
+            className={buttonVariants({ size: 'sm' })}
+          >
+            <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            New scene
+          </ActionLink>
+        </div>
       </div>
 
       {activeScenes.length === 0 ? (

@@ -1,8 +1,8 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button-variants'
+import { ActionLink } from '@/components/ui/action-link'
 import { SpecimensList } from './specimens-list'
 
 interface SpecimensPageProps {
@@ -71,11 +71,13 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
             All plant and specimen records for this organisation.
           </p>
         </div>
-        {canManage && (
-          <Link href={`/${orgSlug}/specimens/new`} className={buttonVariants({ size: 'sm' })}>
-            Add specimen
-          </Link>
-        )}
+        <ActionLink
+          href={`/${orgSlug}/specimens/new`}
+          unavailable={canManage ? null : 'Your role can’t add specimens.'}
+          className={buttonVariants({ size: 'sm' })}
+        >
+          Add specimen
+        </ActionLink>
       </div>
       <SpecimensList
         orgSlug={orgSlug}

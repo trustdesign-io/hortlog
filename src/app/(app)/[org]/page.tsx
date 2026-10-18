@@ -8,6 +8,7 @@ import { prisma } from '@/lib/prisma'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
+import { ActionLink } from '@/components/ui/action-link'
 import { startOfWeek } from '@/lib/week'
 
 interface OrgPageProps {
@@ -84,24 +85,24 @@ export default async function OrgPage({ params }: OrgPageProps) {
           </div>
         </div>
 
-        {canManage && (
         <div className="flex shrink-0 flex-wrap gap-2">
-          <Link
+          <ActionLink
             href={`/${orgSlug}/specimens/new`}
+            unavailable={canManage ? null : 'Your role can’t add specimens.'}
             className={buttonVariants({ variant: 'default', size: 'sm' })}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             Add Specimen
-          </Link>
-          <Link
+          </ActionLink>
+          <ActionLink
             href={`/${orgSlug}/scenes/new`}
+            unavailable={canManage ? null : 'Your role can’t create scenes.'}
             className={buttonVariants({ variant: 'outline', size: 'sm' })}
           >
             <Plus className="h-4 w-4" aria-hidden="true" />
             New Scene
-          </Link>
+          </ActionLink>
         </div>
-        )}
       </div>
 
       {/* Summary stats: one card, three linked columns, same on every screen */}

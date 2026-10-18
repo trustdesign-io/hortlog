@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { MemberInviteDialog } from './_components/member-invite-dialog'
 import { MemberDeleteDialog } from './_components/member-delete-dialog'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import { MemberEditDialog } from './_components/member-edit-dialog'
 
 const PAGE_SIZE = 50
@@ -154,15 +155,13 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                           workRecordCount={u._count.workRecords}
                         />
                       ) : (
-                        // Shown greyed out so the row lines up and it's clear why it's unavailable
-                        <span
-                          role="img"
-                          aria-label="You can’t delete your own account"
-                          title="You can’t delete your own account"
-                          className="inline-flex size-8 items-center justify-center text-muted-foreground opacity-40"
+                        <UnavailableAction
+                          reason="You can’t delete your own account."
+                          label={`Delete ${u.name ?? u.email}`}
+                          className={buttonVariants({ variant: 'ghost', size: 'icon', className: 'text-destructive' })}
                         >
                           <Trash2 className="h-4 w-4" aria-hidden="true" />
-                        </span>
+                        </UnavailableAction>
                       )}
                     </div>
                   </td>

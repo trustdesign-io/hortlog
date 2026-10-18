@@ -5,6 +5,8 @@ import { EmptyState } from '@/components/empty-state'
 import { useRouter } from 'next/navigation'
 import { createTask, updateTask, setTaskStatus, deleteTask } from '@/lib/actions/task'
 import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -572,8 +574,13 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants, scenes
             Tasks for your organisation.
           </p>
         </div>
-        {canManage && (
+        {canManage ? (
           <CreateTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} scenes={scenes} />
+        ) : (
+          <UnavailableAction reason="Your role can’t add tasks." className={buttonVariants({ size: 'sm' })}>
+            <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Add task
+          </UnavailableAction>
         )}
       </div>
 
@@ -594,13 +601,17 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants, scenes
                   {canManage ? (
                     <ToggleStatusButton orgSlug={orgSlug} task={task} />
                   ) : (
-                    <div className="shrink-0 mt-0.5">
+                    <UnavailableAction
+                      reason={isDone ? 'Your role can’t reopen tasks.' : 'Your role can’t mark tasks done.'}
+                      label={isDone ? `Reopen ${task.title}` : `Mark ${task.title} done`}
+                      className="mt-0.5 shrink-0"
+                    >
                       {isDone ? (
                         <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" />
                       ) : (
                         <Circle className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
                       )}
-                    </div>
+                    </UnavailableAction>
                   )}
 
                   <div className="min-w-0 flex-1">
@@ -650,12 +661,31 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants, scenes
                     </div>
                   </div>
 
-                  {canManage && (
-                    <div className="flex shrink-0 items-center gap-1">
-                      <EditTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} scenes={scenes} task={task} />
-                      <DeleteTaskDialog orgSlug={orgSlug} task={task} />
-                    </div>
-                  )}
+                  <div className="flex shrink-0 items-center gap-1">
+                    {canManage ? (
+                      <>
+                        <EditTaskDialog orgSlug={orgSlug} orgMembers={orgMembers} plants={plants} scenes={scenes} task={task} />
+                        <DeleteTaskDialog orgSlug={orgSlug} task={task} />
+                      </>
+                    ) : (
+                      <>
+                        <UnavailableAction
+                          reason="Your role can’t edit tasks."
+                          label={`Edit ${task.title}`}
+                          className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'text-muted-foreground' })}
+                        >
+                          <Pencil className="h-4 w-4" aria-hidden="true" />
+                        </UnavailableAction>
+                        <UnavailableAction
+                          reason="Your role can’t delete tasks."
+                          label={`Delete ${task.title}`}
+                          className={buttonVariants({ variant: 'ghost', size: 'icon-sm', className: 'text-muted-foreground' })}
+                        >
+                          <Trash2 className="h-4 w-4" aria-hidden="true" />
+                        </UnavailableAction>
+                      </>
+                    )}
+                  </div>
                 </li>
               )
             })}
