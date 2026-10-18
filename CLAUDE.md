@@ -83,7 +83,7 @@ npx prisma studio    # Open database GUI
 npx prisma migrate dev  # Run pending migrations
 ```
 
-Database changes ship as Prisma migrations in `prisma/migrations/`: CI applies them on merge to `main` (`Run DB migrations` job). `0_init` is the database as it was when migrations began; it's recorded as applied, never run.
+Database changes ship as Prisma migrations in `prisma/migrations/`. The production build on Vercel applies them before building (`scripts/migrate-on-deploy.mjs`), so new code never goes live ahead of its tables; a failed migration fails the build and the current version stays live. Preview builds never touch the database. CI's `Run DB migrations` job also runs `migrate deploy` on merge (a no-op if the build got there first). `0_init` is the database as it was when migrations began; it's recorded as applied, never run. Keep migrations additive where possible (add before removing), since the old version keeps serving until the new build finishes.
 
 ## Environment Variables
 Copy `.env.example` to `.env.local` and fill in values. Never commit `.env.local`.
