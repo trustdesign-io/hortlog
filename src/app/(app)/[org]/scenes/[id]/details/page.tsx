@@ -23,17 +23,24 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
       perspective: true,
       organisationId: true,
       primaryCollectionId: true,
+      locationId: true,
       active: true, primaryCollection: { select: { name: true, slug: true } },
       _count: { select: { specimens: true } },
     },
   })
   if (!scene) return notFound()
 
-  const collections = await prisma.collection.findMany({
-    where: { organisationId: scene.organisationId },
-    select: { id: true, name: true },
-    orderBy: { name: 'asc' },
-  })
+  const [collections, locations] = await Promise.all([
+    prisma.collection.findMany({
+      where: { organisationId: scene.organisationId },
+      select: { id: true, name: true },
+      orderBy: { name: 'asc' },
+    }),
+    prisma.location.findMany({
+      where: { organisationId: scene.organisationId },
+      select: { id: true, name: true, parentId: true },
+    }),
+  ])
 
   return (
     <div className="space-y-6">
@@ -54,10 +61,12 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
           name: scene.name,
           title: scene.title,
           primaryCollectionId: scene.primaryCollectionId,
+          locationId: scene.locationId,
           perspective: scene.perspective,
           plantCount: scene._count.specimens,
         }}
         collections={collections}
+        locations={locations}
       />
     </div>
   )

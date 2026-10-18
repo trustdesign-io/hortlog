@@ -22,7 +22,7 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
   })
   if (!org) return notFound()
 
-  const [specimen, collections] = await Promise.all([
+  const [specimen, collections, locations] = await Promise.all([
     prisma.specimen.findUnique({
       where: { id: specimenId, organisationId: org.id },
       select: {
@@ -37,7 +37,8 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
         sceneId: true,
         gridCell: true,
         species: { select: { id: true, commonName: true, scientificName: true } },
-        scene: { select: { id: true, name: true } },
+        scene: { select: { id: true, name: true, locationId: true } },
+        locationId: true,
         collections: { select: { collectionId: true } },
       },
     }),
@@ -45,6 +46,10 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
       where: { organisationId: org.id },
       select: { id: true, name: true },
       orderBy: { name: 'asc' },
+    }),
+    prisma.location.findMany({
+      where: { organisationId: org.id },
+      select: { id: true, name: true, parentId: true },
     }),
   ])
 
@@ -86,9 +91,11 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
           gridCell: specimen.gridCell,
           species: specimen.species,
           scene: specimen.scene,
+          locationId: specimen.locationId,
           collectionIds: specimen.collections.map((c) => c.collectionId),
         }}
         collections={collections}
+        locations={locations}
       />
     </div>
   )

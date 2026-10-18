@@ -27,6 +27,8 @@ import { Trash2, MapPin, X } from 'lucide-react'
 import { cellLabel } from '@/lib/scene-grid'
 import { SpeciesPicker, type PickedSpecies } from '@/components/species/species-picker'
 import type { ActionResult } from '@/lib/shared/types'
+import { NativeSelect, NativeSelectOption } from '@/components/ui/native-select'
+import { flattenTree, locationPath, type LocationNode } from '@/lib/locations'
 
 interface SpecimenData {
   id: string
@@ -39,7 +41,8 @@ interface SpecimenData {
   sceneId: string | null
   gridCell: string | null
   species: { id: string; commonName: string; scientificName: string }
-  scene: { id: string; name: string } | null
+  scene: { id: string; name: string; locationId: string | null } | null
+  locationId: string | null
   collectionIds: string[]
 }
 
@@ -52,6 +55,7 @@ interface SpecimenEditFormProps {
   orgSlug: string
   specimen: SpecimenData
   collections: CollectionOption[]
+  locations: LocationNode[]
 }
 
 function DeleteSpecimenDialog({
@@ -124,7 +128,8 @@ function DeleteSpecimenDialog({
   )
 }
 
-export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEditFormProps) {
+export function SpecimenEditForm({ orgSlug, specimen, collections, locations }: SpecimenEditFormProps) {
+  const sceneLocation = locationPath(locations, specimen.scene?.locationId ?? null).map((l) => l.name).join(' › ')
   const boundAction = updateSpecimen.bind(null, orgSlug, specimen.id)
   const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(
     boundAction,
@@ -292,6 +297,20 @@ export function SpecimenEditForm({ orgSlug, specimen, collections }: SpecimenEdi
             <CardTitle className="text-base">Location</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="specimen-location">Place</Label>
+              <NativeSelect id="specimen-location" name="locationId" defaultValue={specimen.locationId ?? ''} disabled={isPending} className="w-full">
+                <NativeSelectOption value="">
+                  {sceneLocation ? `Same as its scene (${sceneLocation})` : specimen.scene ? 'Same as its scene' : 'Not set'}
+                </NativeSelectOption>
+                {flattenTree(locations).map((l) => (
+                  <NativeSelectOption key={l.id} value={l.id}>{`${'— '.repeat(l.depth)}${l.name}`}</NativeSelectOption>
+                ))}
+              </NativeSelect>
+              {locations.length === 0 && (
+                <p className="text-xs text-muted-foreground">Add places under Locations to choose one here.</p>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col gap-2">
                 <Label htmlFor="latitude">Latitude</Label>

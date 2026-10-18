@@ -18,6 +18,7 @@ import {
   CheckSquare,
   ClipboardList,
   CircleUser,
+  MapPin,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getActiveHref, resolveOrgSlug } from '@/lib/nav-utils'
@@ -96,6 +97,7 @@ export function buildOrgNav(orgSlug: string, canManage: boolean): NavItem[] {
     // Specimens has no tour step — it's a data-dense list page, not a concept to introduce
     { href: `/${orgSlug}/specimens`, label: 'Specimens', icon: Leaf, tourId: 'org-specimens' },
     { href: `/${orgSlug}/collections`, label: 'Collections', icon: BookOpen, tourId: 'org-collections' },
+    { href: `/${orgSlug}/locations`, label: 'Locations', icon: MapPin, tourId: 'org-locations' },
     { href: `/${orgSlug}/scenes`, label: 'Scenes', icon: Grid3x3, tourId: 'org-scenes' },
     { href: `/${orgSlug}/team`, label: 'Team', icon: UsersRound, tourId: 'org-team' },
     // Manager-only pages: members would only hit the no-access page

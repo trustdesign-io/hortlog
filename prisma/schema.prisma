@@ -68,6 +68,7 @@ model Organisation {
   scenes          Scene[]
   collections     Collection[]
   collectionTypes CollectionType[]
+  locations       Location[]
   tasks           Task[]
   workRecords     WorkRecord[]
 }
@@ -189,35 +190,39 @@ enum ScenePerspective {
 }
 
 model Scene {
-  id          String           @id @default(cuid())
-  slug        String
-  name        String
-  perspective ScenePerspective @default(BED)
-  gridRows    Int              @default(4)
-  gridCols    Int              @default(4)
+  id            String           @id @default(cuid())
+  slug          String
+  name          String
+  perspective   ScenePerspective @default(BED)
+  gridRows      Int              @default(4)
+  gridCols      Int              @default(4)
   /// 0: odd rows are offset half a cell right; 1: even rows are. Flips when a row is added or removed at the top.
-  rowShift    Int              @default(0)
+  rowShift      Int              @default(0)
   /// Hexes ("row,col") split into seven smaller cells; plants in them are at "row,col:0"–"row,col:6"
-  splitCells  String[]         @default([])
+  splitCells    String[]         @default([])
   /// Optional title shown on screen beside the name; never printed on the QR label
-  title       String?
+  title         String?
   /// In use at the venue. Pre-made scenes (with labels printed ahead) start inactive.
-  active      Boolean          @default(true)
+  active        Boolean          @default(true)
   /// Hexes ("row,col") outside the bed's outline: not drawn, nothing placed there
-  blockedCells String[]        @default([])
+  blockedCells  String[]         @default([])
   /// When the latest bed photo was sent (see src/lib/scene-photo.ts)
   photoTakenAt  DateTime?
   /// When a layout was last written from that photo (via /api/claude)
   photoMappedAt DateTime?
-  shortCode   String           @unique
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  shortCode     String           @unique
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
   organisationId String
   organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
 
   primaryCollectionId String?
   primaryCollection   Collection? @relation("PrimaryCollection", fields: [primaryCollectionId], references: [id], onDelete: SetNull)
+
+  /// Where the scene is, e.g. the Madagascar bed in the Princess of Wales Conservatory
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
 
   specimens   Specimen[]
   assignments SceneAssignment[]
@@ -333,11 +338,37 @@ model Specimen {
   sceneId String?
   scene   Scene?  @relation(fields: [sceneId], references: [id], onDelete: SetNull)
 
+  /// Where the plant is, when it isn't simply its scene's location
+  locationId String?
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+
   collections CollectionMembership[]
   workRecords WorkRecord[]
   tasks       Task[]
 
   @@unique([slug, organisationId])
+}
+
+// ─── Locations (nested places: glasshouse › zone › bed) ───────────────────────
+
+model Location {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  /// The place this one is inside; null at the top
+  parentId String?
+  parent   Location?  @relation("LocationTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Location[] @relation("LocationTree")
+
+  scenes    Scene[]
+  specimens Specimen[]
+
+  @@unique([organisationId, parentId, name])
+  @@index([organisationId])
 }
 
 // ─── Collection membership (specimen ↔ collection, many-to-many) ──────────────

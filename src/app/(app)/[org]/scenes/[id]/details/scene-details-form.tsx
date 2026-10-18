@@ -18,6 +18,7 @@ import {
 import type { ScenePerspective } from '@/lib/scene-perspective'
 import type { ActionResult } from '@/lib/shared/types'
 import { MAX_SCENE_TITLE } from '@/lib/scene-title'
+import { flattenTree, type LocationNode } from '@/lib/locations'
 
 interface SceneDetailsFormProps {
   orgSlug: string
@@ -26,16 +27,18 @@ interface SceneDetailsFormProps {
     name: string
     title: string | null
     primaryCollectionId: string | null
+    locationId: string | null
     perspective: ScenePerspective
     plantCount: number
   }
   collections: Array<{ id: string; name: string }>
+  locations: LocationNode[]
 }
 
 const selectClass =
   'flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
 
-export function SceneDetailsForm({ orgSlug, scene, collections }: SceneDetailsFormProps) {
+export function SceneDetailsForm({ orgSlug, scene, collections, locations }: SceneDetailsFormProps) {
   const [state, action, isPending] = useActionState<ActionResult | null, FormData>(
     updateScene.bind(null, orgSlug, scene.id),
     null,
@@ -76,6 +79,26 @@ export function SceneDetailsForm({ orgSlug, scene, collections }: SceneDetailsFo
               />
               <p className="text-xs text-muted-foreground">
                 Shown on screen with the name. Not printed on the QR label.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="scene-location">Location</Label>
+              <select
+                id="scene-location"
+                name="locationId"
+                defaultValue={scene.locationId ?? ''}
+                disabled={isPending}
+                className={selectClass}
+              >
+                <option value="">Not set</option>
+                {flattenTree(locations).map((l) => (
+                  <option key={l.id} value={l.id}>{`${'— '.repeat(l.depth)}${l.name}`}</option>
+                ))}
+              </select>
+              <p className="text-xs text-muted-foreground">
+                {locations.length === 0
+                  ? 'Add places under Locations first, e.g. a glasshouse and the beds in it.'
+                  : 'The innermost place it’s in. Visitors see the path to it, e.g. Conservatory › Arid › Madagascar.'}
               </p>
             </div>
             {collections.length > 0 && (

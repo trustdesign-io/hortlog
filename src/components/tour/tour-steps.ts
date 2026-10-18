@@ -55,6 +55,13 @@ export const TOUR_STEPS: TourStep[] = [
     panel: 'nav',
   },
   {
+    tourId: 'org-locations',
+    title: 'Locations',
+    description:
+      'Where things are, place within place: a glasshouse, its zones, the beds in them. Visitors see the path to each scene.',
+    panel: 'nav',
+  },
+  {
     tourId: 'org-scenes',
     title: 'Scenes',
     description:
