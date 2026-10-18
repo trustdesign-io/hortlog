@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { uploadSpecimenImage } from '@/lib/storage'
 import { toSlug } from '@/lib/utils/slug'
+import { slugAfterNaming } from '@/lib/specimen-slug'
 import type { ActionResult } from '@/lib/shared/types'
 
 /** Cultivar name as typed, without the quotes people often add: "‘Flamingo’" → "Flamingo". */
@@ -100,7 +101,7 @@ export async function updateSpecimen(
 ): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_edit_specimen')
 
-  const slug = (formData.get('slug') as string | null)?.trim() ?? ''
+  let slug = (formData.get('slug') as string | null)?.trim() ?? ''
   const cultivar = cleanCultivar(formData.get('cultivar'))
   const accessionNumber = (formData.get('accessionNumber') as string | null)?.trim() || null
   const notes = (formData.get('notes') as string | null)?.trim() || null
@@ -124,7 +125,7 @@ export async function updateSpecimen(
 
   const target = await prisma.specimen.findUnique({
     where: { id: specimenId, organisationId: org.id },
-    select: { slug: true, speciesId: true },
+    select: { id: true, organisationId: true, slug: true, speciesId: true, notes: true, accessionNumber: true },
   })
   if (!target) return { success: false, error: 'Specimen not found.' }
 
@@ -132,9 +133,11 @@ export async function updateSpecimen(
   const speciesIdRaw = (formData.get('speciesId') as string | null)?.trim() || null
   let speciesId: string | undefined
   if (speciesIdRaw && speciesIdRaw !== target.speciesId) {
-    const exists = await prisma.species.findUnique({ where: { id: speciesIdRaw }, select: { id: true } })
+    const exists = await prisma.species.findUnique({ where: { id: speciesIdRaw }, select: { id: true, scientificName: true } })
     if (!exists) return { success: false, error: 'Selected species not found.' }
     speciesId = speciesIdRaw
+    // Named for the first time, slug left as it was: it follows the new name
+    if (slug === target.slug) slug = (await slugAfterNaming(target, exists.scientificName)) ?? slug
   }
 
   if (accessionNumber) {
@@ -267,15 +270,17 @@ export async function uploadSpecimenImageAction(
 /** Name a plant added as Unidentified (e.g. from a bed photo): set its species, keep everything else. */
 export async function identifySpecimen(orgSlug: string, specimenId: string, speciesId: string): Promise<ActionResult> {
   await requireOrgAccess(orgSlug, 'can_edit_specimen')
-  const species = await prisma.species.findUnique({ where: { id: speciesId }, select: { id: true } })
+  const species = await prisma.species.findUnique({ where: { id: speciesId }, select: { id: true, scientificName: true } })
   if (!species) return { success: false, error: 'That species wasn’t found. Search again.' }
   const target = await prisma.specimen.findFirst({
     where: { id: specimenId, organisation: { slug: orgSlug } },
-    select: { id: true, sceneId: true },
+    select: { id: true, sceneId: true, organisationId: true, slug: true, notes: true, accessionNumber: true },
   })
   if (!target) return { success: false, error: 'This plant has been removed.' }
   try {
-    await prisma.specimen.update({ where: { id: target.id }, data: { speciesId: species.id } })
+    // Its web address follows the new name while it's still the placeholder
+    const slug = await slugAfterNaming(target, species.scientificName)
+    await prisma.specimen.update({ where: { id: target.id }, data: { speciesId: species.id, ...(slug ? { slug } : {}) } })
   } catch (err) {
     console.error('[identifySpecimen] error:', err)
     return { success: false, error: 'The name couldn’t be saved. Try again.' }
