@@ -22,15 +22,17 @@ export default async function AdminSpeciesPage({ searchParams }: AdminSpeciesPag
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
   const skip = (page - 1) * PAGE_SIZE
 
+  // "Unidentified" is the placeholder for plants not yet named, not a species to manage
   const where = query
     ? {
+        slug: { not: 'unidentified' },
         OR: [
           { commonName: { contains: query, mode: 'insensitive' as const } },
           { scientificName: { contains: query, mode: 'insensitive' as const } },
           { family: { contains: query, mode: 'insensitive' as const } },
         ],
       }
-    : {}
+    : { slug: { not: 'unidentified' } }
 
   const [species, total] = await Promise.all([
     prisma.species.findMany({
