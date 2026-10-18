@@ -9,7 +9,7 @@ import {
   putOutboxOp,
   putSnapshot,
 } from './db'
-import { sendScenePhotos } from './scene-photos'
+import { countUnsentScenePhotos, sendScenePhotos } from './scene-photos'
 import { isUnsent, type OpResult, type OutboxOp, type SyncOpInput } from './ops'
 import { SNAPSHOT_VERSION, snapshotImageUrls, type OrgSnapshot } from './types'
 
@@ -185,7 +185,8 @@ export async function refreshOutboxStatus(): Promise<OutboxOp[]> {
 export async function queueOp(op: SyncOpInput): Promise<void> {
   await putOutboxOp(op)
   await refreshOutboxStatus()
-  if (!navigator.onLine) return
+  // Try straight away even if the browser says it's offline: it's often wrong,
+  // and a failed try just leaves it waiting
   // Made while a send is under way: send it straight after
   if (flushing) flushAgain = true
   else void flushOutbox()
@@ -283,3 +284,51 @@ export async function clearOfflineData(): Promise<void> {
   }
   setStatus({ syncedAt: null })
 }
+
+/** While anything is waiting, try sending it this often (only while the app is on screen). */
+export const RETRY_MS = 30_000
+
+/** Whether anything made on this device is still waiting to reach hortlog */
+async function hasWaiting(): Promise<boolean> {
+  if (!offlineStoreAvailable()) return false
+  const [ops, photos] = await Promise.all([
+    listOutbox().catch(() => [] as OutboxOp[]),
+    countUnsentScenePhotos().catch(() => 0),
+  ])
+  return ops.some(isUnsent) || photos > 0
+}
+
+/**
+ * Keep trying to send what's waiting, without trusting the browser to say
+ * when: Safari (and home-screen apps on iPhone and iPad) has no background
+ * sync, often resumes the app without reloading it, and its online/offline
+ * signal is unreliable on patchy Wi-Fi and captive portals. So: try when the
+ * app comes back on screen, when it says it's online, and every 30 seconds
+ * while it's open and something is waiting. A failed try costs nothing.
+ * Returns a function that stops it.
+ */
+export function keepSending(): () => void {
+  let stopped = false
+  async function attempt() {
+    if (stopped || document.visibilityState === 'hidden') return
+    if (await hasWaiting()) await flushOutbox()
+  }
+  const onVisible = () => {
+    if (document.visibilityState === 'visible') void attempt()
+  }
+  const timer = window.setInterval(() => void attempt(), RETRY_MS)
+  document.addEventListener('visibilitychange', onVisible)
+  window.addEventListener('pageshow', onVisible)
+  window.addEventListener('focus', onVisible)
+  window.addEventListener('online', onVisible)
+  void attempt()
+  return () => {
+    stopped = true
+    window.clearInterval(timer)
+    document.removeEventListener('visibilitychange', onVisible)
+    window.removeEventListener('pageshow', onVisible)
+    window.removeEventListener('focus', onVisible)
+    window.removeEventListener('online', onVisible)
+  }
+}
+

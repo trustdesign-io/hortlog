@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState, useSyncExternalStore, type MouseEvent
 import { CloudOff, Wifi } from 'lucide-react'
 import { listOutbox, listSnapshots, offlineStoreAvailable } from '@/lib/offline/db'
 import type { OutboxOp } from '@/lib/offline/ops'
-import { flushOutbox, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, SNAPSHOTS_EVENT, useOfflineStatus } from '@/lib/offline/sync'
+import { flushOutbox, keepSending, oldestSync, OUTBOX_EVENT, refreshOutboxStatus, SNAPSHOTS_EVENT, useOfflineStatus } from '@/lib/offline/sync'
 import { offlineAppHref, resolveOfflineRoute, type OfflineRoute } from '@/lib/offline/routes'
 import type { OrgSnapshot } from '@/lib/offline/types'
 import { timeAgo } from '@/components/offline/offline-status'
@@ -128,6 +128,8 @@ export function OfflineApp() {
     void reloadSnapshots()
     void refreshOutboxStatus()
     void sendAndRefresh()
+    // Don't rely on the browser's online signal: keep trying while anything waits
+    const stopSending = keepSending()
     window.addEventListener(OUTBOX_EVENT, reloadOps)
     window.addEventListener(SNAPSHOTS_EVENT, reloadAll)
     window.addEventListener('online', sendAndRefresh)
@@ -136,6 +138,7 @@ export function OfflineApp() {
       window.removeEventListener(OUTBOX_EVENT, reloadOps)
       window.removeEventListener(SNAPSHOTS_EVENT, reloadAll)
       window.removeEventListener('online', sendAndRefresh)
+      stopSending()
     }
   }, [])
 

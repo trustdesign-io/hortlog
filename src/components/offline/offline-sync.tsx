@@ -2,7 +2,7 @@
 
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { flushOutbox, loadSavedStatus, refreshOfflineShell, refreshOutboxStatus, setOnline, syncOrgs } from '@/lib/offline/sync'
+import { flushOutbox, keepSending, loadSavedStatus, refreshOfflineShell, refreshOutboxStatus, setOnline, syncOrgs } from '@/lib/offline/sync'
 
 /** Refresh the saved copies at most this often while the app is open. */
 const REFRESH_MS = 5 * 60_000
@@ -33,6 +33,9 @@ export function OfflineSync({ memberOrgSlugs, viewableOrgSlugs }: OfflineSyncPro
       .then(() => navigator.onLine && refreshOfflineShell())
       .catch(() => {})
   }, [])
+
+  // Changes made without a connection: keep trying until they're sent
+  useEffect(() => keepSending(), [])
 
   useEffect(() => {
     const orgs = key ? key.split('|') : []
