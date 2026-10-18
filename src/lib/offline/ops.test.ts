@@ -13,8 +13,13 @@ describe('parseOp', () => {
       ...base,
       kind: 'recordWork',
       specimenId: 's1',
-      entry: { action: 'PRUNED', date: '2026-10-15', actionNote: 'hard', location: null, text: null },
+      entry: { action: 'PRUNED', date: '2026-10-15', actionNote: 'hard', location: null, text: null, coworkerIds: [] },
     })
+  })
+
+  it('keeps who it was worked with', () => {
+    const op = parseOp({ ...base, kind: 'recordWork', specimenId: 's1', entry: { action: 'PRUNED', date: '2026-10-15', coworkerIds: ['u2', 3, 'u3'] } })
+    expect(op && op.kind === 'recordWork' && op.entry.coworkerIds).toEqual(['u2', 'u3'])
   })
 
   it('accepts a task tick', () => {

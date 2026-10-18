@@ -5,6 +5,8 @@ import { formatRecordDate, formatRecordNo, plantNameHtml } from '@/lib/personal-
 import { TaxonName } from '@/components/records/taxon-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { UserAvatar } from '@/components/user-avatar'
+import { NotMeButton } from '@/components/not-me-button'
+import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 
 export const metadata = {
   title: 'My record',
@@ -38,6 +40,26 @@ export default async function RecordsPage() {
 
   const totalEntries = await prisma.workLogEntry.count({
     where: { workRecord: { userId: user.id } },
+  })
+
+  // Work someone else logged and tagged you on: shown, not numbered into your record
+  const workedWith = await prisma.workLogEntry.findMany({
+    where: { coworkers: { some: { userId: user.id } } },
+    orderBy: { date: 'desc' },
+    take: 50,
+    select: {
+      id: true,
+      date: true,
+      action: true,
+      workRecord: {
+        select: {
+          scientificName: true,
+          user: { select: { name: true, email: true } },
+          organisation: { select: { slug: true } },
+          specimen: { select: { slug: true } },
+        },
+      },
+    },
   })
 
   const firstOrg = user.memberships[0]?.organisation ?? null
@@ -141,6 +163,33 @@ export default async function RecordsPage() {
             </li>
           ))}
         </ol>
+      )}
+
+      {workedWith.length > 0 && (
+        <section aria-labelledby="worked-with" className="mt-8 space-y-3">
+          <h2 id="worked-with" className="text-sm font-medium uppercase tracking-wide text-muted-foreground">
+            Worked on with others
+          </h2>
+          <ol className="divide-y rounded-xl border bg-card">
+            {workedWith.map((e) => (
+              <li key={e.id} className="flex items-center gap-3 px-4 py-3">
+                <Link
+                  href={`/${e.workRecord.organisation.slug}/specimens/${e.workRecord.specimen.slug}`}
+                  className="min-w-0 flex-1"
+                >
+                  <p className="truncate text-sm font-medium">
+                    {WORK_ACTION_LABELS[e.action]} · <i lang="la">{e.workRecord.scientificName}</i>
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    <time dateTime={e.date.toISOString().slice(0, 10)}>{formatRecordDate(e.date, 'short')}</time>
+                    {` · logged by ${e.workRecord.user.name?.trim() || e.workRecord.user.email}`}
+                  </p>
+                </Link>
+                <NotMeButton entryId={e.id} />
+              </li>
+            ))}
+          </ol>
+        </section>
       )}
     </div>
   )

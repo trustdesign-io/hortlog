@@ -23,11 +23,12 @@ import {
 } from '@/components/ui/dialog'
 import Link from 'next/link'
 import { CellPicker, type PickerScene } from './cell-picker'
-import { MemberPicker, getMemberInitials } from '@/components/member-picker'
+import { getMemberInitials } from '@/components/member-picker'
+import { MultiMemberPicker } from '@/components/multi-member-picker'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
 import { newOpId } from '@/lib/offline/ops'
 import { queueOp } from '@/lib/offline/sync'
-import { X, Plus, Pencil, Trash2, CheckCircle2, Circle, Sprout, LayoutGrid } from 'lucide-react'
+import { Plus, Pencil, Trash2, CheckCircle2, Circle, Sprout, LayoutGrid } from 'lucide-react'
 import type { WorkAction } from '@prisma/client'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -117,80 +118,6 @@ function AssigneeAvatars({ assignees }: { assignees: Assignee[] }) {
   )
 }
 
-// ─── Multi-select assignee picker (chips + combobox) ─────────────────────────
-
-interface MultiPickerProps {
-  id?: string
-  members: OrgMember[]
-  values: string[]
-  onChange: (ids: string[]) => void
-  disabled?: boolean
-}
-
-function MultiAssigneePicker({ id, members, values, onChange, disabled }: MultiPickerProps) {
-  const [pickerValue, setPickerValue] = useState('')
-
-  function handleAdd(id: string) {
-    if (!id || values.includes(id)) { setPickerValue(''); return }
-    onChange([...values, id])
-    setPickerValue('')
-  }
-
-  function handleRemove(id: string) {
-    onChange(values.filter((v) => v !== id))
-  }
-
-  const selected = values
-    .map((id) => members.find((m) => m.id === id))
-    .filter(Boolean) as OrgMember[]
-
-  const unselectedMembers = members.filter((m) => !values.includes(m.id))
-
-  return (
-    <div className="flex flex-col gap-2">
-      {selected.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {selected.map((m) => (
-            <span
-              key={m.id}
-              className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs"
-            >
-              <Avatar size="sm">
-                <AvatarImage src={m.avatarUrl ?? undefined} alt="" />
-                <AvatarFallback>{getMemberInitials(m)}</AvatarFallback>
-              </Avatar>
-              {m.name ?? m.email}
-              <button
-                type="button"
-                onClick={() => handleRemove(m.id)}
-                disabled={disabled}
-                aria-label={`Remove ${m.name ?? m.email}`}
-                className="ml-0.5 rounded-full hover:text-destructive focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <X className="h-3 w-3" aria-hidden="true" />
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-      {/* Hidden inputs for form submission */}
-      {values.map((id) => (
-        <input key={id} type="hidden" name="assigneeId" value={id} readOnly />
-      ))}
-      {unselectedMembers.length > 0 && (
-        <MemberPicker
-          id={id}
-          members={unselectedMembers}
-          value={pickerValue}
-          onValueChange={handleAdd}
-          placeholder="Add assignee…"
-          disabled={disabled}
-        />
-      )}
-    </div>
-  )
-}
-
 // ─── Task form (shared by create and edit dialogs) ────────────────────────────
 
 interface TaskFormProps {
@@ -272,7 +199,9 @@ function TaskForm({ orgSlug, orgMembers, plants, scenes, task, onClose }: TaskFo
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="task-assignees">Assignees</Label>
-        <MultiAssigneePicker
+        <MultiMemberPicker
+          name="assigneeId"
+          placeholder="Add assignee…"
           id="task-assignees"
           members={orgMembers}
           values={assigneeIds}

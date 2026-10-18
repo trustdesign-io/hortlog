@@ -1,5 +1,6 @@
 import { Prisma, type WorkAction } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
+import { validCoworkers } from '@/lib/coworkers'
 import { hasCapability, type Capability } from '@/lib/auth/capabilities'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
 import { syncTaskCare } from '@/lib/task-care'
@@ -55,6 +56,7 @@ async function applyRecordWork(user: UserWithMemberships, op: Extract<SyncOpInpu
 
   // Noon, so the day stays the same in any UK time zone
   const date = new Date(`${op.entry.date}T12:00:00Z`)
+  const coworkerIds = await validCoworkers(op.org, user.id, op.entry.coworkerIds ?? [])
   await prisma.$transaction(
     async (tx) => {
       await claim(tx, op, user.id)
@@ -67,6 +69,7 @@ async function applyRecordWork(user: UserWithMemberships, op: Extract<SyncOpInpu
           location: op.entry.location,
           text: op.entry.text,
           workRecordId: record.id,
+          coworkers: { create: coworkerIds.map((userId) => ({ userId })) },
         },
       })
     },

@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache'
 import { WorkAction } from '@prisma/client'
 import { prisma } from '@/lib/prisma'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
+import { getCurrentUser } from '@/lib/auth/current-user'
+import { validCoworkers } from '@/lib/coworkers'
 import { ensureWorkRecord, WORK_RECORD_SPECIMEN_SELECT } from '@/lib/work-record-db'
 import type { ActionResult } from '@/lib/shared/types'
 
@@ -39,6 +41,8 @@ export async function recordWork(
   })
   if (!specimen) return { success: false, error: 'Specimen not found.' }
 
+  const coworkerIds = await validCoworkers(orgSlug, user.id, formData.getAll('coworkerId'))
+
   try {
     // Create the record on first work, then append the entry, atomically
     await prisma.$transaction(async (tx) => {
@@ -52,6 +56,7 @@ export async function recordWork(
           location,
           text,
           workRecordId: workRecord.id,
+          coworkers: { create: coworkerIds.map((userId) => ({ userId })) },
         },
       })
     }, { isolationLevel: 'Serializable' })
@@ -62,7 +67,23 @@ export async function recordWork(
   revalidatePath(`/${orgSlug}/specimens/${specimen.slug}`)
   revalidatePath('/[org]/[collection]/[scene]/[specimen]', 'page')
   revalidatePath(`/${orgSlug}`)
+  if (coworkerIds.length > 0) revalidatePath('/records')
 
+  return { success: true }
+}
+
+/** "Not me": take yourself off an entry someone else tagged you on. */
+export async function removeMeFromEntry(entryId: string): Promise<ActionResult> {
+  const user = await getCurrentUser()
+  if (!user) return { success: false, error: 'Please sign in again.' }
+  try {
+    await prisma.workLogEntryCoworker.deleteMany({ where: { entryId, userId: user.id } })
+  } catch (err) {
+    console.error('[removeMeFromEntry] error:', err)
+    return { success: false, error: 'That couldn’t be changed. Try again.' }
+  }
+  revalidatePath('/records')
+  revalidatePath('/[org]/specimens/[specimen]', 'page')
   return { success: true }
 }
 

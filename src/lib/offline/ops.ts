@@ -15,6 +15,8 @@ export interface WorkEntryInput {
   actionNote: string | null
   location: string | null
   text: string | null
+  /** Members who did the work too (checked again on the server) */
+  coworkerIds?: string[]
 }
 
 interface OpBase {
@@ -162,6 +164,7 @@ export function parseOp(raw: unknown): SyncOpInput | null {
         actionNote: str(e.actionNote),
         location: str(e.location, 500),
         text: str(e.text),
+        coworkerIds: Array.isArray(e.coworkerIds) ? e.coworkerIds.filter((v): v is string => typeof v === 'string' && v.length <= 64).slice(0, 20) : [],
       },
     }
   }
