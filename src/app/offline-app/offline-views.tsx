@@ -2,7 +2,9 @@
 
 import { useState, type ReactNode } from 'react'
 import { numberedOnPhoto, plantLabel } from '@/components/scene-editor/photo-scene-editor'
+import { CheckCircle2, Circle } from 'lucide-react'
 import { ScientificName } from '@/components/ui/scientific-name'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
 import {
   bedPhotoUrl,
@@ -76,7 +78,17 @@ function TaskRow({ t, snap }: { t: OfflineTask; snap: OrgSnapshot }) {
   const scene = t.sceneId ? snap.scenes.find((s) => s.id === t.sceneId) : undefined
   return (
     <li className="flex gap-3 rounded-lg border p-3">
-      {snap.user.canManage && <TaskToggle task={t} org={snap.org.slug} />}
+      {snap.user.canManage ? (
+        <TaskToggle task={t} org={snap.org.slug} />
+      ) : (
+        <UnavailableAction
+          reason={t.status === 'DONE' ? 'Your role can’t reopen tasks.' : 'Your role can’t mark tasks done.'}
+          label={t.status === 'DONE' ? `Reopen ${t.title}` : `Mark ${t.title} done`}
+          className="-m-2 flex h-11 w-11 shrink-0 items-center justify-center rounded text-muted-foreground"
+        >
+          {t.status === 'DONE' ? <CheckCircle2 className="h-5 w-5 text-primary" aria-hidden="true" /> : <Circle className="h-5 w-5" aria-hidden="true" />}
+        </UnavailableAction>
+      )}
       <div className="min-w-0 flex-1 space-y-1">
       <p className={cn('font-medium', t.status === 'DONE' && 'text-muted-foreground line-through')}>{t.title}</p>
       {t.pending && <WaitingBadge />}

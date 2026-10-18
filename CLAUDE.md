@@ -49,6 +49,7 @@ prisma/
 - **Imports:** Group in order: external packages → internal paths → types → styles. Use `@/` alias for `src/`.
 - **Error handling:** Server actions use try/catch. Components use error boundaries. Always show user-friendly messages.
 - **Accessibility:** Semantic HTML, keyboard navigation, WCAG AA colour contrast, meaningful alt text on all images.
+- **Unavailable actions are greyed out, never hidden:** if a user can't take an action right now (their role, their own account, waiting to sync, offline…), still show the control, disabled, with its reason. Use `UnavailableAction` (`src/components/ui/unavailable-action.tsx`), or `ActionLink` for links: tapping shows why, since phones have no hover. Hide only whole pages or sections a role should never see.
 
 ## Naming Conventions
 | Element | Convention | Example |

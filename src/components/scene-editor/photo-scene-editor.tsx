@@ -11,6 +11,7 @@ import { newDeviceId, newOpId, opTime, type SyncOpInput } from '@/lib/offline/op
 import { getLocalScenePhoto, SCENE_PHOTO_EVENT, takeScenePhoto, type LocalScenePhoto } from '@/lib/offline/scene-photos'
 import { bedPhotoUrl, type OfflineScene, type OfflineSpecimen, type OrgSnapshot } from '@/lib/offline/types'
 import { cn } from '@/lib/utils'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 
 const FIELD = 'flex h-11 w-full rounded-md border border-input bg-background px-3 text-base'
 
@@ -322,9 +323,17 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
                 </SheetDescription>
               </SheetHeader>
               <div className="grid gap-2 px-4 pb-6">
-                {renderIdentify && open.species.scientificName === 'Unidentified' && !open.pending && (
-                  <div className="space-y-2 rounded-xl border p-3">{renderIdentify(open, () => setOpenId(null))}</div>
-                )}
+                {open.species.scientificName === 'Unidentified' &&
+                  (renderIdentify && !open.pending ? (
+                    <div className="space-y-2 rounded-xl border p-3">{renderIdentify(open, () => setOpenId(null))}</div>
+                  ) : (
+                    <UnavailableAction
+                      reason={open.pending ? 'You can name this plant once it has sent.' : 'Naming plants needs a connection.'}
+                      className={buttonVariants({ variant: 'outline' })}
+                    >
+                      Name this plant
+                    </UnavailableAction>
+                  ))}
                 <Button
                   type="button"
                   variant="outline"
@@ -336,7 +345,11 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
                   <Move className="mr-1.5 h-4 w-4" aria-hidden="true" />
                   Move on the photo
                 </Button>
-                {!open.pending && (
+                {open.pending ? (
+                  <UnavailableAction reason="You can edit this plant once it has sent." className={buttonVariants({ variant: 'outline' })}>
+                    Edit the plant
+                  </UnavailableAction>
+                ) : (
                   <a href={`/${org}/specimens/${open.id}/edit`} className={cn(buttonVariants({ variant: 'outline' }))}>
                     Edit the plant
                   </a>

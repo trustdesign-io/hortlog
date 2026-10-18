@@ -14,6 +14,8 @@ import { groupByType, MAX_TYPE_NAME } from '@/lib/collection-types'
 import { fuzzyScore } from '@/lib/fuzzy'
 import { toSlug } from '@/lib/utils/slug'
 import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
@@ -398,8 +400,15 @@ function TypeRow({ orgSlug, type, canDelete }: { orgSlug: string; type: Collecti
         >
           Rename
         </Button>
-        {canDelete &&
-          (confirming ? (
+        {!canDelete ? (
+          <UnavailableAction
+            reason="Your role can’t delete collection types."
+            label={`Delete type ${type.name}`}
+            className={buttonVariants({ variant: 'ghost', size: 'icon', className: 'text-destructive' })}
+          >
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </UnavailableAction>
+        ) : (confirming ? (
             <Button
               type="button"
               variant="destructive"
@@ -534,12 +543,25 @@ export function CollectionsManager({ orgSlug, collections, types, canEdit, canDe
           <h1 className="font-heading text-2xl font-medium">Collections</h1>
           <p className="mt-1 text-sm text-muted-foreground">Themed groups of specimens for display purposes.</p>
         </div>
-        {canEdit && (
-          <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
-            <ManageTypesDialog orgSlug={orgSlug} types={types} canDelete={canDelete} />
-            <CreateCollectionDialog orgSlug={orgSlug} types={types} />
-          </div>
-        )}
+        <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+          {canEdit ? (
+            <>
+              <ManageTypesDialog orgSlug={orgSlug} types={types} canDelete={canDelete} />
+              <CreateCollectionDialog orgSlug={orgSlug} types={types} />
+            </>
+          ) : (
+            <>
+              <UnavailableAction reason="Your role can’t manage collection types." className={buttonVariants({ size: 'sm', variant: 'outline' })}>
+                <Tags className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                Types
+              </UnavailableAction>
+              <UnavailableAction reason="Your role can’t create collections." className={buttonVariants({ size: 'sm' })}>
+                <Plus className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                New collection
+              </UnavailableAction>
+            </>
+          )}
+        </div>
       </div>
 
       {collections.length === 0 && (
@@ -597,9 +619,23 @@ export function CollectionsManager({ orgSlug, collections, types, canEdit, canDe
                     <span className="mr-2 text-xs text-muted-foreground">
                       {c._count.specimens} specimen{c._count.specimens === 1 ? '' : 's'}
                     </span>
-                    {canEdit && <EditCollectionDialog orgSlug={orgSlug} collection={c} types={types} />}
-                    {canDelete && (
+                    {canEdit ? (
+                      <EditCollectionDialog orgSlug={orgSlug} collection={c} types={types} />
+                    ) : (
+                      <UnavailableAction reason="Your role can’t edit collections." label={`Edit ${c.name}`} className={buttonVariants({ variant: 'ghost', size: 'icon' })}>
+                        <Pencil className="h-4 w-4" aria-hidden="true" />
+                      </UnavailableAction>
+                    )}
+                    {canDelete ? (
                       <DeleteCollectionDialog orgSlug={orgSlug} collection={c} />
+                    ) : (
+                      <UnavailableAction
+                        reason="Your role can’t delete collections."
+                        label={`Delete ${c.name}`}
+                        className={buttonVariants({ variant: 'ghost', size: 'icon', className: 'text-destructive' })}
+                      >
+                        <Trash2 className="h-4 w-4" aria-hidden="true" />
+                      </UnavailableAction>
                     )}
                   </div>
                 </li>
