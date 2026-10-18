@@ -76,6 +76,12 @@ jobs:
             echo "::warning::DATABASE_URL secret not set; skipping migrations."
             exit 0
           fi
+          # The database predates migrations: 0_init is its state when they began, so it's
+          # recorded as applied rather than run. A no-op once recorded.
+          # P3008 means it's already recorded; any other failure stops here, before deploy.
+          if ! out=$(npx prisma migrate resolve --applied 0_init 2>&1); then
+            echo "$out" | grep -q "P3008" || { echo "$out"; exit 1; }
+          fi
           npx prisma migrate deploy
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}

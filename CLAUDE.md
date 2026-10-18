@@ -83,6 +83,8 @@ npx prisma studio    # Open database GUI
 npx prisma migrate dev  # Run pending migrations
 ```
 
+Database changes ship as Prisma migrations in `prisma/migrations/`: CI applies them on merge to `main` (`Run DB migrations` job). `0_init` is the database as it was when migrations began; it's recorded as applied, never run.
+
 ## Environment Variables
 Copy `.env.example` to `.env.local` and fill in values. Never commit `.env.local`.
 See `docs/SETUP.md` for the full list, format, and where to find each value.
