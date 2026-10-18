@@ -15,15 +15,17 @@ export default async function SpeciesPage({ params, searchParams }: SpeciesPageP
   const query = q?.trim() ?? ''
 
   const species = await prisma.species.findMany({
+    // "Unidentified" is the placeholder for plants not yet named, not a species
     where: query
       ? {
+          slug: { not: 'unidentified' },
           OR: [
             { commonName: { contains: query, mode: 'insensitive' } },
             { scientificName: { contains: query, mode: 'insensitive' } },
             { family: { contains: query, mode: 'insensitive' } },
           ],
         }
-      : undefined,
+      : { slug: { not: 'unidentified' } },
     orderBy: { commonName: 'asc' },
     take: 100,
   })

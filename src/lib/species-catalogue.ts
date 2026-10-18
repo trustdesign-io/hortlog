@@ -39,6 +39,7 @@ export async function findExistingSpecies(query: string): Promise<ExistingSpecie
   const words = q.split(' ').filter((w) => w.length >= 2)
   const candidates = await prisma.species.findMany({
     where: {
+      slug: { not: 'unidentified' },
       OR: words.flatMap((w) => [
         { scientificName: { contains: w.slice(0, 3), mode: 'insensitive' as const } },
         { commonName: { contains: w.slice(0, 3), mode: 'insensitive' as const } },

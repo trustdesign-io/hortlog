@@ -108,7 +108,7 @@ export async function buildOrgSnapshot(
     }),
     // Species to name new plants by when adding them offline
     canManage
-      ? prisma.species.findMany({ select: { id: true, scientificName: true, commonName: true }, orderBy: { scientificName: 'asc' } })
+      ? prisma.species.findMany({ where: { slug: { not: 'unidentified' } }, select: { id: true, scientificName: true, commonName: true }, orderBy: { scientificName: 'asc' } })
       : Promise.resolve(undefined),
   ])
 
