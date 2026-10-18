@@ -1,5 +1,7 @@
 {
   "installCommand": "npm ci",
-  "buildCommand": "npx prisma generate && next build",
-  "regions": ["lhr1"]
+  "buildCommand": "npx prisma generate && node scripts/migrate-on-deploy.mjs && next build",
+  "regions": [
+    "lhr1"
+  ]
 }
