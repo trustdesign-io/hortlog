@@ -43,6 +43,7 @@ const resolveData = cache(async function resolveData(orgSlug: string, specimenSl
           statusCategory: true,
           statusSource: true,
           statusUpdatedAt: true,
+          openDataUpdatedAt: true,
           nativeRegions: true,
           introducedRegions: true,
           lifeForm: true,
