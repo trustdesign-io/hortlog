@@ -16,9 +16,9 @@ vi.mock('./db', () => ({
   deleteOfflineStore: async () => {},
 }))
 
-vi.mock('./scene-photos', () => ({ sendScenePhotos: async () => {} }))
+vi.mock('./scene-photos', () => ({ sendScenePhotos: async () => {}, countUnsentScenePhotos: async () => 0 }))
 
-const { flushOutbox, queueOp, SNAPSHOTS_EVENT } = await import('./sync')
+const { flushOutbox, keepSending, queueOp, SNAPSHOTS_EVENT } = await import('./sync')
 
 const snapshot = { version: SNAPSHOT_VERSION, org: { slug: 'kew' }, syncedAt: new Date().toISOString() } as unknown as OrgSnapshot
 
@@ -87,3 +87,40 @@ describe('sent changes', () => {
     expect(outbox.get('b')?.sentAt).toBeUndefined()
   })
 })
+
+describe('keeps sending', () => {
+  beforeEach(() => {
+    outbox.clear()
+    snapshots.clear()
+    vi.restoreAllMocks()
+  })
+
+  it('tries when the app comes back on screen, even if the browser says it’s offline', async () => {
+    vi.spyOn(navigator, 'onLine', 'get').mockReturnValue(false)
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}', { status: 503 }))
+    const stop = keepSending()
+    await new Promise((r) => setTimeout(r, 20))
+    expect(fetchMock).not.toHaveBeenCalled() // nothing waiting yet
+
+    outbox.set('w', op('w'))
+    document.dispatchEvent(new Event('visibilitychange'))
+    await new Promise((r) => setTimeout(r, 20))
+    expect(fetchMock).toHaveBeenCalled()
+    expect(outbox.get('w')?.sentAt).toBeUndefined() // failed: still waiting
+    stop()
+  })
+
+  it('retries on a timer while something is waiting', async () => {
+    vi.useFakeTimers()
+    const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async () => new Response('{}', { status: 503 }))
+    outbox.set('w', op('w'))
+    const stop = keepSending()
+    await vi.advanceTimersByTimeAsync(10)
+    const first = fetchMock.mock.calls.length
+    await vi.advanceTimersByTimeAsync(30_000)
+    expect(fetchMock.mock.calls.length).toBeGreaterThan(first)
+    stop()
+    vi.useRealTimers()
+  })
+})
+
