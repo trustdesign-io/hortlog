@@ -33,6 +33,8 @@ interface SpecimenDetailProps {
     statusCategory?: string | null
     statusSource?: string | null
     statusUpdatedAt?: Date | null
+    /** When open data was last looked up; set means "no status" is a real answer */
+    openDataUpdatedAt?: Date | null
     nativeRegions?: string[]
     introducedRegions?: string[]
     lifeForm?: string | null
@@ -291,6 +293,7 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, backL
         statusCategory={species.statusCategory ?? null}
         statusSource={species.statusSource ?? null}
         statusUpdatedAt={species.statusUpdatedAt ?? null}
+        statusChecked={Boolean(species.openDataUpdatedAt) && !species.conservationStatus}
         nativeRegions={species.nativeRegions ?? []}
         introducedRegions={species.introducedRegions ?? []}
         lifeForm={species.lifeForm ?? null}

@@ -6,6 +6,8 @@ interface InTheWildProps {
   statusCategory: string | null
   statusSource: string | null
   statusUpdatedAt: Date | null
+  /** Looked up, and there's no other status shown: say so rather than show nothing */
+  statusChecked?: boolean
   nativeRegions: string[]
   introducedRegions: string[]
   lifeForm: string | null
@@ -30,6 +32,7 @@ export function InTheWild({
   statusCategory,
   statusSource,
   statusUpdatedAt,
+  statusChecked = false,
   nativeRegions,
   introducedRegions,
   lifeForm,
@@ -39,8 +42,10 @@ export function InTheWild({
   habitatExcerptSource,
   gbifTaxonKey,
 }: InTheWildProps) {
+  const notEvaluated = !statusCategory && statusChecked
   const hasAny =
     statusCategory ||
+    notEvaluated ||
     nativeRegions.length ||
     introducedRegions.length ||
     lifeForm ||
@@ -75,6 +80,16 @@ export function InTheWild({
                   {statusDate ? ` · checked ${statusDate}` : ''}
                 </span>
               )}
+            </dd>
+          </div>
+        )}
+
+        {notEvaluated && (
+          <div>
+            <dt className="sr-only">Conservation status</dt>
+            <dd className="flex flex-wrap items-baseline gap-2">
+              <Badge variant="outline">Not evaluated</Badge>
+              <span className="text-xs text-muted-foreground">No IUCN Red List assessment found</span>
             </dd>
           </div>
         )}

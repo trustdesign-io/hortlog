@@ -58,6 +58,7 @@ const resolveData = cache(async function resolveData(
           statusCategory: true,
           statusSource: true,
           statusUpdatedAt: true,
+          openDataUpdatedAt: true,
           nativeRegions: true,
           introducedRegions: true,
           lifeForm: true,
