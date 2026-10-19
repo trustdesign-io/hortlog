@@ -117,10 +117,11 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, backL
       {/* Breadcrumbs */}
       {breadcrumbs && breadcrumbs.length > 0 && (
         <nav aria-label="Breadcrumb" className="mb-4">
-          <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+          {/* The first item (usually the garden's long name) has its own line; the rest follow on the next */}
+          <ol className="flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-muted-foreground">
             {breadcrumbs.map((crumb, i) => (
-              <li key={crumb.href} className="flex items-center gap-1">
-                {i > 0 && <ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />}
+              <li key={crumb.href} className={i === 0 && breadcrumbs.length > 1 ? 'w-full' : 'flex items-center gap-1'}>
+                {i > 1 && <ChevronRight className="h-3 w-3 shrink-0" aria-hidden="true" />}
                 {i < breadcrumbs.length - 1 ? (
                   <Link href={crumb.href} className="hover:text-foreground transition-colors">
                     {crumb.label}
