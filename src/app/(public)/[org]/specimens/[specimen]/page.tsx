@@ -7,6 +7,7 @@ import { truncateDescription } from '@/lib/seo'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { SpecimenWorkHistory } from '@/components/specimen-work-history'
 import { SpecimenCare } from '@/components/specimen-care'
+import { distinctCommonName } from '@/lib/species-name'
 
 interface PublicSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -72,7 +73,8 @@ export async function generateMetadata({ params }: PublicSpecimenPageProps) {
   if (!data) return {}
 
   const { scientificName, commonName, description } = data.specimen.species
-  const title = `${scientificName} — ${commonName}`
+  const common = distinctCommonName({ scientificName, commonName })
+  const title = common ? `${scientificName} — ${common}` : scientificName
   const metaDescription = description
     ? truncateDescription(description)
     : `${commonName} specimen record at ${data.org.name}.`
