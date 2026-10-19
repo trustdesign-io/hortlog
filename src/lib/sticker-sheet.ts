@@ -25,17 +25,18 @@ export interface SheetLayout {
 }
 
 /**
- * 7 × 10 labels of 25 mm with 2.5 mm gaps, centred on A4:
- * (210 − 7 × 25 − 6 × 2.5) / 2 = 10 mm, (297 − 10 × 25 − 9 × 2.5) / 2 = 12.25 mm.
+ * Label Planet LP70/25SQ, as published: 7 × 10 labels of 25 mm on a 27 mm
+ * pitch (2 mm gaps), 11.5 mm side margins and 14.5 mm top and bottom margins.
+ * 2 × 11.5 + 7 × 25 + 6 × 2 = 210; 2 × 14.5 + 10 × 25 + 9 × 2 = 297.
  */
 export const DEFAULT_SHEET_LAYOUT: SheetLayout = {
   cols: 7,
   rows: 10,
   label: STICKER_MM,
-  gapX: 2.5,
-  gapY: 2.5,
-  left: 10,
-  top: 12.25,
+  gapX: 2,
+  gapY: 2,
+  left: 11.5,
+  top: 14.5,
 }
 
 /** Measurements that can be adjusted from the page, with their limits. */
