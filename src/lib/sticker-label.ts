@@ -7,13 +7,13 @@ import QRCode from 'qrcode'
 
 export const STICKER_MM = 25
 /** Width of the QR code including its quiet zone. */
-export const QR_BLOCK_MM = 17
+export const QR_BLOCK_MM = 16
 /** Quiet zone, in modules, kept clear of text on every side. */
 export const QUIET_MODULES = 2
-const QR_TOP_MM = 3.9
-const DOMAIN_BASELINE_MM = 3.1
+const QR_TOP_MM = 4.4
+const DOMAIN_BASELINE_MM = 3.8
 const DOMAIN_FONT_MM = 2.5
-const NAME_BASELINE_MM = 23.7
+const NAME_BASELINE_MM = 23.2
 const NAME_FONT_MM = 2.8
 /** Widest the scene name may run before it's squeezed to fit. */
 const NAME_MAX_WIDTH_MM = 22
