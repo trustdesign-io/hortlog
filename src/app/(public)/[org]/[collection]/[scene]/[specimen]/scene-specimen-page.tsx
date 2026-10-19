@@ -6,6 +6,7 @@ import { GaEvent } from '@/components/ga-event'
 import { truncateDescription } from '@/lib/seo'
 import { SpecimenCare } from '@/components/specimen-care'
 import { publicScenePath } from '@/lib/scene-urls'
+import { distinctCommonName } from '@/lib/species-name'
 
 const resolveData = cache(async function resolveData(
   orgSlug: string,
@@ -97,7 +98,8 @@ export async function sceneSpecimenMetadata({ orgSlug, collectionSlug, sceneSlug
   if (!data) return {}
 
   const { scientificName, commonName, description } = data.specimen.species
-  const title = `${scientificName} — ${commonName}`
+  const common = distinctCommonName({ scientificName, commonName })
+  const title = common ? `${scientificName} — ${common}` : scientificName
   const metaDescription = description
     ? truncateDescription(description)
     : `${commonName} specimen record at ${data.org.name}.`

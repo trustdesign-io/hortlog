@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils'
 import { InTheWild } from '@/components/species/in-the-wild'
 import { buildHabitatLine } from '@/lib/open-data/powo'
 import { buildEllenbergSentence } from '@/lib/ellenberg'
+import { distinctCommonName } from '@/lib/species-name'
 
 interface BreadcrumbItem {
   label: string
@@ -203,8 +204,12 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, backL
               </span>
             )}
           </span>
-          <span className="sr-only">, </span>
-          <span className="mt-1 block text-xl font-medium text-foreground">{species.commonName}</span>
+          {distinctCommonName(species) && (
+            <>
+              <span className="sr-only">, </span>
+              <span className="mt-1 block text-xl font-medium text-foreground">{distinctCommonName(species)}</span>
+            </>
+          )}
         </h1>
         {specimen.accessionNumber && (
           <p className="mt-1 font-mono text-xs text-muted-foreground">

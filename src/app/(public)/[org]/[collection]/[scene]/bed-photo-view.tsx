@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { cn } from '@/lib/utils'
+import { distinctCommonName } from '@/lib/species-name'
 
 export interface ScenePlant {
   /** Its number on the photo, if it's marked there */
@@ -198,11 +199,21 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
                 </span>
                 <span className="flex items-center gap-2 px-3 py-2.5">
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate font-medium leading-tight">
-                      {p.number !== null && <span className="sr-only">{p.number}: </span>}
-                      {p.commonName}
-                    </span>
-                    <ScientificName className="block truncate text-sm text-muted-foreground">{p.scientificName}</ScientificName>
+                    {distinctCommonName(p) ? (
+                      <>
+                        <span className="block truncate font-medium leading-tight">
+                          {p.number !== null && <span className="sr-only">{p.number}: </span>}
+                          {distinctCommonName(p)}
+                        </span>
+                        <ScientificName className="block truncate text-sm text-muted-foreground">{p.scientificName}</ScientificName>
+                      </>
+                    ) : (
+                      // No common name: the scientific name once, as the title
+                      <span className="block truncate font-medium leading-tight">
+                        {p.number !== null && <span className="sr-only">{p.number}: </span>}
+                        <ScientificName>{p.scientificName}</ScientificName>
+                      </span>
+                    )}
                   </span>
                   <ChevronRight className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                 </span>
