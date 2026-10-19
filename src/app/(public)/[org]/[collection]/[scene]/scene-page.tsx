@@ -315,14 +315,17 @@ function ComingSoon({
   );
 }
 
-/** The places the scene is in, outermost first: Princess of Wales Conservatory › Arid › Madagascar */
+/**
+ * The places the scene is in, outermost first: Princess of Wales Conservatory › Arid › Madagascar.
+ * The outermost (usually the longest) has its own line; the rest follow on the next.
+ */
 function PlaceTrail({ places }: { places: string[] }) {
   return (
     <nav aria-label="Where this is">
       <ol className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-sm text-muted-foreground">
         {places.map((name, i) => (
-          <li key={`${i}-${name}`} className="flex items-center gap-1.5">
-            {i > 0 && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />}
+          <li key={`${i}-${name}`} className={i === 0 && places.length > 1 ? 'w-full' : 'flex items-center gap-1.5'}>
+            {i > 1 && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />}
             <span aria-current={i === places.length - 1 ? 'location' : undefined} className={i === places.length - 1 ? 'font-medium text-foreground' : undefined}>
               {name}
             </span>
