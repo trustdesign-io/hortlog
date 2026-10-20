@@ -146,3 +146,28 @@ describe('building a scene offline', () => {
     expect(out.specimens.find((s) => s.id === 's1')!.sceneId).toBeNull()
   })
 })
+
+describe('setStage', () => {
+  it('accepts a known stage and refuses anything else', () => {
+    expect(parseOp({ ...base, kind: 'setStage', specimenId: 's1', stage: 'FLOWER' })).toEqual({
+      ...base,
+      kind: 'setStage',
+      specimenId: 's1',
+      stage: 'FLOWER',
+    })
+    expect(parseOp({ ...base, kind: 'setStage', specimenId: 's1', stage: 'BLOOMING' })).toBeNull()
+    expect(parseOp({ ...base, kind: 'setStage', stage: 'FLOWER' })).toBeNull()
+  })
+
+  it('shows on the saved copy straight away', () => {
+    const snap = {
+      org: { id: 'o1', slug: 'acme', name: 'Acme' },
+      specimens: [{ id: 's1', species: { scientificName: 'Didierea trollii' } }],
+      scenes: [],
+      tasks: [],
+      myRecords: [],
+    } as unknown as OrgSnapshot
+    const out = applyPending(snap, [{ ...base, kind: 'setStage', specimenId: 's1', stage: 'FLOWER' }])
+    expect(out.specimens[0]).toMatchObject({ stage: 'FLOWER', stageSeenAt: base.createdAt })
+  })
+})

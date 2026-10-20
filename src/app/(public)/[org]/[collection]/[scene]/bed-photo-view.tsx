@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Flower2 } from 'lucide-react'
 import { ScientificName } from '@/components/ui/scientific-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { cn } from '@/lib/utils'
@@ -18,6 +18,8 @@ export interface ScenePlant {
   /** Where it is in the photo, 0–1 from the left and top */
   x: number | null
   y: number | null
+  /** What it's doing now, while that's current */
+  stage: 'BUD' | 'FLOWER' | 'FRUIT' | null
 }
 
 interface BedPhotoViewProps {
@@ -32,7 +34,11 @@ interface BedPhotoViewProps {
  * the plants as a row of cards to swipe through. The two move together:
  * tapping a number brings its card into view, swiping lights up its number.
  */
-export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) {
+export function BedPhotoView({ photoUrl, plants: allPlants, basePath }: BedPhotoViewProps) {
+  // "In flower here": just the plants flowering now
+  const [onlyFlowering, setOnlyFlowering] = useState(false)
+  const floweringCount = allPlants.filter((p) => p.stage === 'FLOWER').length
+  const plants = onlyFlowering ? allPlants.filter((p) => p.stage === 'FLOWER') : allPlants
   const [photoFailed, setPhotoFailed] = useState(false)
   const [active, setActive] = useState(0)
   const track = useRef<HTMLUListElement>(null)
@@ -106,7 +112,7 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
                 type="button"
                 onClick={() => go(i)}
                 aria-pressed={on}
-                aria-label={`${p.number}: ${p.commonName}`}
+                aria-label={`${p.number}: ${p.commonName}${p.stage === 'FLOWER' ? ', in flower' : ''}`}
                 className={cn(
                   'absolute flex h-9 min-w-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 px-1.5 text-sm font-semibold shadow-[0_2px_8px_rgba(0,0,0,0.35)] transition-transform focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/70',
                   on ? 'z-10 scale-125 border-white bg-primary text-primary-foreground' : 'border-white/90 bg-white/90 text-[#16201A]',
@@ -114,6 +120,11 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
                 style={{ left: `${(p.x as number) * 100}%`, top: `${(p.y as number) * 100}%` }}
               >
                 {p.number}
+                {p.stage === 'FLOWER' && (
+                  <span className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-pink-600 text-white shadow" aria-hidden="true">
+                    <Flower2 className="h-3 w-3" />
+                  </span>
+                )}
               </button>
             )
           })}
@@ -122,9 +133,30 @@ export function BedPhotoView({ photoUrl, plants, basePath }: BedPhotoViewProps) 
 
       <section aria-labelledby="plants-here" className="flex flex-1 flex-col gap-2">
         <div className="flex items-end justify-between gap-3">
-          <h2 id="plants-here" className="font-heading text-lg">
-            Plants here
-          </h2>
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 id="plants-here" className="font-heading text-lg">
+              {onlyFlowering ? 'In flower here' : 'Plants here'}
+            </h2>
+            {floweringCount > 0 && (
+              <button
+                type="button"
+                aria-pressed={onlyFlowering}
+                onClick={() => {
+                  setOnlyFlowering((v) => !v)
+                  setActive(0)
+                  steering.current = null
+                  track.current?.scrollTo({ left: 0 })
+                }}
+                className={cn(
+                  'inline-flex h-9 items-center gap-1.5 rounded-full border px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                  onlyFlowering ? 'border-pink-600 bg-pink-600 text-white' : 'bg-card text-foreground',
+                )}
+              >
+                <Flower2 className="h-4 w-4" aria-hidden="true" />
+                {onlyFlowering ? 'Show all' : `In flower (${floweringCount})`}
+              </button>
+            )}
+          </div>
           {plants.length > 1 && (
             <div className="flex items-center gap-1">
               <span className="mr-1 text-sm tabular-nums text-muted-foreground" aria-live="polite">

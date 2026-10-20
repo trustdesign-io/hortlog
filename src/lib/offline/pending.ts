@@ -43,6 +43,14 @@ export function applyPending(snap: OrgSnapshot, ops: OutboxOp[]): OrgSnapshot {
         break
       }
 
+      case 'setStage': {
+        const specimen = findSpecimen(op.specimenId)
+        if (!specimen) break
+        specimen.stage = op.stage
+        specimen.stageSeenAt = op.createdAt
+        break
+      }
+
       case 'recordWork': {
         const specimen = findSpecimen(op.specimenId)
         if (!specimen) break

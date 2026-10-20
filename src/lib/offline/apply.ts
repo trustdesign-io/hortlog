@@ -10,12 +10,14 @@ import { cellKey, cellsInGrid, gridResizeError, hexOf, planGridOps, SUB_CELLS } 
 import { toSlug } from '@/lib/utils/slug'
 import { addFromCatalogue, labelName, searchCatalogue } from '@/lib/species-catalogue'
 import { nameKey } from '@/lib/taxonomy'
+import { saveStageObservation } from '@/lib/plant-stage-db'
 import type {
   CreateSpecimenOp,
   OpResult,
   PlaceOnPhotoOp,
   PlaceSpecimenOp,
   ResizeGridOp,
+  SetStageOp,
   SplitHexOp,
   SyncOpInput,
   UnplaceSpecimenOp,
@@ -97,6 +99,26 @@ async function applyTaskStatus(user: UserWithMemberships, op: Extract<SyncOpInpu
         data: { status: op.status, completedAt: op.status === 'DONE' ? new Date(op.createdAt) : null },
       })
       await syncTaskCare(tx, task.id, { refreshTargets: op.status === 'DONE' })
+    },
+    { isolationLevel: 'Serializable' },
+  )
+  return { id: op.id, status: 'applied' }
+}
+
+async function applySetStage(user: UserWithMemberships, op: SetStageOp): Promise<OpResult> {
+  if (!can(user, op.org, 'can_record_work')) return { id: op.id, status: 'rejected', error: 'You can no longer record plants here.' }
+  const specimen = await prisma.specimen.findFirst({
+    where: { id: op.specimenId, organisation: { slug: op.org } },
+    select: { id: true },
+  })
+  if (!specimen) return { id: op.id, status: 'rejected', error: 'This plant has been removed.' }
+
+  // Seen when it was tapped on the device, not when it arrived (never in the future)
+  const at = new Date(Math.min(Date.parse(op.createdAt), Date.now()))
+  await prisma.$transaction(
+    async (tx) => {
+      await claim(tx, op, user.id)
+      await saveStageObservation(tx, { specimenId: specimen.id, userId: user.id, stage: op.stage, at })
     },
     { isolationLevel: 'Serializable' },
   )
@@ -425,6 +447,8 @@ function applyOne(user: UserWithMemberships, op: SyncOpInput): Promise<OpResult>
       return applyResizeGrid(user, op)
     case 'updateScene':
       return applyUpdateScene(user, op)
+    case 'setStage':
+      return applySetStage(user, op)
   }
 }
 

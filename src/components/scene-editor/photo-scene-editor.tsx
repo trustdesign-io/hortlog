@@ -12,6 +12,7 @@ import { getLocalScenePhoto, SCENE_PHOTO_EVENT, takeScenePhoto, type LocalSceneP
 import { bedPhotoUrl, type OfflineScene, type OfflineSpecimen, type OrgSnapshot } from '@/lib/offline/types'
 import { cn } from '@/lib/utils'
 import { UnavailableAction } from '@/components/ui/unavailable-action'
+import { StageButtons, stageLine } from '@/components/plant-stage-picker'
 
 const FIELD = 'flex h-11 w-full rounded-md border border-input bg-background px-3 text-base'
 
@@ -334,6 +335,14 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
                       Name this plant
                     </UnavailableAction>
                   ))}
+                <div className="space-y-2 rounded-xl border p-3">
+                  <p className="text-sm font-medium">Flowering</p>
+                  <p className="text-xs text-muted-foreground">{stageLine(open.stage, open.stageSeenAt)}</p>
+                  <StageButtons
+                    value={open.stage ?? null}
+                    onPick={(stage) => onQueue([{ ...base(), kind: 'setStage', specimenId: open.id, stage }])}
+                  />
+                </div>
                 <Button
                   type="button"
                   variant="outline"

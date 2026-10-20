@@ -38,6 +38,7 @@ model User {
   workRecords           WorkRecord[]
   workRecordEdits       WorkRecordEdit[]       @relation("WorkRecordEditedBy")
   workLogEntryEdits     WorkLogEntryEdit[]     @relation("WorkLogEntryEditedBy")
+  stageObservations     StageObservation[]
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -327,7 +328,36 @@ model Specimen {
   workRecords WorkRecord[]
   tasks       Task[]
 
+  /// Its latest flowering stage and when it was last seen at it (kept from StageObservation)
+  stage             PlantStage?
+  stageSeenAt       DateTime?
+  stageObservations StageObservation[]
+
   @@unique([slug, organisationId])
+}
+
+// ─── Flowering and fruiting (phenology) ───────────────────────────────────────
+
+enum PlantStage {
+  BUD
+  FLOWER
+  FRUIT
+  OVER
+}
+
+/// A member saw this plant at this stage on this day
+model StageObservation {
+  id         String     @id @default(cuid())
+  stage      PlantStage
+  observedAt DateTime   @default(now())
+
+  specimenId String
+  specimen   Specimen @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([specimenId, observedAt])
 }
 
 // ─── Locations (nested places: glasshouse › zone › bed) ───────────────────────

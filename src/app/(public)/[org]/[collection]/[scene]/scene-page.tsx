@@ -1,5 +1,5 @@
 import { cache } from "react";
-import { ChevronRight, Leaf } from "lucide-react";
+import { ChevronRight, Flower2, Leaf } from "lucide-react";
 import { locationPath } from "@/lib/locations";
 import { bedPhotoUrl } from "@/lib/offline/types";
 import { notFound } from "next/navigation";
@@ -10,6 +10,7 @@ import { SceneSplash } from "./scene-splash";
 import { GaEvent } from "@/components/ga-event";
 import { OfflineNotice } from "@/components/offline/offline-notice";
 import { publicScenePath } from "@/lib/scene-urls";
+import { currentStage } from "@/lib/plant-stage";
 
 /** Shared by /[org]/[collection]/[scene] and /[org]/scene/[scene] (no collection). */
 export async function sceneMetadata(
@@ -143,6 +144,8 @@ export async function ScenePage({
       photoX: true,
       photoY: true,
       imageUrl: true,
+      stage: true,
+      stageSeenAt: true,
       species: {
         select: { commonName: true, scientificName: true, photoUrl: true },
       },
@@ -213,8 +216,19 @@ export async function ScenePage({
           thumbnailUrl: s.imageUrl ?? s.species.photoUrl,
           x: s.photoX,
           y: s.photoY,
+          stage: currentStage(s.stage, s.stageSeenAt),
         }))}
       />
+
+      {scene.locationId && places.length > 0 && (
+        <Link
+          href={`/${org.slug}/flowering?in=${scene.locationId}`}
+          className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border bg-card px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Flower2 className="h-4 w-4 text-primary" aria-hidden="true" />
+          What’s in flower in {places[places.length - 1]}
+        </Link>
+      )}
     </SceneShell>
   );
 }
