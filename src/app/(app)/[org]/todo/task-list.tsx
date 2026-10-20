@@ -548,7 +548,7 @@ export function TaskList({ orgSlug, canManage, tasks, orgMembers, plants, scenes
                       {task.title}
                     </p>
                     {task.description && (
-                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2">
+                      <p className="mt-0.5 text-xs text-muted-foreground line-clamp-2 whitespace-pre-line">
                         {task.description}
                       </p>
                     )}

@@ -8,6 +8,8 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { SpecimenWorkHistory } from '@/components/specimen-work-history'
 import { SpecimenCare } from '@/components/specimen-care'
 import { distinctCommonName } from '@/lib/species-name'
+import { LabelReportForm } from '@/components/label-report-form'
+import { LabelIssueBadge } from '@/components/label-issue-badge'
 import { PlantStagePicker } from '@/components/plant-stage-picker'
 import { PlantStageHistory } from '@/components/plant-stage-history'
 
@@ -147,6 +149,7 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
             <PlantStageHistory specimenId={specimen.id} />
           </>
         )}
+        {isMember && <LabelIssueBadge orgSlug={orgSlug} specimenId={specimen.id} />}
         <SpecimenCare specimenId={specimen.id} audience={isMember ? 'members' : 'public'} />
         {isMember && currentUser && (
           <SpecimenWorkHistory
@@ -155,6 +158,7 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
             userId={currentUser.id}
           />
         )}
+        <LabelReportForm orgSlug={orgSlug} specimenId={specimen.id} audience={isMember ? 'member' : 'visitor'} />
       </SpecimenDetail>
     </>
   )
