@@ -7,6 +7,7 @@ import { truncateDescription } from '@/lib/seo'
 import { SpecimenCare } from '@/components/specimen-care'
 import { publicScenePath } from '@/lib/scene-urls'
 import { distinctCommonName } from '@/lib/species-name'
+import { LabelReportForm } from '@/components/label-report-form'
 
 const resolveData = cache(async function resolveData(
   orgSlug: string,
@@ -159,6 +160,7 @@ export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, sp
       >
         {/* Reached from a scene: always the visitor's view, even for signed-in members */}
         <SpecimenCare specimenId={specimen.id} audience="public" />
+        <LabelReportForm orgSlug={orgSlug} specimenId={specimen.id} audience="visitor" />
       </SpecimenDetail>
     </>
   )
