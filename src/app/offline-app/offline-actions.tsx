@@ -1,5 +1,6 @@
 'use client'
 
+import { STAGE_LABELS } from '@/lib/plant-stage'
 import { useState, type FormEvent } from 'react'
 import { CheckCircle2, Circle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -187,6 +188,8 @@ function describeOp(op: OutboxOp, snapshots: OrgSnapshot[]): string {
       return `Changed rows or columns – ${scene(op.sceneId)}`
     case 'updateScene':
       return `Changed ${scene(op.sceneId)}`
+    case 'setStage':
+      return `${STAGE_LABELS[op.stage]} – ${plant(op.specimenId)}`
   }
 }
 

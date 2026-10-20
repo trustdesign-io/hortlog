@@ -8,6 +8,8 @@ import { getCurrentUser } from '@/lib/auth/current-user'
 import { SpecimenWorkHistory } from '@/components/specimen-work-history'
 import { SpecimenCare } from '@/components/specimen-care'
 import { distinctCommonName } from '@/lib/species-name'
+import { PlantStagePicker } from '@/components/plant-stage-picker'
+import { PlantStageHistory } from '@/components/plant-stage-history'
 
 interface PublicSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -29,6 +31,8 @@ const resolveData = cache(async function resolveData(orgSlug: string, specimenSl
       cultivar: true,
       notes: true,
       imageUrl: true,
+      stage: true,
+      stageSeenAt: true,
       species: {
         select: {
           commonName: true,
@@ -126,10 +130,23 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
           notes: specimen.notes,
           imageUrl: specimen.imageUrl,
           cultivar: specimen.cultivar,
+          stage: specimen.stage,
+          stageSeenAt: specimen.stageSeenAt,
         }}
         breadcrumbs={breadcrumbs}
         backHref={`/${orgSlug}`}
       >
+        {isMember && (
+          <>
+            <PlantStagePicker
+              orgSlug={orgSlug}
+              specimenId={specimen.id}
+              stage={specimen.stage}
+              seenAt={specimen.stageSeenAt?.toISOString() ?? null}
+            />
+            <PlantStageHistory specimenId={specimen.id} />
+          </>
+        )}
         <SpecimenCare specimenId={specimen.id} audience={isMember ? 'members' : 'public'} />
         {isMember && currentUser && (
           <SpecimenWorkHistory

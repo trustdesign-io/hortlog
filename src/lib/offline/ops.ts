@@ -1,6 +1,7 @@
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
 import { GRID_SIDES, MAX_GRID_OPS, SUB_CELLS, type GridOp } from '@/lib/scene-grid'
 import { MAX_SCENE_TITLE } from '@/lib/scene-title'
+import { isPlantStage, type PlantStageValue } from '@/lib/plant-stage'
 
 /**
  * Changes a member makes without a connection. Each is saved on the device
@@ -97,6 +98,13 @@ export interface UpdateSceneOp extends OpBase {
   title?: string | null
 }
 
+/** A member saw the plant in bud, in flower, in fruit or over */
+export interface SetStageOp extends OpBase {
+  kind: 'setStage'
+  specimenId: string
+  stage: PlantStageValue
+}
+
 /** Changes sent to /api/offline-sync */
 export type SyncOpInput =
   | RecordWorkOp
@@ -108,6 +116,7 @@ export type SyncOpInput =
   | SplitHexOp
   | ResizeGridOp
   | UpdateSceneOp
+  | SetStageOp
 
 /**
  * An op as kept in the outbox. `error` is set when the server refused it.
@@ -167,6 +176,12 @@ export function parseOp(raw: unknown): SyncOpInput | null {
         coworkerIds: Array.isArray(e.coworkerIds) ? e.coworkerIds.filter((v): v is string => typeof v === 'string' && v.length <= 64).slice(0, 20) : [],
       },
     }
+  }
+
+  if (o.kind === 'setStage') {
+    const specimenId = str(o.specimenId, 64)
+    if (!specimenId || !isPlantStage(o.stage)) return null
+    return { id, org, createdAt, kind: 'setStage', specimenId, stage: o.stage }
   }
 
   if (o.kind === 'setTaskStatus') {

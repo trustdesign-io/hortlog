@@ -1,3 +1,4 @@
+import type { PlantStageValue } from '@/lib/plant-stage'
 /**
  * The copy of an organisation a member keeps on their device for offline use.
  * Built by /api/offline-data/[org] and stored in IndexedDB.
@@ -32,6 +33,9 @@ export interface OfflineSpecimen {
   photoY?: number | null
   collectionIds: string[]
   species: OfflineSpecies
+  /** Latest flowering stage and when it was seen (ISO); missing in older saved copies */
+  stage?: PlantStageValue | null
+  stageSeenAt?: string | null
   /** Added on this device and not yet sent */
   pending?: boolean
 }

@@ -11,6 +11,8 @@ import { InTheWild } from '@/components/species/in-the-wild'
 import { buildHabitatLine } from '@/lib/open-data/powo'
 import { buildEllenbergSentence } from '@/lib/ellenberg'
 import { distinctCommonName } from '@/lib/species-name'
+import { PlantStageBadge } from '@/components/plant-stage-badge'
+import type { PlantStageValue } from '@/lib/plant-stage'
 
 interface BreadcrumbItem {
   label: string
@@ -56,6 +58,9 @@ interface SpecimenDetailProps {
     notes: string | null
     imageUrl?: string | null
     cultivar?: string | null
+    /** Latest flowering stage; visitors see it while it's current */
+    stage?: PlantStageValue | null
+    stageSeenAt?: Date | null
   }
   breadcrumbs?: BreadcrumbItem[]
   backHref?: string
@@ -211,6 +216,7 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, backL
             </>
           )}
         </h1>
+        <PlantStageBadge stage={specimen.stage} seenAt={specimen.stageSeenAt} />
         {specimen.accessionNumber && (
           <p className="mt-1 font-mono text-xs text-muted-foreground">
             <span aria-hidden="true">#</span>

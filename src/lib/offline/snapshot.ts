@@ -32,6 +32,8 @@ export async function buildOrgSnapshot(
         extraCells: true,
         photoX: true,
         photoY: true,
+        stage: true,
+        stageSeenAt: true,
         collections: { select: { collectionId: true } },
         species: {
           select: {
@@ -129,6 +131,8 @@ export async function buildOrgSnapshot(
       extraCells: s.extraCells,
       photoX: s.photoX,
       photoY: s.photoY,
+      stage: s.stage,
+      stageSeenAt: s.stageSeenAt?.toISOString() ?? null,
       collectionIds: s.collections.map((c) => c.collectionId),
       species: {
         commonName: s.species.commonName,

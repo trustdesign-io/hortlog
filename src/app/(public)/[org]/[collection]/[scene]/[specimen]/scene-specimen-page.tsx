@@ -44,6 +44,8 @@ const resolveData = cache(async function resolveData(
       notes: true,
       imageUrl: true,
       sceneId: true,
+      stage: true,
+      stageSeenAt: true,
       species: {
         select: {
           commonName: true,
@@ -148,6 +150,8 @@ export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, sp
           notes: specimen.notes,
           imageUrl: specimen.imageUrl,
           cultivar: specimen.cultivar,
+          stage: specimen.stage,
+          stageSeenAt: specimen.stageSeenAt,
         }}
         breadcrumbs={breadcrumbs}
         backHref={scenePath}
