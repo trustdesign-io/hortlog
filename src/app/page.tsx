@@ -137,26 +137,17 @@ export default async function HomePage() {
           }
           actions={
             <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-              <Link href="/sign-up" className={cn(buttonVariants({ size: 'xl' }), 'w-full text-white sm:w-auto')}>
-                Sign up
-              </Link>
-              <Link
-                href="/demo"
-                className={cn(
-                  buttonVariants({ variant: 'outline', size: 'xl' }),
-                  'w-full border-white bg-white text-[#16201A] hover:bg-white/90 hover:text-[#16201A] sm:w-auto',
-                )}
-              >
+              <Link href="/demo" className={cn(buttonVariants({ size: 'xl' }), 'w-full text-white sm:w-auto')}>
                 View demo
               </Link>
               <Link
-                href="/sign-in"
+                href="/sign-up"
                 className={cn(
                   buttonVariants({ variant: 'outline', size: 'xl' }),
                   'w-full border-white bg-transparent text-white hover:bg-white/10 hover:text-white sm:w-auto',
                 )}
               >
-                Sign in
+                Sign up
               </Link>
             </div>
           }
