@@ -339,62 +339,72 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify, demo }:
                   {open.pending && ' · waiting to send'}
                 </SheetDescription>
               </SheetHeader>
-              <div className="grid gap-2 px-4 pb-6">
-                {open.species.scientificName === 'Unidentified' &&
-                  (renderIdentify && !open.pending ? (
-                    <div className="space-y-2 rounded-xl border p-3">{renderIdentify(open, () => setOpenId(null))}</div>
-                  ) : (
-                    <UnavailableAction
-                      reason={demo ? 'Naming plants isn’t part of the demo.' : open.pending ? 'You can name this plant once it has sent.' : 'Naming plants needs a connection.'}
-                      className={buttonVariants({ variant: 'outline' })}
-                    >
-                      Name this plant
-                    </UnavailableAction>
-                  ))}
-                <div className="space-y-2 rounded-xl border p-3">
-                  <p className="text-sm font-medium">Flowering</p>
-                  <p className="text-xs text-muted-foreground">{stageLine(open.stage, open.stageSeenAt)}</p>
-                  <StageButtons
-                    value={open.stage ?? null}
-                    onPick={(stage) => onQueue([{ ...base(), kind: 'setStage', specimenId: open.id, stage }])}
-                  />
+              {/* Phones: one column. Desktop: what it's doing on the left, the plant's actions in a narrow column on the right */}
+              <div className="grid gap-2 px-4 pb-6 md:grid-cols-[minmax(0,1fr)_16rem] md:items-start md:gap-6">
+                <div className="grid min-w-0 gap-2">
+                  {open.species.scientificName === 'Unidentified' &&
+                    (renderIdentify && !open.pending ? (
+                      <div className="space-y-2 rounded-xl border p-3">{renderIdentify(open, () => setOpenId(null))}</div>
+                    ) : (
+                      <UnavailableAction
+                        reason={demo ? 'Naming plants isn’t part of the demo.' : open.pending ? 'You can name this plant once it has sent.' : 'Naming plants needs a connection.'}
+                        className={buttonVariants({ variant: 'outline' })}
+                      >
+                        Name this plant
+                      </UnavailableAction>
+                    ))}
+                  {/* Desktop: the label beside the buttons, so they don't stretch across the screen */}
+                  <div className="space-y-2 rounded-xl border p-3 md:flex md:items-center md:justify-between md:gap-4 md:space-y-0">
+                    <div className="min-w-0">
+                      <p className="text-sm font-medium">Flowering</p>
+                      <p className="text-xs text-muted-foreground">{stageLine(open.stage, open.stageSeenAt)}</p>
+                    </div>
+                    <div className="md:w-[30rem] md:shrink-0">
+                      <StageButtons
+                        value={open.stage ?? null}
+                        onPick={(stage) => onQueue([{ ...base(), kind: 'setStage', specimenId: open.id, stage }])}
+                      />
+                    </div>
+                  </div>
                 </div>
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => {
-                    setMovingId(open.id)
-                    setOpenId(null)
-                  }}
-                >
-                  <Move className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                  Move on the photo
-                </Button>
-                {demo ? (
-                  <UnavailableAction reason="Editing plants isn’t part of the demo." className={buttonVariants({ variant: 'outline' })}>
-                    Edit the plant
-                  </UnavailableAction>
-                ) : open.pending ? (
-                  <UnavailableAction reason="You can edit this plant once it has sent." className={buttonVariants({ variant: 'outline' })}>
-                    Edit the plant
-                  </UnavailableAction>
-                ) : (
-                  <a href={`/${org}/specimens/${open.id}/edit`} className={cn(buttonVariants({ variant: 'outline' }))}>
-                    Edit the plant
-                  </a>
-                )}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="text-destructive"
-                  onClick={() => {
-                    onQueue([{ ...base(), kind: 'unplaceSpecimen', specimenId: open.id }])
-                    setOpenId(null)
-                  }}
-                >
-                  <X className="mr-1.5 h-4 w-4" aria-hidden="true" />
-                  Take off this scene
-                </Button>
+                <div className="grid gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setMovingId(open.id)
+                      setOpenId(null)
+                    }}
+                  >
+                    <Move className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    Move on the photo
+                  </Button>
+                  {demo ? (
+                    <UnavailableAction reason="Editing plants isn’t part of the demo." className={buttonVariants({ variant: 'outline' })}>
+                      Edit the plant
+                    </UnavailableAction>
+                  ) : open.pending ? (
+                    <UnavailableAction reason="You can edit this plant once it has sent." className={buttonVariants({ variant: 'outline' })}>
+                      Edit the plant
+                    </UnavailableAction>
+                  ) : (
+                    <a href={`/${org}/specimens/${open.id}/edit`} className={cn(buttonVariants({ variant: 'outline' }))}>
+                      Edit the plant
+                    </a>
+                  )}
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="text-destructive"
+                    onClick={() => {
+                      onQueue([{ ...base(), kind: 'unplaceSpecimen', specimenId: open.id }])
+                      setOpenId(null)
+                    }}
+                  >
+                    <X className="mr-1.5 h-4 w-4" aria-hidden="true" />
+                    Take off this scene
+                  </Button>
+                </div>
               </div>
             </>
           )}
