@@ -3,6 +3,9 @@ import { SceneHeader } from '@/app/(app)/[org]/scenes/[id]/scene-header'
 import { DemoSceneEditor } from './demo-scene-editor'
 import { DEMO_ORG, loadDemo } from './demo-data'
 
+// Read live from the database on each visit, never built ahead
+export const dynamic = 'force-dynamic'
+
 /** The demo's Layout tab: the bed photo with every plant marked, ready to tap. */
 export default async function DemoLayoutPage() {
   const demo = await loadDemo()
