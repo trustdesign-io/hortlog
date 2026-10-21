@@ -40,6 +40,7 @@ model User {
   workLogEntryEdits     WorkLogEntryEdit[]     @relation("WorkLogEntryEditedBy")
   stageObservations     StageObservation[]
   labelReports          LabelReport[]
+  workLikes             WorkLogEntryLike[]
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -509,6 +510,9 @@ model WorkLogEntry {
   /// Other members who did this work too, tagged by the person who logged it
   coworkers WorkLogEntryCoworker[]
 
+  /// Members of the same organisation who liked this entry
+  likes WorkLogEntryLike[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -618,4 +622,16 @@ model LabelReport {
   @@index([specimenId])
   @@index([taskId])
   @@index([visitorKey, createdAt])
+}
+
+/// A member liked another member's work entry (members of the same organisation only)
+model WorkLogEntryLike {
+  entryId   String
+  entry     WorkLogEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+
+  @@id([entryId, userId])
+  @@index([userId])
 }

@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { prisma } from '@/lib/prisma'
 import { formatRecordDate } from '@/lib/personal-record'
+import { LikeButton } from '@/components/like-button'
 import {
   MEMBER_CARE_LIMIT,
   PUBLIC_CARE_LIMIT,
@@ -11,10 +12,12 @@ interface SpecimenCareProps {
   specimenId: string
   /** Members of the specimen's organisation see everyone's names and notes. */
   audience: 'public' | 'members'
+  /** The signed-in member, so they can like others' work */
+  viewer?: { id: string; name: string }
 }
 
 /** Care logged on this plant by everyone who has worked with it, newest first. */
-export async function SpecimenCare({ specimenId, audience }: SpecimenCareProps) {
+export async function SpecimenCare({ specimenId, audience, viewer }: SpecimenCareProps) {
   const rows = await prisma.workLogEntry.findMany({
     where: { workRecord: { specimenId } },
     orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
@@ -27,11 +30,24 @@ export async function SpecimenCare({ specimenId, audience }: SpecimenCareProps) 
       text: true,
       workRecord: {
         select: {
+          userId: true,
           user: { select: { name: true, username: true, recordPublic: true, creditOnPlants: true } },
         },
       },
+      // Shown to members only
+      likes: { orderBy: { createdAt: 'asc' }, select: { userId: true, user: { select: { name: true } } } },
     },
   })
+  const likesOf = new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        author: row.workRecord.userId,
+        names: row.likes.map((l) => (l.userId === viewer?.id ? viewer.name : (l.user.name ?? 'a member'))),
+        liked: row.likes.some((l) => l.userId === viewer?.id),
+      },
+    ]),
+  )
   const entries = rows.map((row) => toCareEntry(row, audience))
   const isMembers = audience === 'members'
 
@@ -80,6 +96,15 @@ export async function SpecimenCare({ specimenId, audience }: SpecimenCareProps) 
                   )}
                 </p>
                 {entry.note && <p className="mt-1 leading-relaxed text-foreground/80">{entry.note}</p>}
+                {isMembers && viewer && likesOf.get(entry.id) && (
+                  <LikeButton
+                    entryId={entry.id}
+                    names={likesOf.get(entry.id)!.names}
+                    liked={likesOf.get(entry.id)!.liked}
+                    viewerName={viewer.name}
+                    unavailableReason={likesOf.get(entry.id)!.author === viewer.id ? 'You can’t like your own work.' : undefined}
+                  />
+                )}
               </div>
             </li>
           ))}
