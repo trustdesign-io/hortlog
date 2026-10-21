@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from 'react'
 import { regenerateShortCode } from '@/lib/actions/scene'
 import { labelUrl, stickerSvg } from '@/lib/sticker-label'
 import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,8 @@ interface QRPanelProps {
   sceneSlug: string
   shortCode: string
   siteUrl: string
+  /** The public demo: the code can't be regenerated */
+  demo?: boolean
 }
 
 /** Pixels for the downloaded PNG: 25 mm at 600 dpi. */
@@ -35,7 +39,7 @@ function download(href: string, filename: string) {
 }
 
 /** The printable 25 × 25 mm label: hortlog.com, the code, then the scene name. */
-export function QRPanel({ orgSlug, sceneId, sceneName, sceneSlug, shortCode, siteUrl }: QRPanelProps) {
+export function QRPanel({ orgSlug, sceneId, sceneName, sceneSlug, shortCode, siteUrl, demo = false }: QRPanelProps) {
   const url = labelUrl(siteUrl, shortCode)
   const label = useMemo(() => stickerSvg({ url, name: sceneName, cutLine: true }), [url, sceneName])
   const [regenOpen, setRegenOpen] = useState(false)
@@ -103,6 +107,12 @@ export function QRPanel({ orgSlug, sceneId, sceneName, sceneSlug, shortCode, sit
           <Download className="mr-1.5 h-4 w-4" aria-hidden="true" />
           PNG
         </Button>
+        {demo ? (
+          <UnavailableAction reason="Not in the demo: it would stop this scene's printed labels working." className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+            <RefreshCw className="mr-1.5 h-4 w-4" aria-hidden="true" />
+            Regenerate code
+          </UnavailableAction>
+        ) : (
         <Dialog
           open={regenOpen}
           onOpenChange={(next) => {
@@ -137,6 +147,7 @@ export function QRPanel({ orgSlug, sceneId, sceneName, sceneSlug, shortCode, sit
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </div>
     </div>
   )
