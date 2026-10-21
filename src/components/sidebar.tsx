@@ -27,6 +27,7 @@ import { Button } from '@/components/ui/button'
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from '@/components/ui/sheet'
 import { SignOutButton, UserIdentity, UserMenu } from '@/components/user-menu'
 import { Logo } from '@/components/layout/logo'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import { useMobilePanels } from '@/components/layout/mobile-panels'
 import { useOfflineNav } from '@/components/layout/offline-nav'
 import type { TourPanel } from '@/components/tour/tour-steps'
@@ -57,6 +58,13 @@ function NavAnchor({
   'data-tour'?: string
 }) {
   const offline = useOfflineNav()
+  if (offline?.disabled(href) && offline.reason) {
+    return (
+      <UnavailableAction reason={offline.reason} className={cn(className, 'w-full text-left')}>
+        {children}
+      </UnavailableAction>
+    )
+  }
   if (offline?.disabled(href)) {
     return (
       <span aria-disabled="true" title="Needs a connection" className={cn(className, 'pointer-events-none opacity-40')}>
@@ -66,7 +74,7 @@ function NavAnchor({
   }
   if (offline) {
     return (
-      <a href={href} className={className} onClick={onClick} {...rest}>
+      <a href={offline.linkTo ? offline.linkTo(href) : href} className={className} onClick={onClick} {...rest}>
         {children}
       </a>
     )
