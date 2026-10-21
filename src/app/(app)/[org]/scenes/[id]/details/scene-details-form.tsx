@@ -3,6 +3,9 @@
 import { useActionState, useState, useTransition } from 'react'
 import { updateScene, deleteScene } from '@/lib/actions/scene'
 import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
+import { cn } from '@/lib/utils'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -33,14 +36,18 @@ interface SceneDetailsFormProps {
   }
   collections: Array<{ id: string; name: string }>
   locations: LocationNode[]
+  /** The public demo: Save says it isn't saved, and Delete is unavailable */
+  demo?: boolean
 }
 
 const selectClass =
   'flex h-9 w-full rounded-lg border border-input bg-transparent px-3 py-1 text-sm shadow-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50'
 
-export function SceneDetailsForm({ orgSlug, scene, collections, locations }: SceneDetailsFormProps) {
+export function SceneDetailsForm({ orgSlug, scene, collections, locations, demo = false }: SceneDetailsFormProps) {
   const [state, action, isPending] = useActionState<ActionResult | null, FormData>(
-    updateScene.bind(null, orgSlug, scene.id),
+    demo
+      ? async () => ({ success: false, error: 'This is the demo, so changes aren’t saved.' })
+      : updateScene.bind(null, orgSlug, scene.id),
     null,
   )
 
@@ -130,7 +137,7 @@ export function SceneDetailsForm({ orgSlug, scene, collections, locations }: Sce
         </form>
       </Card>
 
-      <DeleteSceneCard orgSlug={orgSlug} sceneId={scene.id} name={scene.name} plantCount={scene.plantCount} />
+      <DeleteSceneCard orgSlug={orgSlug} sceneId={scene.id} name={scene.name} plantCount={scene.plantCount} demo={demo} />
     </div>
   )
 }
@@ -140,11 +147,13 @@ function DeleteSceneCard({
   sceneId,
   name,
   plantCount,
+  demo,
 }: {
   orgSlug: string
   sceneId: string
   name: string
   plantCount: number
+  demo: boolean
 }) {
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -168,6 +177,11 @@ function DeleteSceneCard({
         </CardDescription>
       </CardHeader>
       <CardFooter>
+        {demo ? (
+          <UnavailableAction reason="Not in the demo." className={cn(buttonVariants({ variant: 'destructive' }), 'w-full sm:w-auto')}>
+            Delete scene
+          </UnavailableAction>
+        ) : (
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger render={<Button variant="destructive" className="w-full sm:w-auto" />}>
             Delete scene
@@ -193,6 +207,7 @@ function DeleteSceneCard({
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        )}
       </CardFooter>
     </Card>
   )

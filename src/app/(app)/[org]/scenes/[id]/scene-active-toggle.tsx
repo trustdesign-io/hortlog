@@ -6,7 +6,7 @@ import { Switch } from '@/components/ui/switch'
 import { setSceneActive } from '@/lib/actions/scene'
 
 /** Whether the scene is in use at the venue. */
-export function SceneActiveToggle({ orgSlug, sceneId, active }: { orgSlug: string; sceneId: string; active: boolean }) {
+export function SceneActiveToggle({ orgSlug, sceneId, active, demo = false }: { orgSlug: string; sceneId: string; active: boolean; demo?: boolean }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [on, setOn] = useState(active)
@@ -15,6 +15,8 @@ export function SceneActiveToggle({ orgSlug, sceneId, active }: { orgSlug: strin
   function change(next: boolean) {
     setOn(next)
     setError(null)
+    // The demo only flips the switch: nothing is saved
+    if (demo) return
     startTransition(async () => {
       const result = await setSceneActive(orgSlug, sceneId, next)
       if (result.success) router.refresh()

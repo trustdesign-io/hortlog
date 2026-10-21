@@ -45,6 +45,8 @@ interface PhotoSceneEditorProps {
   onQueue: (ops: SyncOpInput[]) => void
   /** Online only: naming an unidentified plant, shown in its options */
   renderIdentify?: (specimen: OfflineSpecimen, done: () => void) => ReactNode
+  /** The public demo: this photo, nothing saved, and no way to replace the photo or edit plants */
+  demo?: { photoUrl: string }
 }
 
 type Spot = { x: number; y: number }
@@ -53,7 +55,7 @@ type Spot = { x: number; y: number }
  * A scene is its bed photo: tap where a plant is to add it, tap a number to
  * move it or take it off. Works without signal; changes are sent when they can be.
  */
-export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: PhotoSceneEditorProps) {
+export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify, demo }: PhotoSceneEditorProps) {
   const org = snap.org.slug
   const inputId = useId()
   const [local, setLocal] = useState<LocalScenePhoto | null>(null)
@@ -68,6 +70,7 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
   const img = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
+    if (demo) return
     let cancelled = false
     const load = () =>
       void getLocalScenePhoto(scene.id).then((p) => {
@@ -79,7 +82,7 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
       cancelled = true
       window.removeEventListener(SCENE_PHOTO_EVENT, load)
     }
-  }, [scene.id])
+  }, [scene.id, demo])
 
   useEffect(() => {
     if (!local) return setLocalUrl(null)
@@ -95,7 +98,7 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
   const open = inScene.find((s) => s.id === openId) ?? null
   const moving = inScene.find((s) => s.id === movingId) ?? null
 
-  const src = localUrl ?? (scene.photoVersion && !remoteFailed ? bedPhotoUrl(org, scene.id, scene.photoVersion) : null)
+  const src = demo?.photoUrl ?? localUrl ?? (scene.photoVersion && !remoteFailed ? bedPhotoUrl(org, scene.id, scene.photoVersion) : null)
   const base = () => ({ id: newOpId(), org, createdAt: opTime() })
   const placeAt = (specimenId: string, spot: Spot): SyncOpInput => ({ ...base(), kind: 'placeOnPhoto', sceneId: scene.id, specimenId, ...spot })
 
@@ -131,7 +134,18 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
     setAdding(spot)
   }
 
-  const photoButtons = (
+  const photoButtons = demo ? (
+    <div className="grid grid-cols-2 gap-2">
+      <UnavailableAction reason="The demo keeps its photo. In hortlog you take one of your own bed." className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+        <Camera className="mr-1.5 h-4 w-4" aria-hidden="true" />
+        Retake
+      </UnavailableAction>
+      <UnavailableAction reason="The demo keeps its photo. In hortlog you choose one of your own bed." className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+        <ImageIcon className="mr-1.5 h-4 w-4" aria-hidden="true" />
+        Choose photo
+      </UnavailableAction>
+    </div>
+  ) : (
     <div className="grid grid-cols-2 gap-2">
       <label htmlFor={inputId} className={cn(buttonVariants({ variant: src ? 'outline' : 'default', size: src ? 'sm' : 'lg' }), 'cursor-pointer')}>
         {busy ? (
@@ -269,7 +283,9 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
 
       <div className="space-y-2">
         <p className="flex items-center gap-1 text-xs text-muted-foreground">
-          {local && !local.sentAt ? (
+          {demo ? (
+            <>Demo: changes stay on this page and aren&rsquo;t saved</>
+          ) : local && !local.sentAt ? (
             <>
               <CloudOff className="h-3.5 w-3.5" aria-hidden="true" /> Photo on this device – sends when there&rsquo;s signal
             </>
@@ -329,7 +345,7 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
                     <div className="space-y-2 rounded-xl border p-3">{renderIdentify(open, () => setOpenId(null))}</div>
                   ) : (
                     <UnavailableAction
-                      reason={open.pending ? 'You can name this plant once it has sent.' : 'Naming plants needs a connection.'}
+                      reason={demo ? 'Naming plants isn’t part of the demo.' : open.pending ? 'You can name this plant once it has sent.' : 'Naming plants needs a connection.'}
                       className={buttonVariants({ variant: 'outline' })}
                     >
                       Name this plant
@@ -354,7 +370,11 @@ export function PhotoSceneEditor({ snap, scene, onQueue, renderIdentify }: Photo
                   <Move className="mr-1.5 h-4 w-4" aria-hidden="true" />
                   Move on the photo
                 </Button>
-                {open.pending ? (
+                {demo ? (
+                  <UnavailableAction reason="Editing plants isn’t part of the demo." className={buttonVariants({ variant: 'outline' })}>
+                    Edit the plant
+                  </UnavailableAction>
+                ) : open.pending ? (
                   <UnavailableAction reason="You can edit this plant once it has sent." className={buttonVariants({ variant: 'outline' })}>
                     Edit the plant
                   </UnavailableAction>
