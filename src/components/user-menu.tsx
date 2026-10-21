@@ -4,6 +4,9 @@ import { useTransition } from 'react'
 import { useOfflineNav } from '@/components/layout/offline-nav'
 import { UserAvatar } from '@/components/user-avatar'
 import { Button } from '@/components/ui/button'
+import { buttonVariants } from '@/components/ui/button-variants'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
+import { cn } from '@/lib/utils'
 import { signOut } from '@/lib/actions/auth'
 import { listOutbox } from '@/lib/offline/db'
 import { isUnsent } from '@/lib/offline/ops'
@@ -23,7 +26,8 @@ interface SignOutButtonProps {
 
 export function SignOutButton({ className, size = 'sm', variant = 'ghost' }: SignOutButtonProps) {
   const [isPending, startTransition] = useTransition()
-  const inOfflineCopy = useOfflineNav() !== null
+  const offlineNav = useOfflineNav()
+  const inOfflineCopy = offlineNav !== null
 
   function handleSignOut() {
     startTransition(async () => {
@@ -43,6 +47,14 @@ export function SignOutButton({ className, size = 'sm', variant = 'ghost' }: Sig
       await clearOfflineData()
       await signOut()
     })
+  }
+
+  if (offlineNav?.reason) {
+    return (
+      <UnavailableAction reason={offlineNav.reason} className={cn(buttonVariants({ variant, size }), className)}>
+        Sign out
+      </UnavailableAction>
+    )
   }
 
   return (
