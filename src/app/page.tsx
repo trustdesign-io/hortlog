@@ -89,10 +89,10 @@ export default async function HomePage() {
       {/* Visitors at a garden: always to hand, bottom right */}
       <Link
         href="/check-in"
-        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 z-40 flex h-14 items-center gap-2 rounded-full bg-primary px-5 font-medium text-primary-foreground shadow-lg transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        className="fixed bottom-[max(1.5rem,env(safe-area-inset-bottom))] right-6 z-40 flex h-14 w-14 items-center justify-center rounded-full border border-border bg-card text-primary shadow-lg transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
       >
-        <MapPin className="h-5 w-5" aria-hidden="true" />
-        Check in
+        <MapPin className="h-6 w-6" aria-hidden="true" />
+        <span className="sr-only">Check in</span>
       </Link>
 
       {/* Nav */}
