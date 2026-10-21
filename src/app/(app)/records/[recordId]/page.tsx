@@ -23,10 +23,19 @@ export default async function RecordPage({ params }: RecordPageProps) {
   })
   if (!record) return notFound()
 
+  // Who liked each entry: members of the garden, newest last
+  const likeRows = await prisma.workLogEntryLike.findMany({
+    where: { entry: { workRecordId: record.id } },
+    orderBy: { createdAt: 'asc' },
+    select: { entryId: true, user: { select: { name: true } } },
+  })
+  const likes: Record<string, string[]> = {}
+  for (const l of likeRows) (likes[l.entryId] ??= []).push(l.user.name ?? 'a member')
+
   return (
     <div className="print:max-w-full">
       <BackToRecord />
-      <WorkedRecordSheet record={record} />
+      <WorkedRecordSheet record={record} likes={likes} />
 
       <div className="mb-6 print:hidden">
         <PrintButton className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'no-underline')} />

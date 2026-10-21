@@ -1,4 +1,6 @@
 import Link from 'next/link'
+import { Heart } from 'lucide-react'
+import { likedByLine } from '@/lib/likes'
 import type { Prisma } from '@prisma/client'
 import type { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
 import {
@@ -24,6 +26,8 @@ interface WorkedRecordSheetProps {
    * Note and Open questions only when the member chose to include them.
    */
   publicView?: { showNotes: boolean }
+  /** On the member's own record: who liked each entry, by entry id */
+  likes?: Record<string, string[]>
 }
 
 export const quietLink = 'underline decoration-border underline-offset-2 hover:decoration-foreground'
@@ -72,6 +76,7 @@ export function WorkedRecordSheet({
   record: r,
   privateLinks = true,
   publicView,
+  likes,
 }: WorkedRecordSheetProps) {
   const showLocation = !publicView
   const showNotes = !publicView || publicView.showNotes
@@ -159,6 +164,12 @@ export function WorkedRecordSheet({
                           </p>
                         )}
                         {e.text && <p className="min-w-0 break-words">{renderInline(e.text)}</p>}
+                        {likes?.[e.id]?.length ? (
+                          <p className="flex items-center gap-1 text-xs text-pink-600 dark:text-pink-400 print:hidden">
+                            <Heart className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
+                            <span>{likedByLine(likes[e.id])}</span>
+                          </p>
+                        ) : null}
                       </li>
                     )
                   })}

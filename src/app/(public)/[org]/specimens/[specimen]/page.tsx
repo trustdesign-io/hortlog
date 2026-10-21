@@ -150,7 +150,11 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
           </>
         )}
         {isMember && <LabelIssueBadge orgSlug={orgSlug} specimenId={specimen.id} />}
-        <SpecimenCare specimenId={specimen.id} audience={isMember ? 'members' : 'public'} />
+        <SpecimenCare
+          specimenId={specimen.id}
+          audience={isMember ? 'members' : 'public'}
+          viewer={isMember && currentUser ? { id: currentUser.id, name: currentUser.name ?? 'You' } : undefined}
+        />
         {isMember && currentUser && (
           <SpecimenWorkHistory
             orgSlug={orgSlug}
