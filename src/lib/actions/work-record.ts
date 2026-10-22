@@ -175,7 +175,8 @@ export async function updateLogEntryField(
   await prisma.$transaction([
     prisma.workLogEntry.update({
       where: { id: entryId },
-      data: updateData,
+      // A changed entry needs signing off again
+      data: { ...updateData, signedOffAt: null, signedOffById: null, signOffComment: null },
     }),
     prisma.workLogEntryEdit.create({
       data: {

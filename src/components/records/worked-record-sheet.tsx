@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Heart } from 'lucide-react'
+import { CheckCircle2, Heart } from 'lucide-react'
 import { likedByLine } from '@/lib/likes'
 import type { Prisma } from '@prisma/client'
 import type { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
@@ -28,6 +28,8 @@ interface WorkedRecordSheetProps {
   publicView?: { showNotes: boolean }
   /** On the member's own record: who liked each entry, by entry id */
   likes?: Record<string, string[]>
+  /** On the member's own record (and its printout): entries their supervisor signed off */
+  signOffs?: Record<string, { at: Date; by: string; comment: string | null }>
 }
 
 export const quietLink = 'underline decoration-border underline-offset-2 hover:decoration-foreground'
@@ -77,6 +79,7 @@ export function WorkedRecordSheet({
   privateLinks = true,
   publicView,
   likes,
+  signOffs,
 }: WorkedRecordSheetProps) {
   const showLocation = !publicView
   const showNotes = !publicView || publicView.showNotes
@@ -164,6 +167,15 @@ export function WorkedRecordSheet({
                           </p>
                         )}
                         {e.text && <p className="min-w-0 break-words">{renderInline(e.text)}</p>}
+                        {signOffs?.[e.id] && (
+                          <p className="flex items-start gap-1 text-xs text-primary">
+                            <CheckCircle2 className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                            <span>
+                              Signed off by {signOffs[e.id].by}, {formatRecordDate(signOffs[e.id].at, 'short')}
+                              {signOffs[e.id].comment && <> — &ldquo;{signOffs[e.id].comment}&rdquo;</>}
+                            </span>
+                          </p>
+                        )}
                         {likes?.[e.id]?.length ? (
                           <p className="flex items-center gap-1 text-xs text-pink-600 dark:text-pink-400 print:hidden">
                             <Heart className="h-3.5 w-3.5 fill-current" aria-hidden="true" />
