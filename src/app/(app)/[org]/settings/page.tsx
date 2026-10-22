@@ -6,6 +6,7 @@ import { OrgSettingsForm } from './org-settings-form'
 import { OrgLogoCard } from './org-logo-card'
 import { OrgRecordPrivacyCard } from './org-record-privacy-card'
 import { OrgDwcExportCard } from './org-dwc-export-card'
+import { OrgFloweringEmbedCard } from './org-flowering-embed-card'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -36,6 +37,10 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
 
   if (!org) return notFound()
 
+  const locations = await prisma.location.findMany({
+    where: { organisation: { slug: orgSlug } },
+    select: { id: true, name: true, parentId: true },
+  })
   const identified = await prisma.specimen.count({
     where: { organisation: { slug: orgSlug }, species: { scientificName: { not: 'Unidentified' } } },
   })
@@ -54,6 +59,11 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
         orgSlug={orgSlug}
         recordsPublic={org.recordsPublic}
         privateRecordsShowName={org.privateRecordsShowName}
+      />
+      <OrgFloweringEmbedCard
+        orgSlug={orgSlug}
+        siteUrl={process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'}
+        locations={locations}
       />
       <OrgDwcExportCard orgSlug={orgSlug} plantCount={identified} />
     </div>
