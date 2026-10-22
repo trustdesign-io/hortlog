@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { OrgSettingsForm } from './org-settings-form'
 import { OrgLogoCard } from './org-logo-card'
 import { OrgRecordPrivacyCard } from './org-record-privacy-card'
+import { OrgDwcExportCard } from './org-dwc-export-card'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -35,6 +36,10 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
 
   if (!org) return notFound()
 
+  const identified = await prisma.specimen.count({
+    where: { organisation: { slug: orgSlug }, species: { scientificName: { not: 'Unidentified' } } },
+  })
+
   return (
     <div className="space-y-6">
       <div>
@@ -50,6 +55,7 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
         recordsPublic={org.recordsPublic}
         privateRecordsShowName={org.privateRecordsShowName}
       />
+      <OrgDwcExportCard orgSlug={orgSlug} plantCount={identified} />
     </div>
   )
 }
