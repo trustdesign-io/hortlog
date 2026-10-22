@@ -11,6 +11,7 @@ import { GaEvent } from "@/components/ga-event";
 import { OfflineNotice } from "@/components/offline/offline-notice";
 import { publicScenePath } from "@/lib/scene-urls";
 import { currentStage } from "@/lib/plant-stage";
+import { SceneNotes } from "@/components/scene-notes";
 
 /** Shared by /[org]/[collection]/[scene] and /[org]/scene/[scene] (no collection). */
 export async function sceneMetadata(
@@ -219,6 +220,8 @@ export async function ScenePage({
           stage: currentStage(s.stage, s.stageSeenAt),
         }))}
       />
+
+      <SceneNotes sceneId={scene.id} />
 
       {scene.locationId && places.length > 0 && (
         <Link

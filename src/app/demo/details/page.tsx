@@ -1,6 +1,8 @@
 import { notFound } from 'next/navigation'
 import { SceneHeader } from '@/app/(app)/[org]/scenes/[id]/scene-header'
 import { SceneDetailsForm } from '@/app/(app)/[org]/scenes/[id]/details/scene-details-form'
+import { SceneNotesCard } from '@/app/(app)/[org]/scenes/[id]/details/scene-notes-card'
+import { prisma } from '@/lib/prisma'
 import { DEMO_ORG, loadDemo } from '../demo-data'
 
 // Read live from the database on each visit, never built ahead
@@ -10,6 +12,11 @@ export default async function DemoDetailsPage() {
   const demo = await loadDemo()
   if (!demo) return notFound()
   const { scene } = demo
+  const notes = await prisma.sceneNote.findMany({
+    where: { sceneId: scene.id },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, text: true, createdAt: true },
+  })
   return (
     <div className="space-y-6">
       <SceneHeader
@@ -37,6 +44,12 @@ export default async function DemoDetailsPage() {
         }}
         collections={scene.primaryCollection ? [{ id: scene.primaryCollection.id, name: scene.primaryCollection.name }] : []}
         locations={demo.locations}
+      />
+      <SceneNotesCard
+        demo
+        orgSlug={DEMO_ORG}
+        sceneId={scene.id}
+        notes={notes.map((n) => ({ id: n.id, text: n.text, createdAt: n.createdAt.toISOString(), author: null }))}
       />
     </div>
   )
