@@ -5,6 +5,8 @@ import { prisma } from '@/lib/prisma'
 import { MemberList } from './member-list'
 import { TeamTabs } from '../team-tabs'
 import { sortDirectorsThenByName } from '@/lib/team'
+import { listPendingInvites, type PendingInvite } from '@/lib/pending-invites'
+import { PendingInvites } from './pending-invites'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -36,6 +38,17 @@ export default async function MembersPage({ params }: MembersPageProps) {
 
   if (!org) return notFound()
 
+  // From the sign-in service: a failure there mustn't take the team page down
+  let invites: PendingInvite[] = []
+  let invitesFailed = false
+  try {
+    invites = await listPendingInvites(orgSlug)
+  } catch (err) {
+    console.error('[MembersPage] listing invites failed:', err)
+    invitesFailed = true
+  }
+  const labels = { directorLabel: org.directorLabel, managerLabel: org.managerLabel, memberLabel: org.memberLabel }
+
   return (
     <div className="space-y-6">
       <div>
@@ -55,6 +68,11 @@ export default async function MembersPage({ params }: MembersPageProps) {
           user: { ...m.user, createdAt: m.user.createdAt.toISOString() },
         }))}
       />
+      {invitesFailed ? (
+        <p className="text-sm text-muted-foreground">Invites waiting couldn&rsquo;t be loaded just now. Refresh to try again.</p>
+      ) : (
+        <PendingInvites orgSlug={orgSlug} invites={invites} labels={labels} />
+      )}
     </div>
   )
 }
