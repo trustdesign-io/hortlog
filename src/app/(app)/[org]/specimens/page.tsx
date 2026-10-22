@@ -71,13 +71,22 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
             All plant and specimen records for this organisation.
           </p>
         </div>
-        <ActionLink
-          href={`/${orgSlug}/specimens/new`}
-          unavailable={canManage ? null : 'Your role can’t add specimens.'}
-          className={buttonVariants({ size: 'sm' })}
-        >
-          Add specimen
-        </ActionLink>
+        <div className="flex shrink-0 flex-wrap justify-end gap-2">
+          <ActionLink
+            href={`/${orgSlug}/specimens/import`}
+            unavailable={canManage ? null : 'Your role can’t import specimens.'}
+            className={buttonVariants({ size: 'sm', variant: 'outline' })}
+          >
+            Import
+          </ActionLink>
+          <ActionLink
+            href={`/${orgSlug}/specimens/new`}
+            unavailable={canManage ? null : 'Your role can’t add specimens.'}
+            className={buttonVariants({ size: 'sm' })}
+          >
+            Add specimen
+          </ActionLink>
+        </div>
       </div>
       <SpecimensList
         orgSlug={orgSlug}
