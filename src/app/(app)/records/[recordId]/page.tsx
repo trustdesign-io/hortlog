@@ -32,10 +32,19 @@ export default async function RecordPage({ params }: RecordPageProps) {
   const likes: Record<string, string[]> = {}
   for (const l of likeRows) (likes[l.entryId] ??= []).push(l.user.name ?? 'a member')
 
+  // Signed off by the member's supervisor (learning log)
+  const signed = await prisma.workLogEntry.findMany({
+    where: { workRecordId: record.id, signedOffAt: { not: null } },
+    select: { id: true, signedOffAt: true, signOffComment: true, signedOffBy: { select: { name: true } } },
+  })
+  const signOffs = Object.fromEntries(
+    signed.map((e) => [e.id, { at: e.signedOffAt as Date, by: e.signedOffBy?.name ?? 'their supervisor', comment: e.signOffComment }]),
+  )
+
   return (
     <div className="print:max-w-full">
       <BackToRecord />
-      <WorkedRecordSheet record={record} likes={likes} />
+      <WorkedRecordSheet record={record} likes={likes} signOffs={signOffs} />
 
       <div className="mb-6 print:hidden">
         <PrintButton className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'no-underline')} />

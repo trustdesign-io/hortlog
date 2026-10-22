@@ -6,6 +6,7 @@ import { TaxonName } from '@/components/records/taxon-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { UserAvatar } from '@/components/user-avatar'
 import { NotMeButton } from '@/components/not-me-button'
+import { SupervisorPicker } from '@/components/supervisor-picker'
 import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 
 export const metadata = {
@@ -63,6 +64,24 @@ export default async function RecordsPage() {
   })
 
   const firstOrg = user.memberships[0]?.organisation ?? null
+
+  // Who signs off your work in each of your gardens, and who you could choose
+  const [supervisions, orgMembers] = await Promise.all([
+    prisma.supervision.findMany({ where: { traineeId: user.id }, select: { organisationId: true, supervisorId: true } }),
+    prisma.membership.findMany({
+      where: { organisationId: { in: user.memberships.map((m) => m.organisation.id) }, userId: { not: user.id } },
+      select: { organisationId: true, user: { select: { id: true, name: true, email: true } } },
+    }),
+  ])
+  const supervisorChoices = user.memberships.map((m) => ({
+    orgSlug: m.organisation.slug,
+    orgName: m.organisation.name,
+    currentId: supervisions.find((s) => s.organisationId === m.organisation.id)?.supervisorId ?? null,
+    members: orgMembers
+      .filter((o) => o.organisationId === m.organisation.id)
+      .map((o) => ({ id: o.user.id, name: o.user.name ?? o.user.email }))
+      .sort((a, b) => a.name.localeCompare(b.name)),
+  }))
 
   const sites = new Set(records.map((r) => r.site ?? r.organisation.name))
 
@@ -164,6 +183,8 @@ export default async function RecordsPage() {
           ))}
         </ol>
       )}
+
+      {supervisorChoices.length > 0 && <SupervisorPicker choices={supervisorChoices} />}
 
       {workedWith.length > 0 && (
         <section aria-labelledby="worked-with" className="mt-8 space-y-3">

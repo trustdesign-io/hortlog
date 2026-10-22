@@ -42,6 +42,9 @@ model User {
   labelReports          LabelReport[]
   workLikes             WorkLogEntryLike[]
   sceneNotes            SceneNote[]
+  supervisedBy          Supervision[]          @relation("Trainee")
+  supervising           Supervision[]          @relation("Supervisor")
+  entriesSignedOff      WorkLogEntry[]         @relation("EntrySignOff")
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -75,6 +78,7 @@ model Organisation {
   locations   Location[]
   tasks       Task[]
   workRecords WorkRecord[]
+  supervisions Supervision[]
 }
 
 model Membership {
@@ -523,6 +527,12 @@ model WorkLogEntry {
   /// Members of the same organisation who liked this entry
   likes WorkLogEntryLike[]
 
+  /// Signed off by the member's supervisor (learning log); cleared if the entry is changed
+  signedOffAt     DateTime?
+  signOffComment  String?
+  signedOffById   String?
+  signedOffBy     User?     @relation("EntrySignOff", fields: [signedOffById], references: [id], onDelete: SetNull)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -660,4 +670,22 @@ model SceneNote {
   author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
 
   @@index([sceneId, createdAt])
+}
+
+/// A member's supervisor in a garden, who signs off their work entries (learning log). Not a role.
+model Supervision {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  traineeId String
+  trainee   User   @relation("Trainee", fields: [traineeId], references: [id], onDelete: Cascade)
+
+  supervisorId String
+  supervisor   User   @relation("Supervisor", fields: [supervisorId], references: [id], onDelete: Cascade)
+
+  @@unique([organisationId, traineeId])
+  @@index([supervisorId])
 }
