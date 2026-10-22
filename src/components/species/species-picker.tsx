@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useId, useRef, useState, useTransition } from 'react'
-import { Check, Loader2, Search, X } from 'lucide-react'
-import { addSpeciesFromCatalogue, searchSpeciesCatalogue } from '@/lib/actions/species'
+import { Check, Loader2, Mic, Search, X } from 'lucide-react'
+import { addSpeciesFromCatalogue, searchSpeciesCatalogue, searchSpeciesSpoken } from '@/lib/actions/species'
+import { UnavailableAction } from '@/components/ui/unavailable-action'
 import type { CatalogueSuggestion, ExistingSpecies } from '@/lib/species-catalogue'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -20,6 +21,32 @@ interface SpeciesPickerProps {
   value: PickedSpecies | null
   onChange: (species: PickedSpecies | null) => void
   disabled?: boolean
+}
+
+/** The browser's speech recognition, where there is one (Safari and Chrome call it webkitSpeechRecognition) */
+interface Recognition {
+  lang: string
+  interimResults: boolean
+  maxAlternatives: number
+  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
+  onerror: ((e: { error: string }) => void) | null
+  onend: (() => void) | null
+  start: () => void
+  abort: () => void
+}
+type RecognitionCtor = new () => Recognition
+
+function recognitionCtor(): RecognitionCtor | null {
+  if (typeof window === 'undefined') return null
+  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor }
+  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
+}
+
+const VOICE_ERRORS: Record<string, string> = {
+  'not-allowed': 'Allow the microphone for this site to say a name.',
+  'service-not-allowed': 'Allow the microphone for this site to say a name.',
+  'no-speech': 'Didn’t catch that. Tap the microphone and say the name again.',
+  network: 'Saying a name needs a connection.',
 }
 
 type Option =
@@ -61,6 +88,56 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
   const [error, setError] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const latest = useRef(0)
+  // What the phone heard, best guess first, while the box shows the best guess
+  const spoken = useRef<string[] | null>(null)
+  const recognition = useRef<Recognition | null>(null)
+  const [listening, setListening] = useState(false)
+  const [fromVoice, setFromVoice] = useState(false)
+  const [voice, setVoice] = useState<{ supported: boolean; online: boolean }>({ supported: false, online: true })
+
+  // Known only in the browser: whether it can listen, and whether there's signal
+  useEffect(() => {
+    const update = () => setVoice({ supported: recognitionCtor() !== null, online: navigator.onLine })
+    update()
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => {
+      window.removeEventListener('online', update)
+      window.removeEventListener('offline', update)
+      recognition.current?.abort()
+    }
+  }, [])
+
+  function listen() {
+    const Ctor = recognitionCtor()
+    if (!Ctor) return
+    setError(null)
+    if (listening) {
+      recognition.current?.abort()
+      return
+    }
+    const rec = new Ctor()
+    rec.lang = 'en-GB'
+    rec.interimResults = false
+    rec.maxAlternatives = 5
+    rec.onresult = (e) => {
+      const heard = Array.from(e.results[0] ?? [])
+        .map((a) => a.transcript.trim())
+        .filter(Boolean)
+      if (heard.length === 0) return
+      spoken.current = heard
+      setFromVoice(true)
+      setQuery(heard[0])
+      setOpen(true)
+    }
+    rec.onerror = (e) => {
+      if (e.error !== 'aborted') setError(VOICE_ERRORS[e.error] ?? 'That didn’t work. Try again, or type the name.')
+    }
+    rec.onend = () => setListening(false)
+    recognition.current = rec
+    setListening(true)
+    rec.start()
+  }
 
   // Search as you type, after a short pause; ignore answers to older queries
   useEffect(() => {
@@ -68,7 +145,9 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
     const ticket = ++latest.current
     const timer = setTimeout(async () => {
       setSearching(true)
-      const r = await searchSpeciesCatalogue(query)
+      // Said aloud: look up what it sounds like; typed: what it says
+      const heard = spoken.current && spoken.current[0] === query ? spoken.current : null
+      const r = heard ? await searchSpeciesSpoken(heard) : await searchSpeciesCatalogue(query)
       if (ticket === latest.current) {
         setResults(r)
         setActive(0)
@@ -223,6 +302,8 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
           aria-activedescendant={showList && options[active] ? `${listId}-${active}` : undefined}
           value={query}
           onChange={(e) => {
+            spoken.current = null
+            setFromVoice(false)
             setQuery(e.target.value)
             setOpen(true)
           }}
@@ -236,12 +317,47 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
           autoCapitalize="none"
           spellCheck={false}
           disabled={disabled || isPending}
-          className="pl-9"
+          className="pl-9 pr-20"
         />
         {(searching || isPending) && (
-          <Loader2 className="absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-hidden="true" />
+          <Loader2 className="absolute right-12 top-1/2 h-4 w-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-hidden="true" />
         )}
+        {/* Say the name: Latin is matched by how it sounds */}
+        <div className="absolute right-1 top-1/2 -translate-y-1/2">
+          {voice.supported && voice.online ? (
+            <button
+              type="button"
+              onClick={listen}
+              disabled={disabled || isPending}
+              aria-pressed={listening}
+              aria-label={listening ? 'Stop listening' : 'Say the name'}
+              className={cn(
+                'flex h-9 w-9 items-center justify-center rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                listening ? 'animate-pulse bg-tertiary text-tertiary-foreground motion-reduce:animate-none' : 'text-muted-foreground hover:bg-muted hover:text-foreground',
+              )}
+            >
+              <Mic className="h-4 w-4" aria-hidden="true" />
+            </button>
+          ) : (
+            <UnavailableAction
+              label="Say the name"
+              reason={
+                !voice.supported
+                  ? 'This browser can’t listen. Use the microphone on your keyboard instead.'
+                  : 'Saying a name needs a connection. Type it instead.'
+              }
+              className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground"
+            >
+              <Mic className="h-4 w-4" aria-hidden="true" />
+            </UnavailableAction>
+          )}
+        </div>
       </div>
+      {listening && (
+        <p className="mt-1 text-sm text-muted-foreground" aria-live="polite">
+          Listening… say the botanical name.
+        </p>
+      )}
       {error && (
         <p className="mt-1 text-sm text-destructive" role="alert">
           {error}
@@ -254,7 +370,9 @@ export function SpeciesPicker({ id, value, onChange, disabled = false }: Species
           className="absolute z-50 mt-1 max-h-80 w-full overflow-y-auto rounded-lg border bg-popover p-1 shadow-md"
         >
           {options.length === 0 && !searching && (
-            <li className="px-3 py-2 text-sm text-muted-foreground">No botanical name found. Check the spelling.</li>
+            <li className="px-3 py-2 text-sm text-muted-foreground">
+              {fromVoice ? 'Nothing sounded close. Try again, or type it.' : 'No botanical name found. Check the spelling.'}
+            </li>
           )}
           {options.map((o, i) => {
             const first = i === 0 || options[i - 1].kind !== o.kind
