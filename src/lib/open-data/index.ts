@@ -8,6 +8,7 @@ import { fetchWikidataConservationStatus } from './wikidata'
 import { fetchPowoData, buildHabitatLine } from './powo'
 import { fetchGbifTaxonKey } from './gbif'
 import { fetchWikipediaExcerpt } from './wikipedia'
+import { checkWcvp, type WcvpResult } from './wcvp'
 
 export interface OpenDataResult {
   statusCategory: string | null
@@ -21,18 +22,35 @@ export interface OpenDataResult {
   habitatExcerpt: string | null
   habitatExcerptSource: string | null
   gbifTaxonKey: number | null
+  /** Kew's view of the name; null when the checklist couldn't be reached */
+  wcvp: WcvpResult | null
   openDataUpdatedAt: Date
+}
+
+/** The species fields for a checklist result (nothing, if it couldn't be reached) */
+export function wcvpFields(wcvp: WcvpResult | null) {
+  if (!wcvp) return {}
+  return {
+    wcvpStatus: wcvp.status,
+    wcvpAcceptedName: wcvp.acceptedName,
+    wcvpAcceptedAuthority: wcvp.acceptedAuthority,
+    wcvpAcceptedIpniId: wcvp.acceptedIpniId,
+    wcvpPowoUrl: wcvp.powoUrl,
+    wcvpCheckedAt: new Date(),
+  }
 }
 
 export async function fetchOpenData(opts: {
   scientificName: string
   ipniId: string | null
+  authority?: string | null
 }): Promise<OpenDataResult> {
-  const [conservation, powo, gbifKey, wikipedia] = await Promise.allSettled([
+  const [conservation, powo, gbifKey, wikipedia, wcvp] = await Promise.allSettled([
     fetchWikidataConservationStatus(opts.scientificName),
     opts.ipniId ? fetchPowoData(opts.ipniId) : Promise.resolve(null),
     fetchGbifTaxonKey(opts.scientificName),
     fetchWikipediaExcerpt(opts.scientificName),
+    checkWcvp(opts.scientificName, opts.authority),
   ])
 
   const conservationData = conservation.status === 'fulfilled' ? conservation.value : null
@@ -52,6 +70,7 @@ export async function fetchOpenData(opts: {
     habitatExcerpt: wikiData?.habitatExcerpt ?? null,
     habitatExcerptSource: wikiData?.habitatExcerptSource ?? null,
     gbifTaxonKey: gbifData,
+    wcvp: wcvp.status === 'fulfilled' ? wcvp.value : null,
     openDataUpdatedAt: new Date(),
   }
 }

@@ -52,6 +52,11 @@ interface SpecimenDetailProps {
     ellenbergN?: number | null
     ellenbergS?: number | null
     ellenbergSource?: string | null
+    // Checked against Kew's World Checklist of Vascular Plants
+    wcvpStatus?: string | null
+    wcvpAcceptedName?: string | null
+    wcvpAcceptedAuthority?: string | null
+    wcvpPowoUrl?: string | null
   }
   specimen: {
     accessionNumber: string | null
@@ -217,6 +222,27 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, backL
           )}
         </h1>
         <PlantStageBadge stage={specimen.stage} seenAt={specimen.stageSeenAt} />
+        {species.wcvpStatus === 'synonym' && species.wcvpAcceptedName && (
+          <p className="mt-3 rounded-lg border bg-muted/40 px-3 py-2 text-sm leading-relaxed">
+            Kew&rsquo;s Plants of the World Online now accepts this plant as{' '}
+            <ScientificName>{species.wcvpAcceptedName}</ScientificName>
+            {species.wcvpAcceptedAuthority && <span className="text-muted-foreground"> {species.wcvpAcceptedAuthority}</span>}.
+            {species.wcvpPowoUrl && (
+              <>
+                {' '}
+                <a
+                  href={species.wcvpPowoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline underline-offset-2 hover:text-foreground"
+                >
+                  See it on POWO
+                  <span className="sr-only"> (opens in a new tab)</span>
+                </a>
+              </>
+            )}
+          </p>
+        )}
         {specimen.accessionNumber && (
           <p className="mt-1 font-mono text-xs text-muted-foreground">
             <span aria-hidden="true">#</span>
@@ -244,6 +270,30 @@ export function SpecimenDetail({ species, specimen, breadcrumbs, backHref, backL
               Family
             </dt>
             <dd className="mt-0.5 text-sm">{species.family}</dd>
+          </div>
+        )}
+        {species.wcvpStatus === 'accepted' && (
+          <div>
+            <dt className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+              Name
+            </dt>
+            <dd className="mt-0.5 text-sm">
+              Accepted in Kew&rsquo;s World Checklist of Vascular Plants
+              {species.wcvpPowoUrl && (
+                <>
+                  {' · '}
+                  <a
+                    href={species.wcvpPowoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 hover:text-foreground"
+                  >
+                    POWO
+                    <span className="sr-only"> (opens in a new tab)</span>
+                  </a>
+                </>
+              )}
+            </dd>
           </div>
         )}
         {species.origin && (
