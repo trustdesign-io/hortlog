@@ -3,7 +3,7 @@ import type { ReactNode } from 'react'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
-import { DEMO_ORG } from './demo-data'
+import { DEMO_GARDEN_NAME, DEMO_ORG } from './demo-data'
 import { DemoShell } from './demo-shell'
 
 export const metadata: Metadata = {
@@ -35,7 +35,7 @@ export default async function DemoLayout({ children }: { children: ReactNode }) 
     createdAt: now,
     updatedAt: now,
     memberships: [
-      { id: 'demo', role: 'MANAGER', createdAt: now, userId: 'demo', organisationId: org.id, organisation: org },
+      { id: 'demo', role: 'MANAGER', createdAt: now, userId: 'demo', organisationId: org.id, organisation: { ...org, name: DEMO_GARDEN_NAME } },
     ],
   }
 

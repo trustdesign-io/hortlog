@@ -7,6 +7,8 @@ import { publicScenePath } from '@/lib/scene-urls'
 /** The scene the demo shows: Lullingstone's first mapped bed, for now */
 export const DEMO_ORG = 'lullingstone-castle-and-the-world-garden'
 export const DEMO_SCENE = 'scene-001'
+/** What the demo calls the garden, so the real one isn't named */
+export const DEMO_GARDEN_NAME = 'Demo Garden'
 
 /**
  * The real scene, read live, cut down to what the demo needs: just this
@@ -36,6 +38,7 @@ export const loadDemo = cache(async function loadDemo() {
   if (!full) return null
   const snap: OrgSnapshot = {
     ...full,
+    org: { ...full.org, name: DEMO_GARDEN_NAME },
     user: { id: 'demo', name: 'Demo', canManage: true },
     specimens: full.specimens.filter((s) => s.sceneId === scene.id),
     scenes: full.scenes.filter((s) => s.id === scene.id),
