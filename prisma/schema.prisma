@@ -41,6 +41,7 @@ model User {
   stageObservations     StageObservation[]
   labelReports          LabelReport[]
   workLikes             WorkLogEntryLike[]
+  sceneNotes            SceneNote[]
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -219,6 +220,7 @@ model Scene {
   specimens   Specimen[]
   assignments SceneAssignment[]
   tasks       Task[]
+  notes       SceneNote[]
 
   @@unique([slug, organisationId])
 }
@@ -642,4 +644,20 @@ model WorkLogEntryLike {
 
   @@id([entryId, userId])
   @@index([userId])
+}
+
+/// "Notes from the horticulture team": short notes staff pin to a scene for visitors
+model SceneNote {
+  id        String   @id @default(cuid())
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sceneId String
+  scene   Scene  @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+
+  authorId String?
+  author   User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
+
+  @@index([sceneId, createdAt])
 }

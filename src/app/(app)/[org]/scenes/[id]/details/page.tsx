@@ -4,6 +4,7 @@ import { prisma } from '@/lib/prisma'
 import { SceneHeader } from '../scene-header'
 import { publicScenePath } from '@/lib/scene-urls'
 import { SceneDetailsForm } from './scene-details-form'
+import { SceneNotesCard } from './scene-notes-card'
 
 interface SceneDetailsPageProps {
   params: Promise<{ org: string; id: string }>
@@ -30,7 +31,7 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
   })
   if (!scene) return notFound()
 
-  const [collections, locations] = await Promise.all([
+  const [collections, locations, notes] = await Promise.all([
     prisma.collection.findMany({
       where: { organisationId: scene.organisationId },
       select: { id: true, name: true },
@@ -39,6 +40,11 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
     prisma.location.findMany({
       where: { organisationId: scene.organisationId },
       select: { id: true, name: true, parentId: true },
+    }),
+    prisma.sceneNote.findMany({
+      where: { sceneId: scene.id },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, text: true, createdAt: true, author: { select: { name: true } } },
     }),
   ])
 
@@ -67,6 +73,11 @@ export default async function SceneDetailsPage({ params }: SceneDetailsPageProps
         }}
         collections={collections}
         locations={locations}
+      />
+      <SceneNotesCard
+        orgSlug={orgSlug}
+        sceneId={scene.id}
+        notes={notes.map((n) => ({ id: n.id, text: n.text, createdAt: n.createdAt.toISOString(), author: n.author?.name ?? null }))}
       />
     </div>
   )
