@@ -10,6 +10,7 @@ import { ScientificName } from '@/components/ui/scientific-name'
 import { HeroSection } from '@/components/landing/hero-section'
 import { PersonalRecordSection } from '@/components/landing/personal-record-section'
 import { SwipeCards } from '@/components/landing/swipe-cards'
+import { WhatsNew } from '@/components/landing/whats-new'
 import { CookieSettingsButton } from '@/components/cookie-banner'
 import { cn } from '@/lib/utils'
 import { Eye, Shield, Sparkles, RefreshCw, MapPin } from 'lucide-react'
@@ -98,7 +99,8 @@ export default async function HomePage() {
       {/* Nav */}
       <header className="flex items-center justify-between px-6 py-4 max-w-5xl mx-auto">
         <Logo href="/" />
-        <nav aria-label="Primary" className="flex items-center gap-3">
+        <nav aria-label="Primary" className="flex items-center gap-1 sm:gap-3">
+          <WhatsNew />
           <Link href="/sign-in" className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}>
             Sign in
           </Link>
