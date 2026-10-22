@@ -32,7 +32,9 @@ export function CookieBanner({ forceOpen = false, onClose }: CookieBannerProps) 
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
-    const shouldShow = forceOpen || getConsentChoice() === null
+    // Never inside a garden's own website (embedded pages)
+    const embedded = document.querySelector('[data-embed]') !== null
+    const shouldShow = forceOpen || (!embedded && getConsentChoice() === null)
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setVisible(shouldShow)
   }, [forceOpen])
