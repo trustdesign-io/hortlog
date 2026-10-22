@@ -4,6 +4,7 @@ import { nameKey, resolveTaxon, suggestNames, type NameSuggestion } from '@/lib/
 import { toSlug } from '@/lib/utils/slug'
 import { fetchOpenData, wcvpFields } from '@/lib/open-data'
 import { lookupEllenberg, ELLENBERG_SOURCE } from '@/lib/ellenberg'
+import { SOUND_MATCH_MAX, soundDistance, spokenCandidates } from '@/lib/spoken-name'
 
 export interface ExistingSpecies {
   id: string
@@ -182,4 +183,35 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
     console.error('[addFromCatalogue]', err)
     return { ok: false, error: 'Failed to add species. Please try again.' }
   }
+}
+
+/**
+ * The species picker's lists for a name said aloud: each thing the phone
+ * heard is turned into likely spellings, those are looked up, and the results
+ * are kept only if they sound like what was said, closest first.
+ */
+export async function searchSpoken(heard: string[]): Promise<{
+  existing: ExistingSpecies[]
+  catalogue: CatalogueSuggestion[]
+}> {
+  const alternatives = heard.map((h) => h.slice(0, 100)).filter((h) => h.trim()).slice(0, 3)
+  const candidates = [...new Set(alternatives.flatMap(spokenCandidates))].slice(0, 8)
+  const lists = await Promise.all(candidates.map((c) => searchCatalogue(c).catch(() => ({ existing: [], catalogue: [] }))))
+
+  const closest = (name: string) => Math.min(...alternatives.map((h) => soundDistance(h, name)))
+  const binomial = (label: string) => labelName(label).split(' ').slice(0, 2).join(' ')
+
+  const existing = new Map<string, { s: ExistingSpecies; d: number }>()
+  const catalogue = new Map<string, { s: CatalogueSuggestion; d: number }>()
+  for (const list of lists) {
+    for (const s of list.existing) existing.set(s.id, { s, d: closest(s.scientificName) })
+    for (const s of list.catalogue) catalogue.set(s.usageId, { s, d: closest(binomial(s.label)) })
+  }
+  const keep = <T>(m: Map<string, { s: T; d: number }>, n: number) =>
+    [...m.values()]
+      .filter((x) => x.d <= SOUND_MATCH_MAX)
+      .sort((a, b) => a.d - b.d)
+      .slice(0, n)
+      .map((x) => x.s)
+  return { existing: keep(existing, 6), catalogue: keep(catalogue, 10) }
 }

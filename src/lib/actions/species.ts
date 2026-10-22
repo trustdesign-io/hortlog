@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { findReferencePhoto } from '@/lib/inaturalist'
-import { addFromCatalogue, searchCatalogue, type CatalogueSuggestion, type ExistingSpecies } from '@/lib/species-catalogue'
+import { addFromCatalogue, searchCatalogue, searchSpoken, type CatalogueSuggestion, type ExistingSpecies } from '@/lib/species-catalogue'
 import { canManageOrg } from '@/lib/auth/permissions'
 import { notFound } from 'next/navigation'
 import type { ActionResult } from '@/lib/shared/types'
@@ -127,6 +127,15 @@ export async function searchSpeciesCatalogue(
 ): Promise<{ existing: ExistingSpecies[]; catalogue: CatalogueSuggestion[] }> {
   if (!(await requireSpeciesEditor())) return { existing: [], catalogue: [] }
   return searchCatalogue(query.slice(0, 100))
+}
+
+/** The same lists for a name said aloud (what the phone heard, best guess first) */
+export async function searchSpeciesSpoken(
+  heard: string[],
+): Promise<{ existing: ExistingSpecies[]; catalogue: CatalogueSuggestion[] }> {
+  if (!(await requireSpeciesEditor())) return { existing: [], catalogue: [] }
+  if (!Array.isArray(heard) || heard.some((h) => typeof h !== 'string')) return { existing: [], catalogue: [] }
+  return searchSpoken(heard)
 }
 
 export async function addSpeciesFromCatalogue(
