@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma'
 import { isLeader, LEADER_ROLES, parseRole, type Role } from '@/lib/roles'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
+import { isPendingInviteFor } from '@/lib/pending-invites'
 import type { ActionResult } from '@/lib/shared/types'
 
 const APP_URL = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('.supabase.co', '.vercel.app') ?? 'http://localhost:3000'
@@ -150,3 +151,62 @@ export async function removeMember(
   revalidatePath(`/${orgSlug}/team/members`)
   return { success: true }
 }
+
+/** The invited person, if their invite to this garden is still waiting to be accepted */
+async function pendingInvitee(orgSlug: string, userId: string) {
+  const supabase = createAdminClient()
+  const { data, error } = await supabase.auth.admin.getUserById(userId)
+  if (error || !data.user || !isPendingInviteFor(data.user, orgSlug)) return null
+  // Someone with a hortlog account has accepted something: never remove them
+  if (await prisma.user.findUnique({ where: { id: userId }, select: { id: true } })) return null
+  return { supabase, user: data.user }
+}
+
+/**
+ * Sends a fresh invite (the old link may have expired, or gone to spam). An
+ * unaccepted invite can't be sent twice, so it's replaced: the waiting
+ * account is removed and the person invited again, same role and name.
+ */
+export async function resendInvite(orgSlug: string, userId: string): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_manage_members')
+  const found = await pendingInvitee(orgSlug, userId)
+  if (!found) return { success: false, error: 'This invite has already been accepted or cancelled.' }
+  const { supabase, user } = found
+  const email = user.email
+  if (!email) return { success: false, error: 'This invite has no email address.' }
+
+  const data: Record<string, string> = {
+    pending_org_slug: orgSlug,
+    pending_role: parseRole(user.user_metadata?.pending_role),
+  }
+  if (typeof user.user_metadata?.full_name === 'string') data.full_name = user.user_metadata.full_name
+
+  const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id)
+  if (deleteError) {
+    console.error('[resendInvite] delete error:', deleteError)
+    return { success: false, error: 'The invite couldn’t be resent. Try again.' }
+  }
+  const { error } = await supabase.auth.admin.inviteUserByEmail(email, { redirectTo: `${APP_URL}/auth/callback`, data })
+  if (error) {
+    console.error('[resendInvite] invite error:', error)
+    revalidatePath(`/${orgSlug}/team/members`)
+    return { success: false, error: `The old invite was removed but a new one couldn’t be sent. Invite ${email} again.` }
+  }
+  revalidatePath(`/${orgSlug}/team/members`)
+  return { success: true }
+}
+
+/** Withdraws an invite that hasn't been accepted */
+export async function cancelInvite(orgSlug: string, userId: string): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_manage_members')
+  const found = await pendingInvitee(orgSlug, userId)
+  if (!found) return { success: true }
+  const { error } = await found.supabase.auth.admin.deleteUser(found.user.id)
+  if (error) {
+    console.error('[cancelInvite] error:', error)
+    return { success: false, error: 'The invite couldn’t be cancelled. Try again.' }
+  }
+  revalidatePath(`/${orgSlug}/team/members`)
+  return { success: true }
+}
+
