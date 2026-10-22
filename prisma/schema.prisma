@@ -139,7 +139,15 @@ model Species {
   habitatExcerpt       String? // Wikipedia excerpt
   habitatExcerptSource String? // Wikipedia article URL
   gbifTaxonKey         Int? // GBIF backbone key, for occurrence maps
-  openDataUpdatedAt    DateTime? // When this species' open-data was last refreshed
+
+  // The name checked against Kew's World Checklist of Vascular Plants (behind POWO)
+  wcvpStatus            String? // "accepted" | "synonym" | "unplaced" | "not-found"
+  wcvpAcceptedName      String? // Kew's accepted name, e.g. Cleistocactus strausii for Borzicactus strausii
+  wcvpAcceptedAuthority String?
+  wcvpAcceptedIpniId    String?
+  wcvpPowoUrl           String? // The accepted taxon's POWO page
+  wcvpCheckedAt         DateTime?
+  openDataUpdatedAt     DateTime? // When this species' open-data was last refreshed
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

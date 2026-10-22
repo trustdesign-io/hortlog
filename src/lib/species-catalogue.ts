@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { findReferencePhoto } from '@/lib/inaturalist'
 import { nameKey, resolveTaxon, suggestNames, type NameSuggestion } from '@/lib/taxonomy'
 import { toSlug } from '@/lib/utils/slug'
-import { fetchOpenData } from '@/lib/open-data'
+import { fetchOpenData, wcvpFields } from '@/lib/open-data'
 import { lookupEllenberg, ELLENBERG_SOURCE } from '@/lib/ellenberg'
 
 export interface ExistingSpecies {
@@ -132,7 +132,7 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
 
   const [photo, openData] = await Promise.all([
     findReferencePhoto(taxon.scientificName),
-    fetchOpenData({ scientificName: taxon.scientificName, ipniId: taxon.ipniId }),
+    fetchOpenData({ scientificName: taxon.scientificName, ipniId: taxon.ipniId, authority: taxon.authority }),
   ])
   const ellenberg = lookupEllenberg(taxon.scientificName)
   try {
@@ -160,6 +160,7 @@ export async function addFromCatalogue(usageId: string, commonName: string): Pro
         habitatExcerptSource: openData.habitatExcerptSource,
         gbifTaxonKey: openData.gbifTaxonKey,
         openDataUpdatedAt: openData.openDataUpdatedAt,
+        ...wcvpFields(openData.wcvp),
         ...(ellenberg
           ? {
               ellenbergL: ellenberg.L,

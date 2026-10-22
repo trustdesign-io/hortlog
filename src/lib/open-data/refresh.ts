@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma'
-import { fetchOpenData } from '@/lib/open-data'
+import { fetchOpenData, wcvpFields } from '@/lib/open-data'
 
 const BATCH_SIZE = 20
 const REFRESH_INTERVAL_DAYS = 25
@@ -24,9 +24,11 @@ export async function refreshOpenData({ all = false }: { all?: boolean } = {}): 
       OR: [
         { openDataUpdatedAt: null },
         { openDataUpdatedAt: { lt: cutoff } },
+        // Names not yet checked against Kew's checklist
+        { wcvpCheckedAt: null },
       ],
     },
-    select: { id: true, scientificName: true, ipniId: true },
+    select: { id: true, scientificName: true, ipniId: true, authority: true },
     orderBy: { createdAt: 'asc' },
   })
 
@@ -38,7 +40,7 @@ export async function refreshOpenData({ all = false }: { all?: boolean } = {}): 
     await Promise.all(
       batch.map(async (s) => {
         try {
-          const data = await fetchOpenData({ scientificName: s.scientificName, ipniId: s.ipniId })
+          const data = await fetchOpenData({ scientificName: s.scientificName, ipniId: s.ipniId, authority: s.authority })
           await prisma.species.update({
             where: { id: s.id },
             data: {
@@ -53,6 +55,7 @@ export async function refreshOpenData({ all = false }: { all?: boolean } = {}): 
               habitatExcerptSource: data.habitatExcerptSource,
               gbifTaxonKey: data.gbifTaxonKey,
               openDataUpdatedAt: data.openDataUpdatedAt,
+              ...wcvpFields(data.wcvp),
             },
           })
           updated++
