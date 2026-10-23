@@ -20,6 +20,7 @@ import {
   CircleUser,
   MapPin,
   UserCheck,
+  Compass,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { getActiveHref, resolveOrgSlug } from '@/lib/nav-utils'
@@ -128,6 +129,7 @@ function canManageOrg(user: UserWithMemberships, orgSlug: string): boolean {
 export const youNav: NavItem[] = [
   { href: '/records', label: 'My record', icon: ClipboardList, tourId: 'my-record' },
   { href: '/supervising', label: 'Supervising', icon: UserCheck },
+  { href: '/gardens', label: 'Find a garden', icon: Compass },
   { href: '/settings', label: 'Account', icon: Settings, tourId: 'account-settings' },
 ]
 

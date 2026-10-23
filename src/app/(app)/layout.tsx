@@ -10,6 +10,7 @@ import { FloatingOfflineCard } from '@/components/offline/offline-status'
 import { getNameFromMetadata } from '@/lib/auth/name-utils'
 import type { User } from '@prisma/client'
 import { getAuthUser, getCurrentUser, type UserWithMemberships } from '@/lib/auth/current-user'
+import { ensurePersonalGarden } from '@/lib/personal-garden'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -84,6 +85,21 @@ export default async function AppLayout({
       user = dbUser
     } catch (err) {
       console.error('[AppLayout] Failed to upsert user:', err)
+    }
+  }
+
+  // Signed up with no garden and no invite waiting: give them their own, so they can start recording
+  if (user.memberships.length === 0 && !user.isAdmin && !meta?.pending_org_slug) {
+    try {
+      if (await ensurePersonalGarden(user)) {
+        const withGarden = await prisma.user.findUnique({
+          where: { id: user.id },
+          include: { memberships: { include: { organisation: { select: { id: true, slug: true, name: true } } } } },
+        })
+        if (withGarden) user = withGarden
+      }
+    } catch (err) {
+      console.error('[AppLayout] Failed to make a personal garden:', err)
     }
   }
 
