@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
-import { formatRecordDate, formatRecordNo, plantNameHtml } from '@/lib/personal-record'
+import { formatRecordDate, formatRecordNo, plantNameHtml, stripTags } from '@/lib/personal-record'
 import { TaxonName } from '@/components/records/taxon-name'
+import { RecordSearch } from '@/components/records/record-search'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { UserAvatar } from '@/components/user-avatar'
 import { AddToMyRecord } from '@/components/add-to-my-record'
@@ -30,11 +31,13 @@ export default async function RecordsPage() {
       authority: true,
       family: true,
       site: true,
+      commonNames: true,
+      location: true,
       organisation: { select: { name: true } },
       specimen: {
         select: {
           imageUrl: true,
-          species: { select: { photoUrl: true } },
+          species: { select: { photoUrl: true, commonName: true } },
         },
       },
     },
@@ -149,9 +152,23 @@ export default async function RecordsPage() {
           )}
         </div>
       ) : (
-        <ol className="space-y-2" aria-label="Work records">
-          {records.map((r) => (
-            <li key={r.id}>
+        <RecordSearch
+          records={records.map((r) => ({
+            id: r.id,
+            fields: [
+              stripTags(plantNameHtml(r)),
+              r.scientificName,
+              r.commonNames,
+              r.specimen.species.commonName,
+              r.family,
+              r.site ?? r.organisation.name,
+              r.organisation.name,
+              r.location,
+              formatRecordNo(r.recordNumber),
+              String(r.recordNumber),
+              formatRecordDate(r.firstWorkedDate),
+            ],
+            node: (
               <Link
                 href={`/records/${r.id}`}
                 className="flex items-center gap-3 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -182,9 +199,9 @@ export default async function RecordsPage() {
                   </p>
                 </div>
               </Link>
-            </li>
-          ))}
-        </ol>
+            ),
+          }))}
+        />
       )}
 
       {supervisorChoices.length > 0 && <SupervisorPicker choices={supervisorChoices} />}

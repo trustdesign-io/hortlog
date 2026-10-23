@@ -14,8 +14,17 @@ function isSubsequence(needle: string, hay: string): boolean {
   return i === needle.length
 }
 
-/** True when a and b differ by at most one insertion, deletion or substitution. */
+/** True when b is a with two neighbouring letters swapped, e.g. "catalap" for "catalpa". */
+function oneSwap(a: string, b: string): boolean {
+  if (a.length !== b.length) return false
+  const diff: number[] = []
+  for (let i = 0; i < a.length; i++) if (a[i] !== b[i]) diff.push(i)
+  return diff.length === 2 && diff[1] === diff[0] + 1 && a[diff[0]] === b[diff[1]] && a[diff[1]] === b[diff[0]]
+}
+
+/** True when a and b differ by at most one insertion, deletion, substitution or swap of neighbouring letters. */
 function withinOneEdit(a: string, b: string): boolean {
+  if (oneSwap(a, b)) return true
   if (Math.abs(a.length - b.length) > 1) return false
   let i = 0
   let j = 0
