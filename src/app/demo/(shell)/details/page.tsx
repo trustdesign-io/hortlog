@@ -3,7 +3,7 @@ import { SceneHeader } from '@/app/(app)/[org]/scenes/[id]/scene-header'
 import { SceneDetailsForm } from '@/app/(app)/[org]/scenes/[id]/details/scene-details-form'
 import { SceneNotesCard } from '@/app/(app)/[org]/scenes/[id]/details/scene-notes-card'
 import { prisma } from '@/lib/prisma'
-import { DEMO_ORG, loadDemo } from '../demo-data'
+import { DEMO_ORG, loadDemo } from '../../demo-data'
 
 // Read live from the database on each visit, never built ahead
 export const dynamic = 'force-dynamic'

@@ -2,13 +2,14 @@ import { cache } from 'react'
 import { prisma } from '@/lib/prisma'
 import { buildOrgSnapshot } from '@/lib/offline/snapshot'
 import { bedPhotoUrl, type OrgSnapshot } from '@/lib/offline/types'
-import { publicScenePath } from '@/lib/scene-urls'
 
 /** The scene the demo shows: Lullingstone's first mapped bed, for now */
 export const DEMO_ORG = 'lullingstone-castle-and-the-world-garden'
 export const DEMO_SCENE = 'scene-001'
 /** What the demo calls the garden, so the real one isn't named */
 export const DEMO_GARDEN_NAME = 'Demo Garden'
+/** The demo's own visitor view, so "See what visitors see" doesn't open the real garden's page */
+export const DEMO_VISIT_PATH = '/demo/visit'
 
 /**
  * The real scene, read live, cut down to what the demo needs: just this
@@ -58,6 +59,6 @@ export const loadDemo = cache(async function loadDemo() {
     scene,
     locations,
     photoUrl: bedPhotoUrl(DEMO_ORG, scene.id, scene.photoTakenAt.toISOString()),
-    publicPath: publicScenePath(DEMO_ORG, scene.slug, scene.primaryCollection?.slug ?? null),
+    publicPath: DEMO_VISIT_PATH,
   }
 })

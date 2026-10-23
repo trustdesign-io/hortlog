@@ -3,8 +3,8 @@ import type { ReactNode } from 'react'
 import { notFound } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import type { UserWithMemberships } from '@/lib/auth/current-user'
-import { DEMO_GARDEN_NAME, DEMO_ORG } from './demo-data'
-import { DemoShell } from './demo-shell'
+import { DEMO_GARDEN_NAME, DEMO_ORG } from '../demo-data'
+import { DemoShell } from '../demo-shell'
 
 export const metadata: Metadata = {
   title: 'Demo',

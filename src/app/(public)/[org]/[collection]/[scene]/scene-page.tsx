@@ -102,18 +102,26 @@ export async function ScenePage({
   orgSlug,
   collectionSlug,
   sceneSlug,
+  demo,
 }: {
   orgSlug: string;
   collectionSlug: string | null;
   sceneSlug: string;
   /** Old ?tab= links still arrive; there's one view now */
   rawTab?: string | undefined;
+  /**
+   * The demo's visitor view: the garden isn't named or shown (no logo, places,
+   * notes or flowering link), nothing is tracked, and plants open demo pages.
+   */
+  demo?: { gardenName: string; basePath: string };
 }) {
   const data = await resolveScene(orgSlug, collectionSlug, sceneSlug);
   if (!data) return notFound();
 
-  const { org, collection, scene, places } = data;
-  const gardenName = collection ? `${org.name} · ${collection.name}` : org.name;
+  const { collection, scene } = data;
+  const org = demo ? { ...data.org, name: demo.gardenName, logoUrl: null } : data.org;
+  const places = demo ? [] : data.places;
+  const gardenName = collection && !demo ? `${org.name} · ${collection.name}` : org.name;
   const where = places.length > 0 ? <PlaceTrail places={places} /> : undefined;
 
   // A label printed ahead for a scene that isn't in use yet
@@ -155,11 +163,8 @@ export async function ScenePage({
     take: 500,
   });
 
-  const basePath = publicScenePath(
-    orgSlug,
-    sceneSlug,
-    collection?.slug ?? null,
-  );
+  const basePath =
+    demo?.basePath ?? publicScenePath(orgSlug, sceneSlug, collection?.slug ?? null);
   const title = scene.title ?? "What’s growing here";
 
   // A scene is its bed photo: until it has one, it's still being set up
@@ -189,11 +194,13 @@ export async function ScenePage({
 
   return (
     <SceneShell fill>
-      <SceneSplash sceneId={scene.id} logoUrl={org.logoUrl} />
-      <GaEvent
-        name="view_page_load"
-        params={{ view_id: scene.id, org: orgSlug }}
-      />
+      {!demo && <SceneSplash sceneId={scene.id} logoUrl={org.logoUrl} />}
+      {!demo && (
+        <GaEvent
+          name="view_page_load"
+          params={{ view_id: scene.id, org: orgSlug }}
+        />
+      )}
       <SceneHero
         garden={gardenName}
         logoUrl={org.logoUrl}
@@ -204,7 +211,7 @@ export async function ScenePage({
 
       <BedPhotoView
         photoUrl={bedPhotoUrl(
-          org.slug,
+          data.org.slug,
           scene.id,
           scene.photoTakenAt.toISOString(),
         )}
@@ -221,9 +228,9 @@ export async function ScenePage({
         }))}
       />
 
-      <SceneNotes sceneId={scene.id} />
+      {!demo && <SceneNotes sceneId={scene.id} />}
 
-      {scene.locationId && places.length > 0 && (
+      {!demo && scene.locationId && places.length > 0 && (
         <Link
           href={`/${org.slug}/flowering?in=${scene.locationId}`}
           className="inline-flex min-h-11 items-center gap-2 self-start rounded-full border bg-card px-4 text-sm font-medium hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
