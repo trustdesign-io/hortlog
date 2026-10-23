@@ -12,8 +12,22 @@ function makePrismaClient(): PrismaClient {
   return new PrismaClient({ adapter })
 }
 
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
+const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 
-export const prisma = globalForPrisma.prisma ?? makePrismaClient()
+function client(): PrismaClient {
+  globalForPrisma.prisma ??= makePrismaClient()
+  return globalForPrisma.prisma
+}
 
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
+/**
+ * Made on first use, not on import: a build where the database isn't set
+ * (Vercel previews) can still compile and collect pages, and only a request
+ * that actually needs the database fails.
+ */
+export const prisma = new Proxy({} as PrismaClient, {
+  get(_target, prop) {
+    const c = client()
+    const value = Reflect.get(c, prop, c)
+    return typeof value === 'function' ? value.bind(c) : value
+  },
+})
