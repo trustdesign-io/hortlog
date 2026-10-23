@@ -25,8 +25,9 @@ export async function getPublicRecordList(userId: string) {
         authority: true,
         family: true,
         site: true,
+        commonNames: true,
         organisation: { select: { name: true } },
-        specimen: { select: { imageUrl: true, species: { select: { photoUrl: true } } } },
+        specimen: { select: { imageUrl: true, species: { select: { photoUrl: true, commonName: true } } } },
       },
     }),
     prisma.workRecord.groupBy({

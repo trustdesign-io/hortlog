@@ -8,6 +8,7 @@ describe('fuzzyScore', () => {
   it('matches word prefixes in any order', () => expect(fuzzyScore('north world', worldGarden)).toBeGreaterThan(0))
   it('ignores case, punctuation and accents', () => expect(fuzzyScore('NÔRTH-america', worldGarden)).toBeGreaterThan(0))
   it('forgives a one-letter typo', () => expect(fuzzyScore('Amerca', worldGarden)).toBeGreaterThan(0))
+  it('forgives two letters swapped', () => expect(fuzzyScore('Amercia', worldGarden)).toBeGreaterThan(0))
   it('matches letters in order', () => expect(fuzzyScore('wgna', worldGarden)).toBeGreaterThan(0))
   it('searches the type too', () => expect(fuzzyScore('locat', worldGarden)).toBeGreaterThan(0))
   it('needs every word to match', () => expect(fuzzyScore('north cactus', worldGarden)).toBe(0))

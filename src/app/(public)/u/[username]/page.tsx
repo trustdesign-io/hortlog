@@ -3,8 +3,9 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { findPublicOwner, getPublicRecordList } from '@/lib/public-record-queries'
 import { hiddenSummaryText } from '@/lib/public-record'
-import { formatRecordDate, formatRecordNo, plantNameHtml } from '@/lib/personal-record'
+import { formatRecordDate, formatRecordNo, plantNameHtml, stripTags } from '@/lib/personal-record'
 import { TaxonName } from '@/components/records/taxon-name'
+import { RecordSearch } from '@/components/records/record-search'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { UserAvatar } from '@/components/user-avatar'
 
@@ -59,9 +60,22 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
       ) : (
         <>
           {records.length > 0 && (
-            <ol className="space-y-2" aria-label="Work records">
-              {records.map((r) => (
-                <li key={r.id}>
+            <RecordSearch
+              records={records.map((r) => ({
+                id: r.id,
+                fields: [
+                  stripTags(plantNameHtml(r)),
+                  r.scientificName,
+                  r.commonNames,
+                  r.specimen.species.commonName,
+                  r.family,
+                  r.site ?? r.organisation.name,
+                  r.organisation.name,
+                  formatRecordNo(r.recordNumber),
+                  String(r.recordNumber),
+                  formatRecordDate(r.firstWorkedDate),
+                ],
+                node: (
                   <Link
                     href={`/u/${owner.username}/${r.recordNumber}`}
                     className="flex items-center gap-3 rounded-lg border bg-card p-3 text-sm transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -92,9 +106,9 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                       </p>
                     </div>
                   </Link>
-                </li>
-              ))}
-            </ol>
+                ),
+              }))}
+            />
           )}
           {hidden.length > 0 && (
             <ul className="mt-4 space-y-1 text-sm text-muted-foreground" aria-label="Private collections">
