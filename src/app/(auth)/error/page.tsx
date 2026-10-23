@@ -3,14 +3,15 @@ import Link from 'next/link'
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
+import { NewLinkForm } from './new-link-form'
 
 export const metadata: Metadata = {
   title: 'Link expired',
 }
 
 const MESSAGES: Record<string, string> = {
-  link_expired: 'This link has expired. Please request a new one.',
-  invalid_link: 'This link is invalid or has already been used. Please request a new one.',
+  link_expired: 'This link has expired or has already been used. Links last a day and work once.',
+  invalid_link: 'This link is incomplete or has already been used. Links work once.',
 }
 
 const VALID_REASONS = new Set(Object.keys(MESSAGES))
@@ -32,9 +33,10 @@ export default async function AuthErrorPage({ searchParams }: AuthErrorPageProps
         </CardTitle>
         <CardDescription>{message}</CardDescription>
       </CardHeader>
-      <CardFooter>
-        <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}>
-          Back to sign in
+      <CardFooter className="flex-col gap-4">
+        <NewLinkForm />
+        <Link href="/sign-in" className={cn(buttonVariants({ variant: 'outline' }), 'h-11 w-full')}>
+          Already have an account? Sign in
         </Link>
       </CardFooter>
     </Card>

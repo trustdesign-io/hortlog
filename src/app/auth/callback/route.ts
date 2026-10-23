@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
   const errorParam = searchParams.get('error')
 
   if (errorParam) {
-    return NextResponse.redirect(`${origin}/auth/error?reason=link_expired`)
+    return NextResponse.redirect(`${origin}/error?reason=link_expired`)
   }
 
   // PKCE flow (OAuth, magic link via code)
@@ -45,10 +45,18 @@ export async function GET(request: NextRequest) {
       applyCollectedCookies(response, collected)
       return response
     }
-    return NextResponse.redirect(`${origin}/auth/error?reason=link_expired`)
+    return NextResponse.redirect(`${origin}/error?reason=link_expired`)
   }
 
-  // OTP / invite flow (token_hash + type)
+  // OTP / invite flow (token_hash + type). Links are single-use, and email
+  // scanners (Outlook Safe Links, spam filters) open them before the person
+  // does: so the link first shows a page with a button, and only that uses it.
+  if (tokenHash && type && searchParams.get('confirm') !== '1') {
+    const join = new URL(`${origin}/join`)
+    join.searchParams.set('token_hash', tokenHash)
+    join.searchParams.set('type', type)
+    return NextResponse.redirect(join)
+  }
   if (tokenHash && type) {
     const collected: CollectedCookie[] = []
     const supabase = makeSupabase(request, collected)
@@ -64,9 +72,9 @@ export async function GET(request: NextRequest) {
       applyCollectedCookies(response, collected)
       return response
     }
-    return NextResponse.redirect(`${origin}/auth/error?reason=link_expired`)
+    return NextResponse.redirect(`${origin}/error?reason=link_expired`)
   }
 
   // No code, token_hash, or error — link is invalid or user navigated directly
-  return NextResponse.redirect(`${origin}/auth/error?reason=invalid_link`)
+  return NextResponse.redirect(`${origin}/error?reason=invalid_link`)
 }
