@@ -165,7 +165,8 @@ export async function ScenePage({
 
   const basePath =
     demo?.basePath ?? publicScenePath(orgSlug, sceneSlug, collection?.slug ?? null);
-  const title = scene.title ?? "What’s growing here";
+  // The demo doesn't use the real bed's name, which would give the garden away
+  const title = demo ? "What’s growing here" : (scene.title ?? "What’s growing here");
 
   // A scene is its bed photo: until it has one, it's still being set up
   if (specimens.length === 0 || scene.photoTakenAt === null) {

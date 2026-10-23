@@ -174,7 +174,7 @@ export async function SceneSpecimenPage({
         }}
         breadcrumbs={breadcrumbs}
         backHref={scenePath}
-        backLabel={scene.title ?? scene.name}
+        backLabel={demo ? demo.gardenName : (scene.title ?? scene.name)}
       >
         {/* Reached from a scene: always the visitor's view, even for signed-in members */}
         {!demo && <SpecimenCare specimenId={specimen.id} audience="public" />}
