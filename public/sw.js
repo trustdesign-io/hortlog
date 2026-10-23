@@ -17,12 +17,13 @@ const OFFLINE_APP = '/offline-app'
 const STATIC_ASSETS = ['/offline.html']
 const MAX_ASSETS = 400
 /**
- * A page that hasn't started arriving after this long goes to the offline app:
- * quickly when the device says it has no connection, more patiently when it
- * says it has one (a slow page shouldn't throw someone out of the live site).
+ * A page that hasn't started arriving after this long goes to the offline app.
+ * A phone in a glasshouse often says it's online (one bar, or Wi-Fi with no
+ * internet) while nothing gets through, so "online" only buys a little more
+ * patience; the offline app goes back to the live site once hortlog answers.
  */
-const NAV_TIMEOUT_MS = 8000
-const NAV_TIMEOUT_ONLINE_MS = 15000
+const NAV_TIMEOUT_MS = 3000
+const NAV_TIMEOUT_ONLINE_MS = 6000
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -225,9 +226,11 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // With a connection, pages load straight from the network, untouched: the
-  // offline app is only for when the device says it has no connection
-  if (request.mode === 'navigate' && self.navigator.onLine) return
+  // Pages: from the network, but never left hanging (see handleNavigate)
+  if (request.mode === 'navigate') {
+    event.respondWith(handleNavigate(request))
+    return
+  }
 
   event.respondWith(handleFetch(request))
 })
@@ -293,6 +296,45 @@ async function offlineFallback() {
   return (await staticCache.match('/offline.html')) ?? new Response('Offline', { status: 503 })
 }
 
+/** A page a visitor saved at check-in, if any */
+async function savedPublicPage(request) {
+  for (const cacheName of (await caches.keys()).filter((k) => k.startsWith(CACHE_PREFIX))) {
+    const cached = await (await caches.open(cacheName)).match(request)
+    if (cached) return withOfflineHeader(cached)
+  }
+  return null
+}
+
+/**
+ * Opening a page. Signal in gardens is unreliable, and a phone often claims
+ * a connection that carries nothing, so the network gets a short time to
+ * start answering. If it can't: members get the offline app (their saved
+ * copy), visitors the pages they saved at check-in, else the offline notice.
+ */
+async function handleNavigate(request) {
+  const fallback = async () => {
+    if (await hasShell()) return toOfflineApp(request)
+    return (await savedPublicPage(request)) ?? offlineFallback()
+  }
+  // Says it's offline: don't wait at all
+  if (!self.navigator.onLine && (await hasShell())) return toOfflineApp(request)
+
+  const network = fetch(request)
+  network.catch(() => {}) // handled below; this stops an unhandled rejection after a timeout
+  const wait = self.navigator.onLine ? NAV_TIMEOUT_ONLINE_MS : NAV_TIMEOUT_MS
+  const timedOut = new Promise((resolve) => setTimeout(() => resolve('timeout'), wait))
+  try {
+    const first = await Promise.race([network, timedOut])
+    if (first !== 'timeout') return first
+    // Still nothing: use what's saved if there is anything, else keep waiting
+    if ((await hasShell()) || (await savedPublicPage(request))) return fallback()
+    return await network
+  } catch {
+    return fallback()
+  }
+}
+
+/** Anything else (not a page): a visitor's saved copy first, else the network */
 async function handleFetch(request) {
   // Public check-in: pages a visitor saved are served from their cache
   const keys = await caches.keys()
@@ -312,28 +354,10 @@ async function handleFetch(request) {
     }
   }
 
-  if (request.mode !== 'navigate') {
-    try {
-      return await fetch(request)
-    } catch {
-      return new Response('', { status: 503 })
-    }
-  }
-
-  // A page: from the network, unless there's no connection (or it's hanging),
-  // in which case members with a saved copy get the offline app
-  const network = fetch(request)
-  network.catch(() => {}) // handled below; this stops an unhandled rejection after a timeout
-  const wait = self.navigator.onLine ? NAV_TIMEOUT_ONLINE_MS : NAV_TIMEOUT_MS
-  const timedOut = new Promise((resolve) => setTimeout(() => resolve('timeout'), wait))
   try {
-    const first = await Promise.race([network, timedOut])
-    if (first !== 'timeout') return first
-    if (await hasShell()) return toOfflineApp(request)
-    return await network
+    return await fetch(request)
   } catch {
-    if (await hasShell()) return toOfflineApp(request)
-    return offlineFallback()
+    return new Response('', { status: 503 })
   }
 }
 
