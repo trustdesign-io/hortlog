@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
 import { WorkedRecordSheet } from '@/components/records/worked-record-sheet'
+import { EntryCoworkers } from '@/components/entry-coworkers'
 import { BackToRecord } from '@/components/records/back-to-record'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { PrintButton } from '@/components/print-button'
@@ -41,10 +42,30 @@ export default async function RecordPage({ params }: RecordPageProps) {
     signed.map((e) => [e.id, { at: e.signedOffAt as Date, by: e.signedOffBy?.name ?? 'their supervisor', comment: e.signOffComment }]),
   )
 
+  // The garden's other members, to change who each entry was with
+  const memberships = await prisma.membership.findMany({
+    where: { organisation: { slug: record.organisation.slug }, userId: { not: user.id } },
+    select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    orderBy: { user: { name: 'asc' } },
+  })
+  const members = memberships.map((m) => m.user)
+
   return (
     <div className="print:max-w-full">
       <BackToRecord />
-      <WorkedRecordSheet record={record} likes={likes} signOffs={signOffs} />
+      <WorkedRecordSheet
+        record={record}
+        likes={likes}
+        signOffs={signOffs}
+        renderCoworkers={(e) => (
+          <EntryCoworkers
+            orgSlug={record.organisation.slug}
+            entryId={e.id}
+            members={members}
+            initial={e.coworkers.map((c) => c.user)}
+          />
+        )}
+      />
 
       <div className="mb-6 print:hidden">
         <PrintButton className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'no-underline')} />
