@@ -72,6 +72,9 @@ model Organisation {
   /// Made for one person when they signed up with no garden: theirs alone, not listed in Find a garden
   personal Boolean @default(false)
 
+  /// Shown in Find a garden, so people can ask to join. Off until a manager turns it on.
+  listed Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

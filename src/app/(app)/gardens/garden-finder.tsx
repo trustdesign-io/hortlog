@@ -63,7 +63,7 @@ export function GardenFinder({ gardens }: { gardens: Garden[] }) {
       </div>
       {shown.length === 0 ? (
         <p className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          {gardens.length === 0 ? 'No gardens are on hortlog yet.' : 'No gardens match.'}
+          {gardens.length === 0 ? 'No gardens are listed yet.' : 'No gardens match.'}
         </p>
       ) : (
         <ul className="space-y-2" aria-label="Gardens">

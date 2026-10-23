@@ -253,3 +253,23 @@ export async function updateOrgRecordPrivacy(
   // Public records read this setting on every request, so nothing else needs refreshing
   return { success: true }
 }
+
+/** Whether people can find this garden in Find a garden and ask to join. Never for a personal garden. */
+export async function updateOrgListing(
+  orgSlug: string,
+  _prevState: ActionResult | null,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_org_settings')
+  const listed = formData.get('listed') === 'on'
+  try {
+    const { count } = await prisma.organisation.updateMany({ where: { slug: orgSlug, personal: false }, data: { listed } })
+    if (count === 0) return { success: false, error: 'A personal garden can’t be listed.' }
+  } catch (err) {
+    console.error('[updateOrgListing] error:', err)
+    return { success: false, error: 'That couldn’t be saved. Try again.' }
+  }
+  revalidatePath(`/${orgSlug}/settings`)
+  revalidatePath('/gardens')
+  return { success: true }
+}

@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation'
 import { OrgSettingsForm } from './org-settings-form'
 import { OrgLogoCard } from './org-logo-card'
 import { OrgRecordPrivacyCard } from './org-record-privacy-card'
+import { OrgListingCard } from './org-listing-card'
 import { OrgDwcExportCard } from './org-dwc-export-card'
 import { OrgFloweringEmbedCard } from './org-flowering-embed-card'
 
@@ -32,6 +33,8 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
       postcode: true,
       recordsPublic: true,
       privateRecordsShowName: true,
+      listed: true,
+      personal: true,
     },
   })
 
@@ -60,6 +63,7 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
         recordsPublic={org.recordsPublic}
         privateRecordsShowName={org.privateRecordsShowName}
       />
+      <OrgListingCard orgSlug={orgSlug} listed={org.listed} personal={org.personal} />
       <OrgFloweringEmbedCard
         orgSlug={orgSlug}
         siteUrl={process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'}

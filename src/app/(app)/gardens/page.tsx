@@ -11,7 +11,7 @@ export default async function GardensPage() {
 
   const [gardens, requests] = await Promise.all([
     prisma.organisation.findMany({
-      where: { personal: false },
+      where: { personal: false, listed: true },
       orderBy: { name: 'asc' },
       select: { slug: true, name: true, logoUrl: true, postcode: true },
     }),

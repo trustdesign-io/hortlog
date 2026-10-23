@@ -12,7 +12,7 @@ export async function requestToJoin(orgSlug: string, message: string): Promise<A
   const user = await requireAuth()
   const note = message.trim().slice(0, MAX_JOIN_MESSAGE) || null
 
-  const org = await prisma.organisation.findFirst({ where: { slug: orgSlug, personal: false }, select: { id: true } })
+  const org = await prisma.organisation.findFirst({ where: { slug: orgSlug, personal: false, listed: true }, select: { id: true } })
   if (!org) return { success: false, error: 'That garden couldn’t be found.' }
   if (user.memberships.some((m) => m.organisation.slug === orgSlug)) {
     return { success: false, error: 'You’re already a member.' }
