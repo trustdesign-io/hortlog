@@ -1,5 +1,6 @@
-// Keep this in sync with all top-level app routes — any segment listed here
-// cannot be used as an organisation slug (org.ts validates on create/rename).
+// Every top-level route: a garden can't use one of these as its slug, or its
+// pages would clash with the app's (org.ts checks on create and rename).
+// reserved-slugs.test.ts fails if a new top-level route isn't listed here.
 export const RESERVED_ORG_SLUGS = new Set([
   '_next',
   'accept-invite',
@@ -7,15 +8,25 @@ export const RESERVED_ORG_SLUGS = new Set([
   'api',
   'auth',
   'check-email',
+  'check-in',
   'dashboard',
+  'demo',
+  'embed',
+  'error',
   'gardens',
+  'join',
   'no-access',
+  'offline-app',
+  'opengraph-image',
   'orgs',
+  'print',
+  'privacy',
   'records',
   'settings',
   'share',
   'sign-in',
   'sign-up',
+  'supervising',
   'u',
   'v',
 ])
