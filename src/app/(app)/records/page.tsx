@@ -5,6 +5,7 @@ import { formatRecordDate, formatRecordNo, plantNameHtml } from '@/lib/personal-
 import { TaxonName } from '@/components/records/taxon-name'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { UserAvatar } from '@/components/user-avatar'
+import { AddToMyRecord } from '@/components/add-to-my-record'
 import { NotMeButton } from '@/components/not-me-button'
 import { SupervisorPicker } from '@/components/supervisor-picker'
 import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
@@ -52,6 +53,8 @@ export default async function RecordsPage() {
       id: true,
       date: true,
       action: true,
+      // Your tag on it, and your copy once you've added it to your record
+      coworkers: { where: { userId: user.id }, select: { acceptedEntry: { select: { workRecordId: true } } } },
       workRecord: {
         select: {
           scientificName: true,
@@ -206,7 +209,10 @@ export default async function RecordsPage() {
                     {` · logged by ${e.workRecord.user.name?.trim() || e.workRecord.user.email}`}
                   </p>
                 </Link>
-                <NotMeButton entryId={e.id} />
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <AddToMyRecord entryId={e.id} recordId={e.coworkers[0]?.acceptedEntry?.workRecordId ?? null} />
+                  <NotMeButton entryId={e.id} />
+                </div>
               </li>
             ))}
           </ol>

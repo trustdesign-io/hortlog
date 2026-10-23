@@ -522,7 +522,10 @@ model WorkLogEntry {
   editHistory WorkLogEntryEdit[]
 
   /// Other members who did this work too, tagged by the person who logged it
-  coworkers WorkLogEntryCoworker[]
+  coworkers WorkLogEntryCoworker[] @relation("EntryCoworkers")
+
+  /// Tags this entry was copied from, when a tagged member added the work to their own record
+  copiedFrom WorkLogEntryCoworker[] @relation("AcceptedCopy")
 
   /// Members of the same organisation who liked this entry
   likes WorkLogEntryLike[]
@@ -544,7 +547,11 @@ model WorkLogEntry {
 /// A member tagged on someone else's work entry ("worked with"). They can remove themselves.
 model WorkLogEntryCoworker {
   entryId String
-  entry   WorkLogEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+  entry   WorkLogEntry @relation("EntryCoworkers", fields: [entryId], references: [id], onDelete: Cascade)
+
+  /// Set when the tagged member added this work to their own record: their copy of the entry
+  acceptedEntryId String?
+  acceptedEntry   WorkLogEntry? @relation("AcceptedCopy", fields: [acceptedEntryId], references: [id], onDelete: SetNull)
 
   userId String
   user   User   @relation("WorkedWith", fields: [userId], references: [id], onDelete: Cascade)
