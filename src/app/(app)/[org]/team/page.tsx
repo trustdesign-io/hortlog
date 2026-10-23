@@ -162,7 +162,7 @@ function TeamTier({
             {!lead && <p className="-mt-1.5 text-xs text-muted-foreground">{roleLabel(p.role, labels)}</p>}
             {p.user.id === viewerId && <p className="-mt-1 text-xs text-muted-foreground">You</p>}
             {p.pending && (
-              <p className="-mt-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground">Invited, not joined yet</p>
+              <p className="-mt-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground">Invited</p>
             )}
           </li>
         ))}

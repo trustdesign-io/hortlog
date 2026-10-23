@@ -89,7 +89,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
           <h1 className="font-heading text-2xl font-medium">All users</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {total} user{total === 1 ? '' : 's'} on the platform
-            {invited.length > 0 && ` · ${invited.length} invited, not joined yet`}.
+            {invited.length > 0 && ` · ${invited.length} invited`}.
           </p>
         </div>
         <MemberInviteDialog orgs={orgs} />
@@ -292,7 +292,7 @@ function InvitedRow({ name, email, role, orgSlug, orgName, invitedAt, expired }:
         <div className="flex flex-wrap items-center gap-2">
           <p className="font-medium text-muted-foreground">{name ?? email.split('@')[0]}</p>
           <Badge variant="outline" className={cn('border-dashed text-xs text-muted-foreground', expired && 'border-destructive/50')}>
-            {expired ? 'Invited, link expired' : 'Invited, not joined yet'}
+            {expired ? 'Invited, link expired' : 'Invited'}
           </Badge>
         </div>
         <p className="break-all text-xs text-muted-foreground">{email}</p>
