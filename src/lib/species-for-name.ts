@@ -1,22 +1,24 @@
 import { prisma } from '@/lib/prisma'
 import { addFromCatalogue, labelName, searchCatalogue } from '@/lib/species-catalogue'
-import { nameKey } from '@/lib/taxonomy'
+import { nameKey, spellingDistance, typedNameVariants } from '@/lib/taxonomy'
 
 const SPECIES_RANKS = new Set(['species', 'subspecies', 'variety', 'form'])
 
 /**
  * Looks a typed name up in the botanical catalogue, as the species picker
- * would. Only a name that matches exactly (authority aside) is taken; anything
- * less certain is left for a member to identify.
+ * would. Only a name that matches (authority, spelling variants like
+ * "leninghausii"/"lenninghausii", and a missing "subsp." aside) is taken;
+ * anything less certain is left for a member to identify. A genus with a note
+ * in brackets, like "Echinopsis (Red)", is taken as the genus.
  */
 async function lookUpTypedName(name: string, commonName: string): Promise<{ id: string; scientificName: string } | null> {
-  const key = nameKey(name)
+  const variants = typedNameVariants(name)
   const { existing, catalogue } = await searchCatalogue(name)
-  const known = existing.find((s) => nameKey(s.scientificName) === key)
+  const known = existing.find((s) => variants.some((v) => nameKey(s.scientificName) === nameKey(v)))
   if (known) return known
-  const exact = catalogue.filter((c) => {
-    return SPECIES_RANKS.has(c.rank.toLowerCase()) && nameKey(labelName(c.label)) === key
-  })
+  const ranks = (c: (typeof catalogue)[number]) =>
+    SPECIES_RANKS.has(c.rank.toLowerCase()) || (c.rank.toLowerCase() === 'genus' && variants.length > 1 && !variants.at(-1)!.includes(' '))
+  const exact = catalogue.filter((c) => ranks(c) && variants.some((v) => spellingDistance(v, labelName(c.label)) === 0))
   // Several taxa with the same name (different authors) can't be told apart from the name alone
   const accepted = new Set(exact.map((c) => c.existingId ?? nameKey(labelName(c.acceptedLabel ?? c.label))))
   if (exact.length === 0 || accepted.size > 1) return null

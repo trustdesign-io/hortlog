@@ -56,7 +56,90 @@ function toSuggestion(s: ColSuggestion): NameSuggestion {
 
 const RANKS = new Set(['genus', 'species', 'subspecies', 'variety', 'form'])
 
-/** Names starting with what was typed; if none, the closest spelling. */
+const RANK_MARKER = /^(?:subsp|ssp|var|f|fo|cv)\.?$/i
+
+/**
+ * What to look up for a typed name: descriptions in brackets and cultivar
+ * names in quotes left out ("Echinopsis (Red)" → "Echinopsis"), and a third
+ * lowercase word read as a subspecies or variety when no rank was written
+ * ("Trichocereus chiloensis panhoplites").
+ */
+export function typedNameVariants(query: string): string[] {
+  const cleaned = query
+    .replace(/\([^)]*\)/g, ' ')
+    .replace(/['‘’"“”][^'‘’"“”]*['‘’"“”]?/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+  const out = [query.trim().replace(/\s+/g, ' ')]
+  if (cleaned && cleaned !== out[0]) out.push(cleaned)
+  const words = cleaned.split(' ')
+  if (words.length === 3 && /^[a-z-]+$/.test(words[1]) && /^[a-z-]+$/.test(words[2]) && !RANK_MARKER.test(words[2])) {
+    out.push(`${words[0]} ${words[1]} subsp. ${words[2]}`, `${words[0]} ${words[1]} var. ${words[2]}`)
+  }
+  return [...new Set(out.filter((v) => v.length >= 3))]
+}
+
+/**
+ * A word as it sounds on paper: case, doubled letters and the common spelling
+ * variants of epithets ("-ii"/"-i", "ae"/"e") don't matter. "leninghausii" and
+ * "lenninghausii" are the same.
+ */
+export function orthoKey(word: string): string {
+  return word
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/ae/g, 'e')
+    .replace(/(.)\1+/g, '$1')
+    .replace(/i$/, '')
+}
+
+/** The genus and epithets of a name, without authority or rank markers */
+function nameWords(name: string): string[] {
+  const words = name.trim().split(/\s+/)
+  const out = [words[0]]
+  for (const w of words.slice(1)) {
+    if (RANK_MARKER.test(w)) continue
+    if (!/^[a-z×-]+$/.test(w)) break
+    out.push(w)
+  }
+  return out
+}
+
+function editDistance(a: string, b: string): number {
+  const dp = Array.from({ length: b.length + 1 }, (_, i) => i)
+  for (let i = 1; i <= a.length; i++) {
+    let prev = dp[0]
+    dp[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      const tmp = dp[j]
+      dp[j] = Math.min(dp[j] + 1, dp[j - 1] + 1, prev + (a[i - 1] === b[j - 1] ? 0 : 1))
+      prev = tmp
+    }
+  }
+  return dp[b.length]
+}
+
+/**
+ * How far a catalogue name is from a typed one, word by word, ignoring
+ * authority, rank markers and spelling variants. 0 is the same name;
+ * Infinity is a different genus or a different number of epithets.
+ */
+export function spellingDistance(typed: string, label: string): number {
+  const a = nameWords(typed).map(orthoKey)
+  const b = nameWords(label).map(orthoKey)
+  if (a.length !== b.length || a[0] !== b[0]) return Infinity
+  return a.slice(1).reduce((sum, w, i) => sum + editDistance(w, b[i + 1]), 0)
+}
+
+/** Close enough to offer for a misspelt name: two letters off, more for long epithets */
+function closeEnough(typed: string, label: string): boolean {
+  const epithets = nameWords(typed).slice(1)
+  const allowed = Math.max(2, Math.floor(epithets.join('').length / 5))
+  return spellingDistance(typed, label) <= allowed
+}
+
+/** Names starting with what was typed; if none, the same name spelt differently, then the closest spelling. */
 export async function suggestNames(query: string, fetcher: Fetcher = defaultFetcher): Promise<NameSuggestion[]> {
   const q = query.trim().replace(/\s+/g, ' ')
   if (q.length < 3) return []
@@ -64,8 +147,31 @@ export async function suggestNames(query: string, fetcher: Fetcher = defaultFetc
     ((await fetcher(`${COL}/nameusage/suggest?${new URLSearchParams({ q: term, limit: '12' })}`)) as ColSuggestion[])
       .filter((s) => s.nomCode === 'botanical' && RANKS.has(s.rank))
       .map(toSuggestion)
+
+  /** The catalogue's names that start like it (genus and first letters of the epithet), spelt close to it */
+  const respelt = async (name: string) => {
+    const words = nameWords(name)
+    if (words.length < 2 || words[1].length < 4) return []
+    const near = await col(`${words[0]} ${words[1].slice(0, 3)}`)
+    return near
+      .filter((s) => closeEnough(name, s.label))
+      .sort((a, b) => spellingDistance(name, a.label) - spellingDistance(name, b.label))
+  }
+
+  const lookUp = async (name: string) => {
+    for (const variant of typedNameVariants(name)) {
+      const found = await col(variant)
+      if (found.length > 0) return found
+    }
+    for (const variant of typedNameVariants(name).slice(1).concat(name)) {
+      const found = await respelt(variant)
+      if (found.length > 0) return found
+    }
+    return []
+  }
+
   try {
-    const direct = await col(q)
+    const direct = await lookUp(q)
     if (direct.length > 0) return direct.slice(0, 10)
     // Typo in a botanical name (two words or more): let GBIF find the nearest name,
     // then look that up. Single words are left alone: they're usually common names.
@@ -74,7 +180,7 @@ export async function suggestNames(query: string, fetcher: Fetcher = defaultFetc
       `${GBIF}/species/match?${new URLSearchParams({ name: q, kingdom: 'Plantae' })}`,
     )) as { canonicalName?: string; matchType?: string; confidence?: number }
     if (!match.canonicalName || match.matchType === 'NONE' || (match.confidence ?? 0) < 90) return []
-    return (await col(match.canonicalName)).slice(0, 10)
+    return (await lookUp(match.canonicalName)).slice(0, 10)
   } catch (err) {
     console.error('[suggestNames]', q, err)
     return []

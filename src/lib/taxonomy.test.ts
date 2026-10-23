@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { ipniIdFromPowoUrl, nameKey, resolveTaxon, suggestNames } from './taxonomy'
+import { ipniIdFromPowoUrl, nameKey, orthoKey, resolveTaxon, spellingDistance, suggestNames, typedNameVariants } from './taxonomy'
 
 function fakeFetcher(routes: [string, unknown][]) {
   return vi.fn(async (url: string) => {
@@ -100,5 +100,71 @@ describe('nameKey and ipniIdFromPowoUrl', () => {
     expect(ipniIdFromPowoUrl('https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:529214-1')).toBe('529214-1')
     expect(ipniIdFromPowoUrl('https://powo.science.kew.org/taxon/781412-1')).toBe('781412-1')
     expect(ipniIdFromPowoUrl(null)).toBeNull()
+  })
+})
+
+describe('typed names', () => {
+  it('leaves out notes in brackets and cultivar names', () => {
+    expect(typedNameVariants('Echinopsis (Red)')).toEqual(['Echinopsis (Red)', 'Echinopsis'])
+    expect(typedNameVariants("Acer negundo 'Flamingo'")).toContain('Acer negundo')
+  })
+
+  it('reads a third word as a subspecies or variety when no rank is written', () => {
+    expect(typedNameVariants('Trichocereus chiloensis panhoplites')).toEqual([
+      'Trichocereus chiloensis panhoplites',
+      'Trichocereus chiloensis subsp. panhoplites',
+      'Trichocereus chiloensis var. panhoplites',
+    ])
+    expect(typedNameVariants('Aloe arborescens var. lutea')).toEqual(['Aloe arborescens var. lutea'])
+  })
+
+  it('treats spelling variants of an epithet as the same', () => {
+    expect(orthoKey('leninghausii')).toBe(orthoKey('lenninghausii'))
+    expect(orthoKey('millii')).toBe(orthoKey('milii'))
+    expect(orthoKey('aestivalis')).toBe(orthoKey('estivalis'))
+  })
+
+  it('measures spelling distance word by word, ignoring authority and rank', () => {
+    expect(spellingDistance('Parodia leninghausii', 'Parodia lenninghausii (F.Haage) F.H.Brandt ex Eggli & Hofacker')).toBe(0)
+    expect(spellingDistance('Trichocereus chiloensis panhoplites', 'Trichocereus chiloensis subsp. panhoplites (K.Schum.) Albesiano')).toBe(0)
+    expect(spellingDistance('Trichocereus chilensis panhoplites', 'Trichocereus chiloensis subsp. panhoplites (K.Schum.) Albesiano')).toBe(1)
+    expect(spellingDistance('Parodia leninghausii', 'Echinopsis leninghausii')).toBe(Infinity)
+  })
+})
+
+describe('suggestNames with spelling variants', () => {
+  const lenninghausii = {
+    match: 'Parodia lenninghausii (F.Haage) F.H.Brandt ex Eggli & Hofacker',
+    context: 'Cactaceae',
+    usageId: 'PL1',
+    rank: 'species',
+    status: 'accepted',
+    nomCode: 'botanical',
+  }
+  const leucantha = { ...lenninghausii, match: 'Parodia leucantha (Salm-Dyck) Kiesling', usageId: 'PL2' }
+
+  it('finds the catalogue spelling of a name spelt another way', async () => {
+    const fetcher = vi.fn(async (url: string) =>
+      decodeURIComponent(url).replace(/\+/g, ' ').includes('q=Parodia len&') ? [lenninghausii, leucantha] : [],
+    )
+    const out = await suggestNames('Parodia leninghausii', fetcher)
+    expect(out.map((s) => s.usageId)).toEqual(['PL1'])
+  })
+
+  it('looks a name up as a subspecies when no rank was written', async () => {
+    const sub = {
+      match: 'Trichocereus chiloensis subsp. panhoplites (K.Schum.) Albesiano',
+      acceptedName: 'Leucostele chiloensis subsp. panhoplites (K.Schum.) Schlumpb.',
+      context: 'Cactaceae',
+      usageId: 'TC1',
+      rank: 'subspecies',
+      status: 'synonym',
+      nomCode: 'botanical',
+    }
+    const fetcher = vi.fn(async (url: string) =>
+      decodeURIComponent(url).replace(/\+/g, ' ').includes('subsp. panhoplites') ? [sub] : [],
+    )
+    const out = await suggestNames('Trichocereus chiloensis panhoplites', fetcher)
+    expect(out.map((s) => s.usageId)).toEqual(['TC1'])
   })
 })
