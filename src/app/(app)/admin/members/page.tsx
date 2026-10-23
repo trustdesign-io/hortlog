@@ -4,7 +4,7 @@ import { requireAuth, isAdmin } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { DEFAULT_ROLE_LABELS, roleLabel } from '@/lib/roles'
 import type { Role } from '@/lib/roles'
-import { Search, Trash2 } from 'lucide-react'
+import { Search, Trash2, UserCog } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { buttonVariants } from '@/components/ui/button-variants'
@@ -12,6 +12,8 @@ import { MemberInviteDialog } from './_components/member-invite-dialog'
 import { MemberDeleteDialog } from './_components/member-delete-dialog'
 import { UnavailableAction } from '@/components/ui/unavailable-action'
 import { MemberEditDialog } from './_components/member-edit-dialog'
+import { listAllPendingInvites } from '@/lib/pending-invites'
+import { cn } from '@/lib/utils'
 
 const PAGE_SIZE = 50
 
@@ -67,13 +69,27 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
 
   const totalPages = Math.ceil(total / PAGE_SIZE)
 
+  // Invited but not joined yet: not users of the app until they accept. First page only.
+  const orgNames = new Map(orgs.map((o) => [o.slug, o.name]))
+  const needle = search.toLowerCase()
+  const invited =
+    page === 1
+      ? (
+          await listAllPendingInvites().catch((err) => {
+            console.error('[AdminMembersPage] pending invites:', err)
+            return []
+          })
+        ).filter((i) => !needle || i.email.toLowerCase().includes(needle) || (i.name ?? '').toLowerCase().includes(needle))
+      : []
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between gap-4">
         <div>
           <h1 className="font-heading text-2xl font-medium">All users</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            {total} user{total === 1 ? '' : 's'} on the platform.
+            {total} user{total === 1 ? '' : 's'} on the platform
+            {invited.length > 0 && ` · ${invited.length} invited, not joined yet`}.
           </p>
         </div>
         <MemberInviteDialog orgs={orgs} />
@@ -94,7 +110,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
         />
       </form>
 
-      {users.length === 0 ? (
+      {users.length === 0 && invited.length === 0 ? (
         <p className="py-12 text-center text-sm text-muted-foreground">
           {search ? `No users match "${search}".` : 'No users yet.'}
         </p>
@@ -110,6 +126,18 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
               </tr>
             </thead>
             <tbody className="divide-y">
+              {invited.map((i) => (
+                <InvitedRow
+                  key={`invite-${i.userId}`}
+                  name={i.name}
+                  email={i.email}
+                  role={i.role}
+                  orgSlug={i.orgSlug}
+                  orgName={i.orgSlug ? (orgNames.get(i.orgSlug) ?? i.orgSlug) : null}
+                  invitedAt={i.invitedAt}
+                  expired={i.expired}
+                />
+              ))}
               {users.map((u) => (
                 <tr key={u.id} className="hover:bg-muted/30 transition-colors">
                   <td className="px-4 py-3">
@@ -226,5 +254,64 @@ function OrgPills({ memberships }: OrgPillsProps) {
                       </div>
                     )}
     </>
+  )
+}
+
+interface InvitedRowProps {
+  name: string | null
+  email: string
+  role: Role
+  orgSlug: string | null
+  orgName: string | null
+  invitedAt: string
+  expired: boolean
+}
+
+/** Someone invited who hasn't accepted yet: greyed out, with their invite's garden and date. */
+function InvitedRow({ name, email, role, orgSlug, orgName, invitedAt, expired }: InvitedRowProps) {
+  const reason = orgSlug
+    ? `${name ?? email} hasn’t joined yet. Resend or cancel the invite on ${orgName}’s Members page.`
+    : `${name ?? email} hasn’t joined yet.`
+  const org =
+    orgSlug && orgName ? (
+      <Link
+        href={`/${orgSlug}/team/members`}
+        className="inline-flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs hover:bg-muted transition-colors"
+      >
+        {orgName}
+        <span className="text-muted-foreground">({roleLabel(role, DEFAULT_ROLE_LABELS)})</span>
+      </Link>
+    ) : (
+      <span className="text-muted-foreground text-xs">Platform only</span>
+    )
+  const icon = buttonVariants({ variant: 'ghost', size: 'icon' })
+
+  return (
+    <tr className="bg-muted/20">
+      <td className="px-4 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="font-medium text-muted-foreground">{name ?? email.split('@')[0]}</p>
+          <Badge variant="outline" className={cn('border-dashed text-xs text-muted-foreground', expired && 'border-destructive/50')}>
+            {expired ? 'Invited, link expired' : 'Invited, not joined yet'}
+          </Badge>
+        </div>
+        <p className="break-all text-xs text-muted-foreground">{email}</p>
+        <div className="mt-2 sm:hidden">{org}</div>
+      </td>
+      <td className="hidden px-4 py-3 sm:table-cell">{org}</td>
+      <td className="hidden px-4 py-3 text-right text-muted-foreground text-xs sm:table-cell">
+        Invited {new Date(invitedAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+      </td>
+      <td className="px-4 py-3 text-right">
+        <div className="flex items-center justify-end gap-1">
+          <UnavailableAction reason={reason} label={`Edit ${name ?? email}`} className={icon}>
+            <UserCog className="h-4 w-4" aria-hidden="true" />
+          </UnavailableAction>
+          <UnavailableAction reason={reason} label={`Delete ${name ?? email}`} className={cn(icon, 'text-destructive')}>
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </UnavailableAction>
+        </div>
+      </td>
+    </tr>
   )
 }
