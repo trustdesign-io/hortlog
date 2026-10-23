@@ -47,7 +47,7 @@ export async function fetchOpenData(opts: {
 }): Promise<OpenDataResult> {
   const [conservation, powo, gbifKey, wikipedia, wcvp] = await Promise.allSettled([
     fetchWikidataConservationStatus(opts.scientificName),
-    opts.ipniId ? fetchPowoData(opts.ipniId) : Promise.resolve(null),
+    fetchPowoData(opts.scientificName, opts.authority),
     fetchGbifTaxonKey(opts.scientificName),
     fetchWikipediaExcerpt(opts.scientificName),
     checkWcvp(opts.scientificName, opts.authority),
