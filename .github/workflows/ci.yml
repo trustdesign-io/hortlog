@@ -5,6 +5,8 @@ on:
     branches: [main, staging]
   pull_request:
     branches: [main, staging]
+  # Run by the auto-rebase workflow after it updates a PR: its own pushes don't start CI
+  workflow_dispatch:
 
 jobs:
   ci:

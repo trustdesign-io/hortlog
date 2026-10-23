@@ -5,6 +5,7 @@ on:
     branches: [main]
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -62,6 +63,9 @@ jobs:
                 continue
               }
               echo "PR #${pr_number} rebased successfully."
+              # A push made with this workflow's token doesn't start CI (and the PR's own run waits
+              # for approval), so start CI on the rebased branch directly
+              gh workflow run ci.yml --ref "$branch" || echo "Couldn't start CI for $branch."
             else
               echo "Rebase conflicts on PR #${pr_number}, skipping."
               git rebase --abort
