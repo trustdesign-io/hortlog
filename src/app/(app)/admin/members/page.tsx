@@ -151,9 +151,6 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                         {u.isAdmin && (
                           <Badge variant="secondary" className="text-xs">Admin</Badge>
                         )}
-                        {u.id === user.id && (
-                          <Badge variant="outline" className="text-xs">You</Badge>
-                        )}
                       </div>
                       <p className="break-all text-xs text-muted-foreground">{u.email}</p>
                       <div className="mt-2 sm:hidden">
