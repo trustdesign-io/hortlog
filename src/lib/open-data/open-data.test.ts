@@ -86,3 +86,30 @@ describe('wgsrpdName', () => {
     expect(wgsrpdName('XYZ')).toBe('XYZ')
   })
 })
+
+describe('readWcvpInfo', () => {
+  it('reads native and introduced ranges, life form and climate', async () => {
+    const { readWcvpInfo } = await import('./powo')
+    const out = readWcvpInfo({
+      distributions: [
+        { area: { name: 'China Southeast' }, establishmentMeans: null },
+        { area: { name: 'Austria' }, establishmentMeans: 'introduced' },
+        { area: { name: 'China North-Central' }, establishmentMeans: 'native' },
+        { area: { name: 'China Southeast' }, establishmentMeans: null },
+      ],
+      verbatim: { terms: { 'dwc:dynamicProperties': '{"lifeform":"tree","climate":"temperate"}' } },
+    })
+    expect(out).toEqual({
+      nativeRegions: ['China North-Central', 'China Southeast'],
+      introducedRegions: ['Austria'],
+      lifeForm: 'Tree',
+      climate: 'Temperate',
+    })
+  })
+
+  it('is null when there is nothing to show', async () => {
+    const { readWcvpInfo } = await import('./powo')
+    expect(readWcvpInfo({ distributions: [], verbatim: { terms: { 'dwc:dynamicProperties': 'not json' } } })).toBeNull()
+    expect(readWcvpInfo(null)).toBeNull()
+  })
+})
