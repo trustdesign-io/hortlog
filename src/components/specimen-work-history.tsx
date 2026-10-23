@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 import { RecordWorkForm } from '@/components/record-work-form'
 import { NotMeButton } from '@/components/not-me-button'
+import { EntryCoworkers } from '@/components/entry-coworkers'
 
 interface SpecimenWorkHistoryProps {
   orgSlug: string
@@ -31,7 +32,7 @@ export async function SpecimenWorkHistory({ orgSlug, specimenId, userId }: Speci
             actionNote: true,
             location: true,
             text: true,
-            coworkers: { select: { user: { select: { name: true, email: true } } } },
+            coworkers: { select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } } },
           },
         },
       },
@@ -55,6 +56,8 @@ export async function SpecimenWorkHistory({ orgSlug, specimenId, userId }: Speci
     }),
   ])
 
+  const members = memberships.map((m) => m.user)
+
   return (
     <section className="border-t pt-6 mt-6" aria-label="Your work record">
       <h2 className="mb-4 text-sm font-medium uppercase tracking-wide text-muted-foreground">
@@ -73,9 +76,12 @@ export async function SpecimenWorkHistory({ orgSlug, specimenId, userId }: Speci
                   {WORK_ACTION_LABELS[entry.action]}
                   {entry.actionNote && <span className="font-normal text-muted-foreground"> — {entry.actionNote}</span>}
                 </p>
-                {entry.coworkers.length > 0 && (
-                  <p className="text-xs text-muted-foreground">With {entry.coworkers.map((c) => personName(c.user)).join(', ')}</p>
-                )}
+                <EntryCoworkers
+                  orgSlug={orgSlug}
+                  entryId={entry.id}
+                  members={members}
+                  initial={entry.coworkers.map((c) => c.user)}
+                />
                 {entry.location && <p className="text-xs text-muted-foreground">{entry.location}</p>}
                 {entry.text && <p className="mt-1 text-sm leading-relaxed text-foreground/80">{entry.text}</p>}
               </div>
@@ -107,7 +113,7 @@ export async function SpecimenWorkHistory({ orgSlug, specimenId, userId }: Speci
         </div>
       )}
 
-      <RecordWorkForm orgSlug={orgSlug} specimenId={specimenId} members={memberships.map((m) => m.user)} />
+      <RecordWorkForm orgSlug={orgSlug} specimenId={specimenId} members={members} />
     </section>
   )
 }

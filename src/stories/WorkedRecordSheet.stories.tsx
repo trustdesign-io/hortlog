@@ -50,6 +50,7 @@ const record: WorkedRecordData = {
       action: 'OTHER',
       actionNote: null,
       location: 'Terrarium at home',
+      coworkers: [],
       text: 'At home in the terrarium.',
     },
   ],

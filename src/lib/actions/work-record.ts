@@ -87,6 +87,60 @@ export async function removeMeFromEntry(entryId: string): Promise<ActionResult> 
   return { success: true }
 }
 
+/**
+ * Change who's tagged as having worked on an entry, after it's saved: the
+ * person who logged it only, members of the garden only. Kept in the edit
+ * history. Doesn't clear a sign-off, as the work itself hasn't changed.
+ */
+export async function setEntryCoworkers(orgSlug: string, entryId: string, coworkerIds: string[]): Promise<ActionResult> {
+  const { user } = await requireOrgAccess(orgSlug, 'can_record_work')
+
+  const entry = await prisma.workLogEntry.findFirst({
+    where: { id: entryId, workRecord: { userId: user.id, organisation: { slug: orgSlug } } },
+    select: {
+      id: true,
+      workRecord: { select: { specimen: { select: { slug: true } } } },
+      coworkers: { select: { userId: true, user: { select: { name: true, email: true } } } },
+    },
+  })
+  if (!entry) return { success: false, error: 'Only the person who logged this work can change who it was with.' }
+
+  const ids = await validCoworkers(orgSlug, user.id, Array.isArray(coworkerIds) ? coworkerIds : [])
+  const before = entry.coworkers.map((c) => c.userId)
+  if (before.length === ids.length && before.every((id) => ids.includes(id))) return { success: true }
+
+  const named = async (userIds: string[]) => {
+    if (userIds.length === 0) return null
+    const users = await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true } })
+    return userIds
+      .map((id) => users.find((u) => u.id === id))
+      .map((u) => u?.name?.trim() || u?.email || 'a member')
+      .join(', ')
+  }
+
+  try {
+    const [oldValue, newValue] = await Promise.all([named(before), named(ids)])
+    await prisma.$transaction([
+      prisma.workLogEntryCoworker.deleteMany({ where: { entryId, userId: { notIn: ids } } }),
+      prisma.workLogEntryCoworker.createMany({
+        data: ids.filter((id) => !before.includes(id)).map((userId) => ({ entryId, userId })),
+        skipDuplicates: true,
+      }),
+      prisma.workLogEntryEdit.create({
+        data: { field: 'coworkers', oldValue, newValue, editedById: user.id, workLogEntryId: entryId },
+      }),
+    ])
+  } catch (err) {
+    console.error('[setEntryCoworkers] error:', err)
+    return { success: false, error: 'That couldn’t be saved. Try again.' }
+  }
+
+  revalidatePath('/records', 'layout')
+  revalidatePath(`/${orgSlug}/specimens/${entry.workRecord.specimen.slug}`)
+  revalidatePath('/[org]/[collection]/[scene]/[specimen]', 'page')
+  return { success: true }
+}
+
 // ─── Update a work record field (with edit history) ──────────────────────────
 
 export async function updateWorkRecordField(

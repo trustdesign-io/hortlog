@@ -41,10 +41,22 @@ export default async function RecordPage({ params }: RecordPageProps) {
     signed.map((e) => [e.id, { at: e.signedOffAt as Date, by: e.signedOffBy?.name ?? 'their supervisor', comment: e.signOffComment }]),
   )
 
+  // The garden's other members, to change who each entry was with
+  const memberships = await prisma.membership.findMany({
+    where: { organisation: { slug: record.organisation.slug }, userId: { not: user.id } },
+    select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    orderBy: { user: { name: 'asc' } },
+  })
+
   return (
     <div className="print:max-w-full">
       <BackToRecord />
-      <WorkedRecordSheet record={record} likes={likes} signOffs={signOffs} />
+      <WorkedRecordSheet
+        record={record}
+        likes={likes}
+        signOffs={signOffs}
+        coworkerChoices={memberships.map((m) => m.user)}
+      />
 
       <div className="mb-6 print:hidden">
         <PrintButton className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'no-underline')} />

@@ -53,6 +53,10 @@ export const WORKED_RECORD_SELECT = {
       actionNote: true,
       location: true,
       text: true,
+      coworkers: {
+        orderBy: { createdAt: 'asc' as const },
+        select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+      },
     },
   },
 } as const
