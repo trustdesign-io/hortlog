@@ -45,7 +45,7 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
     select: { id: true, name: true, parentId: true },
   })
   const identified = await prisma.specimen.count({
-    where: { organisation: { slug: orgSlug }, species: { scientificName: { not: 'Unidentified' } } },
+    where: { organisation: { slug: orgSlug }, removedAt: null, species: { scientificName: { not: 'Unidentified' } } },
   })
 
   return (

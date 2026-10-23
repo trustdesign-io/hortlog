@@ -297,3 +297,64 @@ export async function identifySpecimen(orgSlug: string, specimenId: string, spec
   revalidatePath('/[org]/scene/[scene]', 'page')
   return { success: true }
 }
+
+/** Longest note on why a plant was removed */
+const MAX_REMOVED_NOTE = 200
+
+/**
+ * The plant is no longer in the garden (died, taken out): taken off its scene
+ * and the live lists, but kept, with everyone's work records on it.
+ */
+export async function markSpecimenRemoved(
+  orgSlug: string,
+  specimenId: string,
+  date: string,
+  note: string,
+): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  const removedAt = new Date(date)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || isNaN(removedAt.getTime())) return { success: false, error: 'Please choose a date.' }
+  if (removedAt.getTime() > Date.now() + 24 * 3600 * 1000) return { success: false, error: 'That date is in the future.' }
+
+  try {
+    const specimen = await prisma.specimen.update({
+      where: { id: specimenId, organisation: { slug: orgSlug } },
+      data: {
+        removedAt,
+        removedNote: note.trim().slice(0, MAX_REMOVED_NOTE) || null,
+        sceneId: null,
+        gridCell: null,
+        extraCells: [],
+        photoX: null,
+        photoY: null,
+      },
+      select: { slug: true },
+    })
+    revalidatePath(`/${orgSlug}/specimens`)
+    revalidatePath(`/${orgSlug}/specimens/${specimen.slug}`)
+    revalidatePath(`/${orgSlug}`, 'layout')
+  } catch (err) {
+    console.error('[markSpecimenRemoved] error:', err)
+    return { success: false, error: 'That couldn’t be saved. Try again.' }
+  }
+  return { success: true }
+}
+
+/** Back in the garden: on the live lists again (place it on a scene again if needed). */
+export async function restoreSpecimen(orgSlug: string, specimenId: string): Promise<ActionResult> {
+  await requireOrgAccess(orgSlug, 'can_edit_specimen')
+  try {
+    const specimen = await prisma.specimen.update({
+      where: { id: specimenId, organisation: { slug: orgSlug } },
+      data: { removedAt: null, removedNote: null },
+      select: { slug: true },
+    })
+    revalidatePath(`/${orgSlug}/specimens`)
+    revalidatePath(`/${orgSlug}/specimens/${specimen.slug}`)
+    revalidatePath(`/${orgSlug}`, 'layout')
+  } catch (err) {
+    console.error('[restoreSpecimen] error:', err)
+    return { success: false, error: 'That couldn’t be saved. Try again.' }
+  }
+  return { success: true }
+}

@@ -3,16 +3,18 @@ import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { ActionLink } from '@/components/ui/action-link'
+import Link from 'next/link'
 import { SpecimensList } from './specimens-list'
 
 interface SpecimensPageProps {
   params: Promise<{ org: string }>
-  searchParams: Promise<{ q?: string; collectionId?: string; placed?: string }>
+  searchParams: Promise<{ q?: string; collectionId?: string; placed?: string; removed?: string }>
 }
 
 export default async function SpecimensPage({ params, searchParams }: SpecimensPageProps) {
   const { org: orgSlug } = await params
-  const { q, collectionId, placed } = await searchParams
+  const { q, collectionId, placed, removed } = await searchParams
+  const showRemoved = removed === '1'
   const { user } = await requireOrgAccess(orgSlug, 'can_view_org')
   const canManage = canManageOrg(user, orgSlug)
 
@@ -29,6 +31,8 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
     prisma.specimen.findMany({
       where: {
         organisationId: org.id,
+        // Plants no longer in the garden have their own list
+        removedAt: showRemoved ? { not: null } : null,
         ...(query
           ? {
               OR: [
@@ -61,14 +65,17 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
       orderBy: { name: 'asc' },
     }),
   ])
+  const removedCount = await prisma.specimen.count({ where: { organisationId: org.id, removedAt: { not: null } } })
 
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="font-heading text-2xl font-medium">Specimens</h1>
+          <h1 className="font-heading text-2xl font-medium">{showRemoved ? 'Removed plants' : 'Specimens'}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            All plant and specimen records for this organisation.
+            {showRemoved
+              ? 'No longer in the garden. Their records stay; open one to put it back.'
+              : 'All plant and specimen records for this organisation.'}
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap justify-end gap-2">
@@ -97,6 +104,17 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
         initialCollectionId={collectionId ?? ''}
         initialPlaced={placedOnly}
       />
+      {showRemoved ? (
+        <Link href={`/${orgSlug}/specimens`} className="inline-block text-sm text-primary underline underline-offset-2">
+          Back to the plants in the garden
+        </Link>
+      ) : (
+        removedCount > 0 && (
+          <Link href={`/${orgSlug}/specimens?removed=1`} className="inline-block text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground">
+            {removedCount === 1 ? '1 plant no longer in the garden' : `${removedCount} plants no longer in the garden`}
+          </Link>
+        )
+      )}
     </div>
   )
 }

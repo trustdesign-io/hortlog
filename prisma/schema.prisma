@@ -334,6 +334,10 @@ model Specimen {
   photoY          Float?
   latitude        Float?
   longitude       Float?
+  /// No longer in the garden (died, taken out): kept so its records and history stay, but off live lists
+  removedAt       DateTime?
+  /// Why, e.g. "Honey fungus"
+  removedNote     String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
