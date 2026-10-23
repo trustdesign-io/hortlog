@@ -7,6 +7,7 @@ import { buttonVariants } from '@/components/ui/button-variants'
 import { cn } from '@/lib/utils'
 import { SpecimenEditForm } from './specimen-edit-form'
 import { SpecimenImageCard } from './specimen-image-card'
+import { SpecimenRemovedCard } from './specimen-removed-card'
 
 interface EditSpecimenPageProps {
   params: Promise<{ org: string; specimen: string }>
@@ -40,6 +41,8 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
         scene: { select: { id: true, name: true, locationId: true } },
         locationId: true,
         collections: { select: { collectionId: true } },
+        removedAt: true,
+        removedNote: true,
       },
     }),
     prisma.collection.findMany({
@@ -96,6 +99,12 @@ export default async function EditSpecimenPage({ params }: EditSpecimenPageProps
         }}
         collections={collections}
         locations={locations}
+      />
+      <SpecimenRemovedCard
+        orgSlug={orgSlug}
+        specimenId={specimen.id}
+        removedAt={specimen.removedAt?.toISOString() ?? null}
+        removedNote={specimen.removedNote}
       />
     </div>
   )

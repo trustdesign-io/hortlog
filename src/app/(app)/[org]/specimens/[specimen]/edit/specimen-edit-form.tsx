@@ -102,7 +102,8 @@ function DeleteSpecimenDialog({
         <DialogHeader>
           <DialogTitle>Delete &ldquo;{specimenName}&rdquo;?</DialogTitle>
           <DialogDescription>
-            This will permanently delete this specimen and all its data. This cannot be undone.
+            This will permanently delete this specimen and all its data, including everyone&rsquo;s work records
+            on it. This cannot be undone. If it died or was taken out, mark it removed instead (below).
           </DialogDescription>
         </DialogHeader>
         {isPlaced && (

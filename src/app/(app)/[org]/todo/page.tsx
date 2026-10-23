@@ -51,7 +51,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
       : Promise.resolve([]),
     canManage
       ? prisma.specimen.findMany({
-          where: { organisationId: org.id },
+          where: { organisationId: org.id, removedAt: null },
           select: { id: true, accessionNumber: true, species: { select: { commonName: true, scientificName: true } } },
           orderBy: { species: { commonName: 'asc' } },
         })

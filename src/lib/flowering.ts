@@ -35,6 +35,7 @@ export async function floweringNow(orgSlug: string, inId: string | undefined | n
   const specimens = await prisma.specimen.findMany({
     where: {
       organisationId: org.id,
+      removedAt: null,
       stage: { in: ['FLOWER', 'FRUIT'] },
       stageSeenAt: { gte: freshSince() },
       // Plants in scenes still being set up stay out of sight

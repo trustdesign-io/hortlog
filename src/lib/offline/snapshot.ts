@@ -18,7 +18,7 @@ export async function buildOrgSnapshot(
   const doneSince = new Date(Date.now() - DONE_TASK_DAYS * 86_400_000)
   const [specimens, scenes, collections, tasks, records, speciesList] = await Promise.all([
     prisma.specimen.findMany({
-      where: { organisationId: org.id },
+      where: { organisationId: org.id, removedAt: null },
       orderBy: { species: { commonName: 'asc' } },
       select: {
         id: true,

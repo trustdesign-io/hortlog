@@ -26,7 +26,8 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   const [specimens, locations] = await Promise.all([
     prisma.specimen.findMany({
-      where: { organisationId: org.id },
+      // Plants no longer in the garden aren't in the living collection
+      where: { organisationId: org.id, removedAt: null },
       orderBy: { slug: 'asc' },
       select: {
         slug: true,

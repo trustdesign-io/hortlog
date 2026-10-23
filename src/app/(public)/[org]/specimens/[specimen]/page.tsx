@@ -35,6 +35,8 @@ const resolveData = cache(async function resolveData(orgSlug: string, specimenSl
       imageUrl: true,
       stage: true,
       stageSeenAt: true,
+      removedAt: true,
+      removedNote: true,
       species: {
         select: {
           commonName: true,
@@ -129,6 +131,13 @@ export default async function PublicSpecimenPage({ params }: PublicSpecimenPageP
           ),
         }}
       />
+      {specimen.removedAt && (
+        <p role="status" className="mx-auto mb-4 max-w-2xl rounded-lg border border-dashed px-4 py-3 text-sm text-muted-foreground">
+          No longer in the garden: removed{' '}
+          {specimen.removedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}
+          {specimen.removedNote ? ` (${specimen.removedNote})` : ''}.
+        </p>
+      )}
       <SpecimenDetail
         species={specimen.species}
         specimen={{
