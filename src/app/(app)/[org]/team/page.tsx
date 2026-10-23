@@ -89,7 +89,6 @@ export default async function TeamPage({ params }: TeamPageProps) {
               <TeamTier
                 label={tier.label}
                 people={tier.people}
-                viewerId={viewer.id}
                 lead={tier.lead}
                 labels={org}
               />
@@ -122,14 +121,12 @@ interface TierPerson {
 function TeamTier({
   label,
   people,
-  viewerId,
   lead,
   labels,
 }: {
   /** Empty when there is only one level: the page heading says enough. */
   label: string
   people: TierPerson[]
-  viewerId: string
   lead: boolean
   labels: RoleLabels
 }) {
@@ -160,9 +157,8 @@ function TeamTier({
             </p>
             {/* Title on every card below the directors, so managers are visible without being ranked */}
             {!lead && <p className="-mt-1.5 text-xs text-muted-foreground">{roleLabel(p.role, labels)}</p>}
-            {p.user.id === viewerId && <p className="-mt-1 text-xs text-muted-foreground">You</p>}
             {p.pending && (
-              <p className="-mt-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground">Invited, not joined yet</p>
+              <p className="-mt-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground">Invited</p>
             )}
           </li>
         ))}
