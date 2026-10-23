@@ -6,6 +6,7 @@ import { isLeader, LEADER_ROLES, parseRole, type Role } from '@/lib/roles'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isPendingInviteFor } from '@/lib/pending-invites'
+import { reinvite } from '@/lib/reinvite'
 import type { ActionResult } from '@/lib/shared/types'
 
 const APP_URL = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL?.replace('.supabase.co', '.vercel.app') ?? 'http://localhost:3000'
@@ -171,26 +172,15 @@ export async function resendInvite(orgSlug: string, userId: string): Promise<Act
   await requireOrgAccess(orgSlug, 'can_manage_members')
   const found = await pendingInvitee(orgSlug, userId)
   if (!found) return { success: false, error: 'This invite has already been accepted or cancelled.' }
-  const { supabase, user } = found
-  const email = user.email
-  if (!email) return { success: false, error: 'This invite has no email address.' }
-
-  const data: Record<string, string> = {
-    pending_org_slug: orgSlug,
-    pending_role: parseRole(user.user_metadata?.pending_role),
-  }
-  if (typeof user.user_metadata?.full_name === 'string') data.full_name = user.user_metadata.full_name
-
-  const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id)
-  if (deleteError) {
-    console.error('[resendInvite] delete error:', deleteError)
-    return { success: false, error: 'The invite couldn’t be resent. Try again.' }
-  }
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, { redirectTo: `${APP_URL}/auth/callback`, data })
-  if (error) {
-    console.error('[resendInvite] invite error:', error)
+  const r = await reinvite(found.supabase, found.user)
+  if (!r.ok) {
     revalidatePath(`/${orgSlug}/team/members`)
-    return { success: false, error: `The old invite was removed but a new one couldn’t be sent. Invite ${email} again.` }
+    return {
+      success: false,
+      error: r.removed
+        ? `The old invite was removed but a new one couldn’t be sent. Invite ${found.user.email} again.`
+        : 'The invite couldn’t be resent. Try again.',
+    }
   }
   revalidatePath(`/${orgSlug}/team/members`)
   return { success: true }
