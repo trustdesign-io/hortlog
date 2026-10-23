@@ -291,3 +291,95 @@ export async function deleteLogEntry(
   revalidatePath(`/${orgSlug}`)
   return { success: true }
 }
+
+// ─── Add work you were tagged on to your own record ──────────────────────────
+
+/** The parts of the logger's record copied into a new record, so nobody types it twice */
+const COPIED_RECORD_FIELDS = [
+  'scientificName', 'nameHtml', 'family', 'authority', 'commonNames', 'nativeRange', 'habit',
+  'diagnostic', 'nearMisses', 'powoUrl', 'site', 'location', 'viceCounty', 'gridRef',
+  'determination', 'labelText', 'provenance', 'workDone', 'observed', 'note', 'sources', 'openQuestions',
+] as const
+
+/**
+ * Someone tagged you on their work: add it to your own record, numbered like
+ * your other records. A new record copies theirs (names, det., provenance,
+ * notes…) for you to edit; the entry is copied with them tagged on it.
+ */
+export async function addTaggedWorkToMyRecord(entryId: string): Promise<ActionResult & { recordId?: string }> {
+  const user = await getCurrentUser()
+  if (!user) return { success: false, error: 'Please sign in again.' }
+
+  const tag = await prisma.workLogEntryCoworker.findUnique({
+    where: { entryId_userId: { entryId, userId: user.id } },
+    select: {
+      acceptedEntry: { select: { workRecordId: true } },
+      entry: {
+        select: {
+          id: true,
+          date: true,
+          action: true,
+          actionNote: true,
+          location: true,
+          text: true,
+          workRecord: {
+            select: {
+              userId: true,
+              organisation: { select: { slug: true } },
+              specimen: { select: WORK_RECORD_SPECIMEN_SELECT },
+              ...Object.fromEntries(COPIED_RECORD_FIELDS.map((f) => [f, true])),
+            },
+          },
+        },
+      },
+    },
+  })
+  if (!tag) return { success: false, error: 'You’re not tagged on that work.' }
+  if (tag.acceptedEntry) return { success: true, recordId: tag.acceptedEntry.workRecordId }
+
+  const { entry } = tag
+  const source = entry.workRecord as typeof entry.workRecord & Record<(typeof COPIED_RECORD_FIELDS)[number], unknown>
+  const orgSlug = source.organisation.slug
+  await requireOrgAccess(orgSlug, 'can_record_work')
+
+  try {
+    const recordId = await prisma.$transaction(async (tx) => {
+      const existed = await tx.workRecord.findUnique({
+        where: { userId_specimenId: { userId: user.id, specimenId: source.specimen.id } },
+        select: { id: true },
+      })
+      const record = await ensureWorkRecord(tx, user.id, source.specimen, entry.date)
+      if (!existed) {
+        const copied = Object.fromEntries(
+          COPIED_RECORD_FIELDS.filter((f) => source[f] !== null && source[f] !== undefined).map((f) => [f, source[f]]),
+        )
+        await tx.workRecord.update({ where: { id: record.id }, data: copied })
+      }
+      const copy = await tx.workLogEntry.create({
+        data: {
+          date: entry.date,
+          action: entry.action,
+          actionNote: entry.actionNote,
+          location: entry.location,
+          text: entry.text,
+          workRecordId: record.id,
+          // The person who logged it, already holding the original
+          coworkers: { create: [{ userId: source.userId, acceptedEntryId: entry.id }] },
+        },
+        select: { id: true },
+      })
+      await tx.workLogEntryCoworker.update({
+        where: { entryId_userId: { entryId, userId: user.id } },
+        data: { acceptedEntryId: copy.id },
+      })
+      return record.id
+    }, { isolationLevel: 'Serializable' })
+
+    revalidatePath('/records', 'layout')
+    revalidatePath(`/${orgSlug}/specimens/${source.specimen.slug}`)
+    return { success: true, recordId }
+  } catch (err) {
+    console.error('[addTaggedWorkToMyRecord] error:', err)
+    return { success: false, error: 'That couldn’t be added. Try again.' }
+  }
+}

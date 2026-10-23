@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma'
 import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 import { RecordWorkForm } from '@/components/record-work-form'
 import { NotMeButton } from '@/components/not-me-button'
+import { AddToMyRecord } from '@/components/add-to-my-record'
 import { EntryCoworkers } from '@/components/entry-coworkers'
 
 interface SpecimenWorkHistoryProps {
@@ -46,6 +47,7 @@ export async function SpecimenWorkHistory({ orgSlug, specimenId, userId }: Speci
         date: true,
         action: true,
         actionNote: true,
+        coworkers: { where: { userId }, select: { acceptedEntry: { select: { workRecordId: true } } } },
         workRecord: { select: { user: { select: { name: true, email: true } } } },
       },
     }),
@@ -106,7 +108,10 @@ export async function SpecimenWorkHistory({ orgSlug, specimenId, userId }: Speci
                   </p>
                   <p className="text-xs text-muted-foreground">Logged by {personName(entry.workRecord.user)}</p>
                 </div>
-                <NotMeButton entryId={entry.id} />
+                <div className="flex shrink-0 flex-col items-end gap-1">
+                  <AddToMyRecord entryId={entry.id} recordId={entry.coworkers[0]?.acceptedEntry?.workRecordId ?? null} />
+                  <NotMeButton entryId={entry.id} />
+                </div>
               </li>
             ))}
           </ol>
