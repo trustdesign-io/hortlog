@@ -1,12 +1,13 @@
 import { notFound } from 'next/navigation'
 import { SceneHeader } from '@/app/(app)/[org]/scenes/[id]/scene-header'
-import { QRPanel } from '@/app/(app)/[org]/scenes/[id]/qr/qr-panel'
+import { DemoSceneEditor } from '../demo-scene-editor'
 import { DEMO_ORG, loadDemo } from '../demo-data'
 
 // Read live from the database on each visit, never built ahead
 export const dynamic = 'force-dynamic'
 
-export default async function DemoQrPage() {
+/** The demo's Layout tab: the bed photo with every plant marked, ready to tap. */
+export default async function DemoLayoutPage() {
   const demo = await loadDemo()
   if (!demo) return notFound()
   const { scene } = demo
@@ -21,17 +22,9 @@ export default async function DemoQrPage() {
         collectionName={scene.primaryCollection?.name ?? null}
         isActive={scene.active}
         publicPath={demo.publicPath}
-        active="qr"
+        active="layout"
       />
-      <QRPanel
-        demo
-        orgSlug={DEMO_ORG}
-        sceneId={scene.id}
-        sceneName={scene.name}
-        sceneSlug={scene.slug}
-        shortCode={scene.shortCode}
-        siteUrl={process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'}
-      />
+      <DemoSceneEditor snap={demo.snap} sceneId={scene.id} photoUrl={demo.photoUrl} />
     </div>
   )
 }

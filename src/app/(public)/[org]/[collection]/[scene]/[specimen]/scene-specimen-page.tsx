@@ -120,25 +120,39 @@ export async function sceneSpecimenMetadata({ orgSlug, collectionSlug, sceneSlug
   }
 }
 
-export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, specimenSlug }: SceneSpecimenArgs) {
+export async function SceneSpecimenPage({
+  orgSlug,
+  collectionSlug,
+  sceneSlug,
+  specimenSlug,
+  demo,
+}: SceneSpecimenArgs & {
+  /** The demo's visitor view: the garden isn't named, nothing is tracked or reported, no care log */
+  demo?: { gardenName: string; scenePath: string }
+}) {
   const data = await resolveData(orgSlug, collectionSlug, sceneSlug, specimenSlug)
   if (!data) return notFound()
 
   const { org, collection, scene, specimen } = data
-  const scenePath = publicScenePath(orgSlug, sceneSlug, collectionSlug)
+  const scenePath = demo?.scenePath ?? publicScenePath(orgSlug, sceneSlug, collectionSlug)
 
-  const breadcrumbs = [
-    { label: org.name, href: `/${orgSlug}` },
-    ...(collection ? [{ label: collection.name, href: `/${orgSlug}/${collection.slug}` }] : []),
-    { label: scene.name, href: scenePath },
-    { label: specimen.species.commonName, href: `${scenePath}/${specimenSlug}` },
-  ]
+  const breadcrumbs = demo
+    ? [
+        { label: demo.gardenName, href: scenePath },
+        { label: specimen.species.commonName, href: `${scenePath}/${specimenSlug}` },
+      ]
+    : [
+        { label: org.name, href: `/${orgSlug}` },
+        ...(collection ? [{ label: collection.name, href: `/${orgSlug}/${collection.slug}` }] : []),
+        { label: scene.name, href: scenePath },
+        { label: specimen.species.commonName, href: `${scenePath}/${specimenSlug}` },
+      ]
 
   return (
     <>
       {/* Visitor page, read outdoors: always light */}
       <span data-daylight="" hidden />
-      <GaEvent name="specimen_view" params={{ specimen_slug: specimenSlug, org: orgSlug }} />
+      {!demo && <GaEvent name="specimen_view" params={{ specimen_slug: specimenSlug, org: orgSlug }} />}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -163,8 +177,8 @@ export async function SceneSpecimenPage({ orgSlug, collectionSlug, sceneSlug, sp
         backLabel={scene.title ?? scene.name}
       >
         {/* Reached from a scene: always the visitor's view, even for signed-in members */}
-        <SpecimenCare specimenId={specimen.id} audience="public" />
-        <LabelReportForm orgSlug={orgSlug} specimenId={specimen.id} audience="visitor" />
+        {!demo && <SpecimenCare specimenId={specimen.id} audience="public" />}
+        {!demo && <LabelReportForm orgSlug={orgSlug} specimenId={specimen.id} audience="visitor" />}
       </SpecimenDetail>
     </>
   )
