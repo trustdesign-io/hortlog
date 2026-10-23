@@ -8,6 +8,7 @@ export const RESERVED_ORG_SLUGS = new Set([
   'auth',
   'check-email',
   'dashboard',
+  'gardens',
   'no-access',
   'orgs',
   'records',

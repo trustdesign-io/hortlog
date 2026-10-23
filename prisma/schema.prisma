@@ -45,6 +45,7 @@ model User {
   supervisedBy          Supervision[]          @relation("Trainee")
   supervising           Supervision[]          @relation("Supervisor")
   entriesSignedOff      WorkLogEntry[]         @relation("EntrySignOff")
+  joinRequests          JoinRequest[]
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -68,6 +69,12 @@ model Organisation {
   // When they may not: whether the summary line names the organisation
   privateRecordsShowName Boolean @default(true)
 
+  /// Made for one person when they signed up with no garden: theirs alone, not listed in Find a garden
+  personal Boolean @default(false)
+
+  /// Shown in Find a garden, so people can ask to join. Off until a manager turns it on.
+  listed Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -79,6 +86,7 @@ model Organisation {
   tasks       Task[]
   workRecords WorkRecord[]
   supervisions Supervision[]
+  joinRequests JoinRequest[]
 }
 
 model Membership {
@@ -695,4 +703,23 @@ model Supervision {
 
   @@unique([organisationId, traineeId])
   @@index([supervisorId])
+}
+
+/// Someone asking to join a garden; its managers accept (they become a member) or decline
+model JoinRequest {
+  id         String    @id @default(cuid())
+  /// Optional note to the managers, e.g. "I volunteer on Fridays"
+  message    String?
+  createdAt  DateTime  @default(now())
+  /// Kept when declined, so the same person can't keep asking
+  declinedAt DateTime?
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, organisationId])
+  @@index([organisationId])
 }

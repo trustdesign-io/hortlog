@@ -136,7 +136,7 @@ export default async function RecordsPage() {
           <p className="text-sm">You haven&apos;t recorded any work yet.</p>
           {firstOrg ? (
             <p className="mt-1 text-sm">
-              Open a specimen in{' '}
+              Add or open a plant in{' '}
               <Link
                 href={`/${firstOrg.slug}/specimens`}
                 className="underline underline-offset-2 hover:text-foreground"
@@ -150,6 +150,13 @@ export default async function RecordsPage() {
               Once you&apos;ve joined an organisation, open a specimen and tap &ldquo;Record work&rdquo;.
             </p>
           )}
+          <p className="mt-3 text-sm">
+            Volunteer or work at another garden?{' '}
+            <Link href="/gardens" className="underline underline-offset-2 hover:text-foreground">
+              Find it and ask to join
+            </Link>
+            .
+          </p>
         </div>
       ) : (
         <RecordSearch

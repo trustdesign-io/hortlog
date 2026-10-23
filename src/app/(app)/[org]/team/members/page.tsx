@@ -7,6 +7,7 @@ import { TeamTabs } from '../team-tabs'
 import { sortDirectorsThenByName } from '@/lib/team'
 import { listPendingInvites, type PendingInvite } from '@/lib/pending-invites'
 import { PendingInvites } from './pending-invites'
+import { JoinRequests } from './join-requests'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -27,6 +28,11 @@ export default async function MembersPage({ params }: MembersPageProps) {
       directorLabel: true,
       managerLabel: true,
       memberLabel: true,
+      joinRequests: {
+        where: { declinedAt: null },
+        orderBy: { createdAt: 'asc' },
+        select: { id: true, message: true, createdAt: true, user: { select: { name: true, email: true } } },
+      },
       memberships: {
         include: {
           user: { select: { id: true, name: true, email: true, createdAt: true } },
@@ -58,6 +64,16 @@ export default async function MembersPage({ params }: MembersPageProps) {
         </p>
       </div>
       <TeamTabs orgSlug={orgSlug} active="members" />
+      <JoinRequests
+        orgSlug={orgSlug}
+        requests={org.joinRequests.map((r) => ({
+          id: r.id,
+          name: r.user.name,
+          email: r.user.email,
+          message: r.message,
+          createdAt: r.createdAt.toISOString(),
+        }))}
+      />
       <MemberList
         orgSlug={orgSlug}
         labels={{ directorLabel: org.directorLabel, managerLabel: org.managerLabel, memberLabel: org.memberLabel }}
