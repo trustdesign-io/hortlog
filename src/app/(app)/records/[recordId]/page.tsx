@@ -3,6 +3,7 @@ import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
 import { WORKED_RECORD_SELECT } from '@/lib/personal-record-queries'
 import { WorkedRecordSheet } from '@/components/records/worked-record-sheet'
+import { EntryCoworkers } from '@/components/entry-coworkers'
 import { BackToRecord } from '@/components/records/back-to-record'
 import { buttonVariants } from '@/components/ui/button-variants'
 import { PrintButton } from '@/components/print-button'
@@ -47,6 +48,7 @@ export default async function RecordPage({ params }: RecordPageProps) {
     select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
     orderBy: { user: { name: 'asc' } },
   })
+  const members = memberships.map((m) => m.user)
 
   return (
     <div className="print:max-w-full">
@@ -55,7 +57,14 @@ export default async function RecordPage({ params }: RecordPageProps) {
         record={record}
         likes={likes}
         signOffs={signOffs}
-        coworkerChoices={memberships.map((m) => m.user)}
+        renderCoworkers={(e) => (
+          <EntryCoworkers
+            orgSlug={record.organisation.slug}
+            entryId={e.id}
+            members={members}
+            initial={e.coworkers.map((c) => c.user)}
+          />
+        )}
       />
 
       <div className="mb-6 print:hidden">

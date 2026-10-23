@@ -14,8 +14,7 @@ import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 import { Blank, FIELD_LABEL_CLASS, FieldGroup, RecordField } from './record-field'
 import { RecordHeader } from './record-header'
 import { ReferencePhoto } from './reference-photo'
-import { EntryCoworkers } from '@/components/entry-coworkers'
-import type { PickerMember } from '@/components/member-picker'
+import type { ReactNode } from 'react'
 
 export type WorkedRecordData = Prisma.WorkRecordGetPayload<{ select: typeof WORKED_RECORD_SELECT }>
 
@@ -32,8 +31,8 @@ interface WorkedRecordSheetProps {
   likes?: Record<string, string[]>
   /** On the member's own record (and its printout): entries their supervisor signed off */
   signOffs?: Record<string, { at: Date; by: string; comment: string | null }>
-  /** On the member's own record: the garden's other members, so they can change who each entry was with */
-  coworkerChoices?: PickerMember[]
+  /** On the member's own record: who each entry was with, with a way to change it */
+  renderCoworkers?: (entry: WorkedRecordData['logEntries'][number]) => ReactNode
 }
 
 export const quietLink = 'underline decoration-border underline-offset-2 hover:decoration-foreground'
@@ -84,7 +83,7 @@ export function WorkedRecordSheet({
   publicView,
   likes,
   signOffs,
-  coworkerChoices,
+  renderCoworkers,
 }: WorkedRecordSheetProps) {
   const showLocation = !publicView
   const showNotes = !publicView || publicView.showNotes
@@ -172,13 +171,8 @@ export function WorkedRecordSheet({
                           </p>
                         )}
                         {e.text && <p className="min-w-0 break-words">{renderInline(e.text)}</p>}
-                        {coworkerChoices ? (
-                          <EntryCoworkers
-                            orgSlug={r.organisation.slug}
-                            entryId={e.id}
-                            members={coworkerChoices}
-                            initial={e.coworkers.map((c) => c.user)}
-                          />
+                        {renderCoworkers ? (
+                          renderCoworkers(e)
                         ) : (
                           // Other members are only named on the member's own record
                           !publicView &&
