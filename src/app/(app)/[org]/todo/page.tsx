@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { canManageOrg, requireOrgAccess } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
+import { listPendingInvites } from '@/lib/pending-invites'
 import { TaskList } from './task-list'
 
 interface TodoPageProps {
@@ -82,6 +83,19 @@ export default async function TodoPage({ params }: TodoPageProps) {
       : Promise.resolve([]),
   ])
 
+  // Invited but not joined yet: managers can assign them tasks already (greyed in the picker)
+  const invited = canManage
+    ? (
+        await listPendingInvites(orgSlug).catch((err) => {
+          console.error('[TodoPage] pending invites:', err)
+          return []
+        })
+      ).filter((i) => !orgMembers.some((m) => m.user.id === i.userId))
+    : []
+  const memberIds = new Set(
+    (await prisma.membership.findMany({ where: { organisationId: org.id }, select: { userId: true } })).map((m) => m.userId),
+  )
+
   return (
     <TaskList
       orgSlug={orgSlug}
@@ -90,7 +104,7 @@ export default async function TodoPage({ params }: TodoPageProps) {
         ...t,
         dueDate: t.dueDate?.toISOString() ?? null,
         createdAt: t.createdAt.toISOString(),
-        assignees: t.assignees.map((a) => a.user),
+        assignees: t.assignees.map((a) => ({ ...a.user, invited: !memberIds.has(a.user.id) })),
         specimen: t.specimen
           ? { id: t.specimen.id, slug: t.specimen.slug, name: t.specimen.species.commonName }
           : null,
@@ -117,7 +131,10 @@ export default async function TodoPage({ params }: TodoPageProps) {
           thumbnailUrl: sp.imageUrl ?? sp.species.photoUrl,
         })),
       }))}
-      orgMembers={orgMembers.map((m) => m.user)}
+      orgMembers={[
+        ...orgMembers.map((m) => m.user),
+        ...invited.map((i) => ({ id: i.userId, name: i.name, email: i.email, avatarUrl: null, invited: true })),
+      ]}
       plants={specimens.map((sp) => ({
         id: sp.id,
         label: [sp.species.commonName, sp.accessionNumber].filter(Boolean).join(' · '),

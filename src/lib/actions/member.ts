@@ -196,7 +196,12 @@ export async function cancelInvite(orgSlug: string, userId: string): Promise<Act
     console.error('[cancelInvite] error:', error)
     return { success: false, error: 'The invite couldn’t be cancelled. Try again.' }
   }
+  // Assigned to tasks before joining: they come off them (they never joined anywhere)
+  await prisma.user
+    .deleteMany({ where: { id: found.user.id, memberships: { none: {} } } })
+    .catch((err) => console.error('[cancelInvite] removing account:', err))
   revalidatePath(`/${orgSlug}/team/members`)
+  revalidatePath(`/${orgSlug}/todo`)
   return { success: true }
 }
 

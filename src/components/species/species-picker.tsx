@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { cn } from '@/lib/utils'
+import { recognitionCtor, type Recognition } from '@/lib/speech-recognition'
 
 export interface PickedSpecies {
   id: string
@@ -21,25 +22,6 @@ interface SpeciesPickerProps {
   value: PickedSpecies | null
   onChange: (species: PickedSpecies | null) => void
   disabled?: boolean
-}
-
-/** The browser's speech recognition, where there is one (Safari and Chrome call it webkitSpeechRecognition) */
-interface Recognition {
-  lang: string
-  interimResults: boolean
-  maxAlternatives: number
-  onresult: ((e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void) | null
-  onerror: ((e: { error: string }) => void) | null
-  onend: (() => void) | null
-  start: () => void
-  abort: () => void
-}
-type RecognitionCtor = new () => Recognition
-
-function recognitionCtor(): RecognitionCtor | null {
-  if (typeof window === 'undefined') return null
-  const w = window as unknown as { SpeechRecognition?: RecognitionCtor; webkitSpeechRecognition?: RecognitionCtor }
-  return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null
 }
 
 const VOICE_ERRORS: Record<string, string> = {
