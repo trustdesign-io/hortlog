@@ -32,14 +32,23 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
   const page = Math.max(1, parseInt(pageParam ?? '1', 10) || 1)
   const skip = (page - 1) * PAGE_SIZE
 
-  const where = search
-    ? {
-        OR: [
-          { name: { contains: search, mode: 'insensitive' as const } },
-          { email: { contains: search, mode: 'insensitive' as const } },
-        ],
-      }
-    : {}
+  // Invited but not joined yet: listed separately (an invitee can already have an
+  // account here, if a task was assigned to them before they joined)
+  const allInvites = await listAllPendingInvites().catch((err) => {
+    console.error('[AdminMembersPage] pending invites:', err)
+    return []
+  })
+  const where = {
+    id: { notIn: allInvites.map((i) => i.userId) },
+    ...(search
+      ? {
+          OR: [
+            { name: { contains: search, mode: 'insensitive' as const } },
+            { email: { contains: search, mode: 'insensitive' as const } },
+          ],
+        }
+      : {}),
+  }
 
   const [users, total, orgs] = await Promise.all([
     prisma.user.findMany({
@@ -74,12 +83,7 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
   const needle = search.toLowerCase()
   const invited =
     page === 1
-      ? (
-          await listAllPendingInvites().catch((err) => {
-            console.error('[AdminMembersPage] pending invites:', err)
-            return []
-          })
-        ).filter((i) => !needle || i.email.toLowerCase().includes(needle) || (i.name ?? '').toLowerCase().includes(needle))
+      ? allInvites.filter((i) => !needle || i.email.toLowerCase().includes(needle) || (i.name ?? '').toLowerCase().includes(needle))
       : []
 
   return (

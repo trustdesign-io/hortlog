@@ -25,6 +25,7 @@ import Link from 'next/link'
 import { CellPicker, type PickerScene } from './cell-picker'
 import { getMemberInitials } from '@/components/member-picker'
 import { MultiMemberPicker } from '@/components/multi-member-picker'
+import { DictateButton } from '@/components/dictate-button'
 import { WORK_ACTION_LABELS } from '@/lib/work-action-labels'
 import { newOpId } from '@/lib/offline/ops'
 import { queueOp } from '@/lib/offline/sync'
@@ -37,6 +38,8 @@ interface Assignee {
   name: string | null
   email: string
   avatarUrl: string | null
+  /** Invited and hasn't joined yet */
+  invited?: boolean
 }
 
 interface Task {
@@ -64,6 +67,8 @@ interface OrgMember {
   name: string | null
   email: string
   avatarUrl: string | null
+  /** Invited and hasn't joined yet */
+  invited?: boolean
 }
 
 interface TaskListProps {
@@ -92,13 +97,13 @@ function AssigneeAvatars({ assignees }: { assignees: Assignee[] }) {
   const visible = assignees.slice(0, 3)
   const overflow = assignees.length - 3
 
-  const allNames = assignees.map((a) => a.name ?? a.email).join(', ')
+  const allNames = assignees.map((a) => `${a.name ?? a.email}${a.invited ? ' (invited)' : ''}`).join(', ')
 
   return (
     <div className="flex items-center gap-1" title={allNames} aria-label={`Assigned to ${allNames}`}>
       <div className="flex -space-x-1.5">
         {visible.map((a) => (
-          <Avatar key={a.id} size="sm" className="ring-2 ring-background">
+          <Avatar key={a.id} size="sm" className={a.invited ? 'opacity-50 ring-2 ring-background grayscale' : 'ring-2 ring-background'}>
             <AvatarImage src={a.avatarUrl ?? undefined} alt="" />
             <AvatarFallback>{getMemberInitials(a)}</AvatarFallback>
           </Avatar>
@@ -112,6 +117,7 @@ function AssigneeAvatars({ assignees }: { assignees: Assignee[] }) {
       {assignees.length === 1 && (
         <span className="max-w-[12rem] truncate text-xs text-muted-foreground">
           {assignees[0].name ?? assignees[0].email}
+          {assignees[0].invited && ' · Invited'}
         </span>
       )}
     </div>
@@ -144,6 +150,8 @@ function TaskForm({ orgSlug, orgMembers, plants, scenes, task, onClose }: TaskFo
   const action = isEdit ? boundUpdate! : boundCreate
   const [state, formAction, isPending] = useActionState<ActionResult | null, FormData>(action, null)
 
+  const [title, setTitle] = useState(task?.title ?? '')
+  const [description, setDescription] = useState(task?.description ?? '')
   const [assigneeIds, setAssigneeIds] = useState<string[]>(
     task?.assignees.map((a) => a.id) ?? [],
   )
@@ -166,25 +174,36 @@ function TaskForm({ orgSlug, orgMembers, plants, scenes, task, onClose }: TaskFo
     <form action={formAction} className="flex flex-col gap-4">
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="task-title">Title <span aria-hidden="true">*</span></Label>
-        <Input
-          id="task-title"
-          name="title"
-          required
-          defaultValue={task?.title ?? ''}
-          placeholder="Task title"
-          autoComplete="off"
-        />
+        <div className="flex items-start gap-1">
+          <Input
+            id="task-title"
+            name="title"
+            required
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            placeholder="Task title"
+            autoComplete="off"
+          />
+          <DictateButton label="Dictate the title" onText={(t) => setTitle((v) => (v.trim() ? `${v.trim()} ${t}` : t))} />
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="task-description">Description</Label>
-        <Textarea
-          id="task-description"
-          name="description"
-          rows={3}
-          defaultValue={task?.description ?? ''}
-          placeholder="Optional description"
-        />
+        <div className="flex items-start gap-1">
+          <Textarea
+            id="task-description"
+            name="description"
+            rows={3}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Optional description"
+          />
+          <DictateButton
+            label="Dictate the description"
+            onText={(t) => setDescription((v) => (v.trim() ? `${v.trim()} ${t}` : t))}
+          />
+        </div>
       </div>
 
       <div className="flex flex-col gap-1.5">

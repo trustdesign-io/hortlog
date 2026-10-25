@@ -1,4 +1,5 @@
 import type { SupabaseClient, User as AuthUser } from '@supabase/supabase-js'
+import { prisma } from '@/lib/prisma'
 import { parseRole } from '@/lib/roles'
 
 const APP_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://hortlog.com'
@@ -22,10 +23,18 @@ export async function reinvite(supabase: SupabaseClient, user: AuthUser): Promis
     console.error('[reinvite] delete error:', deleteError)
     return { ok: false, removed: false }
   }
-  const { error } = await supabase.auth.admin.inviteUserByEmail(email, { redirectTo: `${APP_URL}/auth/callback`, data })
+  const { data: invited, error } = await supabase.auth.admin.inviteUserByEmail(email, { redirectTo: `${APP_URL}/auth/callback`, data })
   if (error) {
     console.error('[reinvite] invite error:', error)
     return { ok: false, removed: true }
+  }
+  // The new invite is a new sign-in account: anything assigned to them before
+  // (tasks, credited work) moves to it, so it's still waiting when they join
+  const newId = invited?.user?.id
+  if (newId && newId !== user.id) {
+    await prisma.user
+      .updateMany({ where: { id: user.id, memberships: { none: {} } }, data: { id: newId } })
+      .catch((err) => console.error('[reinvite] moving account:', err))
   }
   return { ok: true }
 }

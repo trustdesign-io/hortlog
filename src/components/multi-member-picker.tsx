@@ -41,12 +41,20 @@ export function MultiMemberPicker({ id, members, values, onChange, name, placeho
       {selected.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
           {selected.map((m) => (
-            <span key={m.id} className="flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs">
-              <Avatar size="sm">
+            <span
+              key={m.id}
+              className={
+                m.invited
+                  ? 'flex items-center gap-1 rounded-full border border-dashed px-2 py-0.5 text-xs text-muted-foreground'
+                  : 'flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs'
+              }
+            >
+              <Avatar size="sm" className={m.invited ? 'opacity-50 grayscale' : undefined}>
                 <AvatarImage src={m.avatarUrl ?? undefined} alt="" />
                 <AvatarFallback>{getMemberInitials(m)}</AvatarFallback>
               </Avatar>
               {m.name ?? m.email}
+              {m.invited && <span className="sr-only"> (invited)</span>}
               <button
                 type="button"
                 onClick={() => handleRemove(m.id)}

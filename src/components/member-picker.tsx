@@ -16,6 +16,8 @@ export interface PickerMember {
   name: string | null
   email: string
   avatarUrl?: string | null
+  /** Invited and hasn't joined yet: shown greyed, marked "Invited" */
+  invited?: boolean
 }
 
 export function getMemberInitials(m: { name: string | null; email: string }): string {
@@ -124,13 +126,17 @@ export function MemberPicker({
             <ComboboxEmpty>No members found.</ComboboxEmpty>
             {members.map((m) => (
               <ComboboxItem key={m.id} value={m.id}>
-                <Avatar size="sm">
+                <Avatar size="sm" className={m.invited ? 'opacity-50 grayscale' : undefined}>
                   <AvatarImage src={m.avatarUrl ?? undefined} alt="" />
                   <AvatarFallback>{getMemberInitials(m)}</AvatarFallback>
                 </Avatar>
-                <span className="min-w-0 flex-1 truncate">{m.name ?? m.email}</span>
-                {m.name && (
-                  <span className="shrink-0 text-xs text-muted-foreground">{m.email}</span>
+                <span className={m.invited ? 'min-w-0 flex-1 truncate text-muted-foreground' : 'min-w-0 flex-1 truncate'}>
+                  {m.name ?? m.email}
+                </span>
+                {m.invited ? (
+                  <span className="shrink-0 rounded-full border border-dashed px-1.5 text-xs text-muted-foreground">Invited</span>
+                ) : (
+                  m.name && <span className="shrink-0 text-xs text-muted-foreground">{m.email}</span>
                 )}
               </ComboboxItem>
             ))}

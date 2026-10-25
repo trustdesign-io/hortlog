@@ -5,25 +5,35 @@ import { prisma } from '@/lib/prisma'
 import { WorkAction } from '@prisma/client'
 import { requireOrgAccess } from '@/lib/auth/permissions'
 import { sameTarget, syncTaskCare } from '@/lib/task-care'
+import { invitedAssignees } from '@/lib/invited-assignees'
 import type { ActionResult } from '@/lib/shared/types'
 
 async function getOrg(orgSlug: string) {
   return prisma.organisation.findUnique({ where: { slug: orgSlug }, select: { id: true } })
 }
 
+/** Members of the garden, or people invited to it who haven't joined yet */
 async function validateAssignees(
   assigneeIds: string[],
   organisationId: string,
+  orgSlug: string,
 ): Promise<string | null> {
   if (assigneeIds.length === 0) return null
   const memberships = await prisma.membership.findMany({
     where: { userId: { in: assigneeIds }, organisationId },
     select: { userId: true },
   })
-  if (memberships.length !== assigneeIds.length) {
-    return 'One or more assignees are not members of this organisation.'
+  const members = new Set(memberships.map((m) => m.userId))
+  const others = assigneeIds.filter((id) => !members.has(id))
+  if (others.length === 0) return null
+  try {
+    const invited = await invitedAssignees(orgSlug, others)
+    if (others.every((id) => invited.has(id))) return null
+  } catch (err) {
+    console.error('[validateAssignees] invites:', err)
+    return 'Invited people couldn’t be checked just now. Try again.'
   }
-  return null
+  return 'One or more assignees are not members of this organisation.'
 }
 
 interface TaskCareFields {
@@ -102,7 +112,7 @@ export async function createTask(
   const org = await getOrg(orgSlug)
   if (!org) return { success: false, error: 'Organisation not found.' }
 
-  const assigneeError = await validateAssignees(assigneeIds, org.id)
+  const assigneeError = await validateAssignees(assigneeIds, org.id, orgSlug)
   if (assigneeError) return { success: false, error: assigneeError }
 
   const care = await parseCareFields(formData, org.id)
@@ -163,7 +173,7 @@ export async function updateTask(
   })
   if (!task) return { success: false, error: 'Task not found.' }
 
-  const assigneeError = await validateAssignees(assigneeIds, org.id)
+  const assigneeError = await validateAssignees(assigneeIds, org.id, orgSlug)
   if (assigneeError) return { success: false, error: assigneeError }
 
   const care = await parseCareFields(formData, org.id)

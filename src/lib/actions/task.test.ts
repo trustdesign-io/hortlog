@@ -12,11 +12,13 @@ const {
   scene,
   $transaction,
   syncTaskCare,
+  invitedAssignees,
 } = vi.hoisted(() => {
   // Interactive transactions get the same mocked client as `tx`
   const $transaction = vi.fn()
   return {
     syncTaskCare: vi.fn(),
+    invitedAssignees: vi.fn(),
     requireOrgAccess: vi.fn(),
     revalidatePath: vi.fn(),
     org: { findUnique: vi.fn() },
@@ -42,6 +44,8 @@ vi.mock('@/lib/task-care', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/lib/task-care')>()),
   syncTaskCare,
 }))
+
+vi.mock('@/lib/invited-assignees', () => ({ invitedAssignees }))
 
 import { createTask, updateTask, setTaskStatus, deleteTask } from './task'
 
@@ -69,6 +73,7 @@ beforeEach(() => {
     fn({ organisation: org, task, taskAssignee, membership }),
   )
   requireOrgAccess.mockResolvedValue({ user: MANAGER, orgSlug: 'test-org' })
+  invitedAssignees.mockResolvedValue(new Set())
   org.findUnique.mockResolvedValue(ORG)
   // Default: membership check returns all requested members (valid)
   membership.findMany.mockImplementation(({ where }: { where: { userId: { in: string[] } } }) =>
@@ -107,6 +112,14 @@ describe('createTask', () => {
       success: false,
       error: 'One or more assignees are not members of this organisation.',
     })
+  })
+
+  it('accepts someone invited to the garden who hasn’t joined yet', async () => {
+    membership.findMany.mockResolvedValue([])
+    invitedAssignees.mockResolvedValue(new Set(['u-invited']))
+    const result = await createTask('test-org', null, fd({ title: 'Task', assigneeId: 'u-invited' }))
+    expect(result).toEqual({ success: true })
+    expect(invitedAssignees).toHaveBeenCalledWith('test-org', ['u-invited'])
   })
 
   it('returns error for invalid due date', async () => {
