@@ -53,8 +53,9 @@ function wordScore(word: string, text: string, words: string[]): number {
   if (word.length >= 4 && words.some((w) => withinOneEdit(word, w.slice(0, word.length + 1)) || withinOneEdit(word, w))) {
     return 2
   }
-  // Initials or squashed letters across the whole text, e.g. "wgna" in "world garden north america"
-  if (word.length >= 2 && isSubsequence(word, text.replace(/ /g, ''))) return 1
+  // Initials or squashed letters across the whole text, e.g. "wgna" in "world garden north america".
+  // Short words only: a long word's letters turn up in order in almost any long text
+  if (word.length >= 2 && word.length <= 4 && isSubsequence(word, text.replace(/ /g, ''))) return 1
   return 0
 }
 
