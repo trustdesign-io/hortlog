@@ -26,6 +26,9 @@ const nextConfig: NextConfig = {
     ]
   },
   images: {
+    // Served straight from Supabase and iNaturalist (already sized), not through Vercel's
+    // paid image optimisation
+    unoptimized: true,
     remotePatterns: [
       {
         protocol: 'https',
