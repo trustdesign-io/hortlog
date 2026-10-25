@@ -1,7 +1,7 @@
 {
   "installCommand": "npm ci",
   "buildCommand": "npx prisma generate && node scripts/migrate-on-deploy.mjs && next build",
-  "ignoreCommand": "[ \"$VERCEL_ENV\" != \"production\" ]",
+  "ignoreCommand": "[ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]",
   "regions": [
     "lhr1"
   ],
