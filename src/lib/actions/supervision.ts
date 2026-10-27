@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/current-user'
 import { MAX_SIGN_OFF_COMMENT } from '@/lib/supervision'
+import { invitedAssignees } from '@/lib/invited-assignees'
 import type { ActionResult } from '@/lib/shared/types'
 
 /** Choose (or, with null, remove) your supervisor in one of your gardens */
@@ -20,7 +21,10 @@ export async function setSupervisor(orgSlug: string, supervisorId: string | null
     } else {
       if (supervisorId === user.id) return { success: false, error: 'Choose someone else as your supervisor.' }
       const theirs = await prisma.membership.findFirst({ where: { organisationId, userId: supervisorId }, select: { id: true } })
-      if (!theirs) return { success: false, error: 'Your supervisor must be a member of this garden.' }
+      // Someone invited to this garden who hasn't joined yet can be chosen too
+      if (!theirs && !(await invitedAssignees(orgSlug, [supervisorId]).catch(() => new Set<string>())).has(supervisorId)) {
+        return { success: false, error: 'Your supervisor must be a member of this garden, or invited to it.' }
+      }
       await prisma.supervision.upsert({
         where: { organisationId_traineeId: { organisationId, traineeId: user.id } },
         create: { organisationId, traineeId: user.id, supervisorId },

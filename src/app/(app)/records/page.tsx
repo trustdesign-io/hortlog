@@ -9,6 +9,7 @@ import { UserAvatar } from '@/components/user-avatar'
 import { AddToMyRecord } from '@/components/add-to-my-record'
 import { NotMeButton } from '@/components/not-me-button'
 import { SupervisorPicker } from '@/components/supervisor-picker'
+import { listAllPendingInvites } from '@/lib/pending-invites'
 import { WORK_ACTION_LABELS } from '@/lib/work-record-constants'
 
 export const metadata = {
@@ -79,14 +80,23 @@ export default async function RecordsPage() {
       select: { organisationId: true, user: { select: { id: true, name: true, email: true } } },
     }),
   ])
+  // People invited to your gardens who haven't joined yet can be chosen too
+  const invites = await listAllPendingInvites().catch((err) => {
+    console.error('[RecordsPage] pending invites:', err)
+    return []
+  })
   const supervisorChoices = user.memberships.map((m) => ({
     orgSlug: m.organisation.slug,
     orgName: m.organisation.name,
     currentId: supervisions.find((s) => s.organisationId === m.organisation.id)?.supervisorId ?? null,
-    members: orgMembers
-      .filter((o) => o.organisationId === m.organisation.id)
-      .map((o) => ({ id: o.user.id, name: o.user.name ?? o.user.email }))
-      .sort((a, b) => a.name.localeCompare(b.name)),
+    members: [
+      ...orgMembers
+        .filter((o) => o.organisationId === m.organisation.id)
+        .map((o) => ({ id: o.user.id, name: o.user.name ?? o.user.email, invited: false })),
+      ...invites
+        .filter((i) => i.orgSlug === m.organisation.slug && i.userId !== user.id)
+        .map((i) => ({ id: i.userId, name: i.name ?? i.email.split('@')[0], invited: true })),
+    ].sort((a, b) => Number(a.invited) - Number(b.invited) || a.name.localeCompare(b.name)),
   }))
 
   const sites = new Set(records.map((r) => r.site ?? r.organisation.name))

@@ -8,7 +8,8 @@ export interface SupervisorChoice {
   orgSlug: string
   orgName: string
   currentId: string | null
-  members: { id: string; name: string }[]
+  /** Invited people who haven't joined yet are marked, and can be chosen */
+  members: { id: string; name: string; invited?: boolean }[]
 }
 
 /** On My record: who signs off your work, garden by garden */
@@ -60,10 +61,16 @@ export function SupervisorPicker({ choices }: { choices: SupervisorChoice[] }) {
             <option value="">No supervisor</option>
             {c.members.map((m) => (
               <option key={m.id} value={m.id}>
-                {m.name}
+                {m.invited ? `${m.name} (invited)` : m.name}
               </option>
             ))}
           </select>
+          {c.members.find((m) => m.id === values[c.orgSlug])?.invited && (
+            <p className="text-xs text-muted-foreground">
+              {c.members.find((m) => m.id === values[c.orgSlug])?.name} hasn&rsquo;t joined yet. Your entries are waiting
+              for them, and they can sign them off once they accept the invite.
+            </p>
+          )}
         </div>
       ))}
       <p className="min-h-4 text-xs text-muted-foreground" aria-live="polite">
