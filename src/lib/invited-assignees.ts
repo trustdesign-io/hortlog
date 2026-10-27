@@ -4,7 +4,8 @@ import { listPendingInvites } from '@/lib/pending-invites'
 /**
  * Of these people, the ones invited to this garden who haven't joined yet,
  * each given a hortlog account (the same id their sign-in account has, and
- * keeps when they join) so tasks can be assigned to them now.
+ * keeps when they join) so they can be assigned tasks, or chosen as
+ * someone's supervisor, now.
  */
 export async function invitedAssignees(orgSlug: string, userIds: string[]): Promise<Set<string>> {
   if (userIds.length === 0) return new Set()
