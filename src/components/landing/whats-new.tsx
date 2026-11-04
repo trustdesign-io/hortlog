@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { WHATS_NEW, WHATS_NEW_SEEN_KEY, WHATS_NEW_UPDATE_ID } from '@/lib/whats-new'
 import { cn } from '@/lib/utils'
+import { Logo } from '@/components/layout/logo'
 
 /**
  * "What's new": opens by itself once per update, then stays closed until the
@@ -58,6 +59,10 @@ export function WhatsNew() {
       <Dialog open={open} onOpenChange={change}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
+            {/* It covers the page header, so it carries the logo itself */}
+            <div className="pb-1" onClickCapture={() => change(false)}>
+              <Logo />
+            </div>
             <DialogTitle className="font-heading text-xl">What&rsquo;s new in hortlog</DialogTitle>
             <DialogDescription>The latest improvements for gardens, their teams and their visitors.</DialogDescription>
           </DialogHeader>
