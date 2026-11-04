@@ -11,7 +11,7 @@ on:
 jobs:
   ci:
     name: Lint, Type-check, Test & Build
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout
@@ -54,7 +54,7 @@ jobs:
 
   migrate:
     name: Run DB migrations
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: ci
     # Only run migrations on merge to main
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
