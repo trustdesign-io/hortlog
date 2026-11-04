@@ -69,31 +69,31 @@ export default async function SpecimensPage({ params, searchParams }: SpecimensP
 
   return (
     <div className="space-y-6">
-      <div className="flex items-start justify-between gap-4">
-        <div>
+      <div>
+        <div className="flex items-start justify-between gap-4">
           <h1 className="font-heading text-2xl font-medium">{showRemoved ? 'Removed plants' : 'Specimens'}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            {showRemoved
-              ? 'No longer in the garden. Their records stay; open one to put it back.'
-              : 'All plant and specimen records for this organisation.'}
-          </p>
+          <div className="flex shrink-0 flex-wrap justify-end gap-2">
+            <ActionLink
+              href={`/${orgSlug}/specimens/import`}
+              unavailable={canManage ? null : 'Your role can’t import specimens.'}
+              className={buttonVariants({ size: 'sm', variant: 'outline' })}
+            >
+              Import
+            </ActionLink>
+            <ActionLink
+              href={`/${orgSlug}/specimens/new`}
+              unavailable={canManage ? null : 'Your role can’t add specimens.'}
+              className={buttonVariants({ size: 'sm' })}
+            >
+              Add specimen
+            </ActionLink>
+          </div>
         </div>
-        <div className="flex shrink-0 flex-wrap justify-end gap-2">
-          <ActionLink
-            href={`/${orgSlug}/specimens/import`}
-            unavailable={canManage ? null : 'Your role can’t import specimens.'}
-            className={buttonVariants({ size: 'sm', variant: 'outline' })}
-          >
-            Import
-          </ActionLink>
-          <ActionLink
-            href={`/${orgSlug}/specimens/new`}
-            unavailable={canManage ? null : 'Your role can’t add specimens.'}
-            className={buttonVariants({ size: 'sm' })}
-          >
-            Add specimen
-          </ActionLink>
-        </div>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {showRemoved
+            ? 'No longer in the garden. Their records stay; open one to put it back.'
+            : 'All plant and specimen records for this organisation.'}
+        </p>
       </div>
       <SpecimensList
         orgSlug={orgSlug}

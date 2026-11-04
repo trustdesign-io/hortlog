@@ -284,9 +284,12 @@
     /* Even line lengths in headings */
     text-wrap: balance;
   }
-  /* No single orphaned word on the last line of running text */
-  p, li, dd, figcaption, blockquote {
-    text-wrap: pretty;
+  /* No single orphaned word on the last line of running text. Wider screens only:
+     on phones (Safari especially) it wraps lines well short of the edge */
+  @media (min-width: 640px) {
+    p, li, dd, figcaption, blockquote {
+      text-wrap: pretty;
+    }
   }
 }
 
