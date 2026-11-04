@@ -46,6 +46,7 @@ model User {
   supervising           Supervision[]          @relation("Supervisor")
   entriesSignedOff      WorkLogEntry[]         @relation("EntrySignOff")
   joinRequests          JoinRequest[]
+  departments           DepartmentMember[]
 }
 
 // ─── Organisations ────────────────────────────────────────────────────────────
@@ -87,6 +88,7 @@ model Organisation {
   workRecords WorkRecord[]
   supervisions Supervision[]
   joinRequests JoinRequest[]
+  departments  Department[]
 }
 
 model Membership {
@@ -726,4 +728,33 @@ model JoinRequest {
 
   @@unique([userId, organisationId])
   @@index([organisationId])
+}
+
+/// A group of people in a garden (e.g. Glasshouse, Arboretum). It groups the Team page; it grants no permissions.
+model Department {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  name      String
+
+  organisationId String
+  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  members DepartmentMember[]
+
+  @@unique([organisationId, name])
+}
+
+/// Someone in a department; people can be in several. isManager is a title only.
+model DepartmentMember {
+  id        String  @id @default(cuid())
+  isManager Boolean @default(false)
+
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([departmentId, userId])
+  @@index([userId])
 }
