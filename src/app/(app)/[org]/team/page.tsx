@@ -32,6 +32,10 @@ export default async function TeamPage({ params }: TeamPageProps) {
       directorLabel: true,
       managerLabel: true,
       memberLabel: true,
+      departments: {
+        orderBy: { name: 'asc' },
+        select: { id: true, name: true, members: { select: { userId: true, isManager: true } } },
+      },
       memberships: {
         select: {
           id: true,
@@ -63,9 +67,32 @@ export default async function TeamPage({ params }: TeamPageProps) {
   // have more permissions in hortlog, not authority over other people.
   const directors = sortByName(team.filter((m) => m.role === 'DIRECTOR'))
   const everyoneElse = sortByName(team.filter((m) => m.role !== 'DIRECTOR'))
+  // Then a group per department (people can be in several, its managers first),
+  // and everyone else not in one. Anyone no longer here is left out.
+  const byUser = new Map(team.map((p) => [p.user.id, p]))
+  const inADepartment = new Set(org.departments.flatMap((d) => d.members.map((m) => m.userId)))
+  const departmentTiers = org.departments.map((d) => {
+    const managers = new Set(d.members.filter((m) => m.isManager).map((m) => m.userId))
+    const people = sortByName(d.members.map((m) => byUser.get(m.userId)).filter((p): p is TierPerson => !!p))
+    return {
+      key: d.id,
+      label: d.name,
+      people: [...people.filter((p) => managers.has(p.user.id)), ...people.filter((p) => !managers.has(p.user.id))],
+      lead: false,
+      managers,
+    }
+  })
+  const unassigned = everyoneElse.filter((p) => !inADepartment.has(p.user.id))
   const tiers = [
-    { key: 'directors', label: plural(org.directorLabel, directors.length), people: directors, lead: true },
-    { key: 'team', label: directors.length > 0 ? 'Team' : '', people: everyoneElse, lead: false },
+    { key: 'directors', label: plural(org.directorLabel, directors.length), people: directors, lead: true, managers: new Set<string>() },
+    ...departmentTiers,
+    {
+      key: 'team',
+      label: directors.length > 0 || departmentTiers.length > 0 ? 'Team' : '',
+      people: unassigned,
+      lead: false,
+      managers: new Set<string>(),
+    },
   ].filter((t) => t.people.length > 0)
 
   return (
@@ -86,11 +113,13 @@ export default async function TeamPage({ params }: TeamPageProps) {
         <div className="flex flex-col items-center">
           {tiers.map((tier, i) => (
             <Fragment key={tier.key}>
-              {i > 0 && <div aria-hidden="true" className="h-8 w-px bg-border" />}
+              {/* A line down from the directors; departments sit side by side in rank, so just a gap between them */}
+              {i > 0 && (tiers[i - 1].lead ? <div aria-hidden="true" className="h-8 w-px bg-border" /> : <div aria-hidden="true" className="h-6" />)}
               <TeamTier
                 label={tier.label}
                 people={tier.people}
                 lead={tier.lead}
+                managers={tier.managers}
                 labels={org}
                 viewerId={viewer.id}
               />
@@ -142,6 +171,7 @@ function TeamTier({
   lead,
   labels,
   viewerId,
+  managers,
 }: {
   /** Empty when there is only one level: the page heading says enough. */
   label: string
@@ -149,6 +179,8 @@ function TeamTier({
   lead: boolean
   labels: RoleLabels
   viewerId: string
+  /** Who manages this department (a title only) */
+  managers: Set<string>
 }) {
   return (
     <section aria-label={label || 'Team'} className="w-full">
@@ -178,6 +210,9 @@ function TeamTier({
               </span>
               {/* Title on every card below the directors, so managers are visible without being ranked */}
               {!lead && <span className="block -mt-1.5 text-xs text-muted-foreground">{roleLabel(p.role, labels)}</span>}
+              {managers.has(p.user.id) && (
+                <span className="block -mt-1 rounded-full bg-primary/10 px-2 text-xs font-medium text-primary">Dept manager</span>
+              )}
               {p.pending && (
                 <span className="block -mt-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground">Invited</span>
               )}

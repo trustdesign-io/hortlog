@@ -8,6 +8,8 @@ import { OrgRecordPrivacyCard } from './org-record-privacy-card'
 import { OrgListingCard } from './org-listing-card'
 import { OrgDwcExportCard } from './org-dwc-export-card'
 import { OrgFloweringEmbedCard } from './org-flowering-embed-card'
+import { OrgDepartmentsCard } from './org-departments-card'
+import { listPendingInvites } from '@/lib/pending-invites'
 
 export const metadata: Metadata = {
   robots: { index: false, follow: false },
@@ -48,6 +50,29 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
     where: { organisation: { slug: orgSlug }, removedAt: null, species: { scientificName: { not: 'Unidentified' } } },
   })
 
+  const [departments, memberships] = await Promise.all([
+    prisma.department.findMany({
+      where: { organisation: { slug: orgSlug } },
+      orderBy: { name: 'asc' },
+      select: { id: true, name: true, members: { select: { userId: true, isManager: true } } },
+    }),
+    prisma.membership.findMany({
+      where: { organisation: { slug: orgSlug } },
+      select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+    }),
+  ])
+  // Departments can include people invited who haven't joined yet. The card still shows if this lookup fails.
+  const invited = (
+    await listPendingInvites(orgSlug).catch((err) => {
+      console.error('[OrgSettingsPage] pending invites:', err)
+      return []
+    })
+  ).filter((i) => !memberships.some((m) => m.user.id === i.userId))
+  const people = [
+    ...memberships.map((m) => m.user),
+    ...invited.map((i) => ({ id: i.userId, name: i.name, email: i.email, avatarUrl: null, invited: true })),
+  ]
+
   return (
     <div className="space-y-6">
       <div>
@@ -62,6 +87,16 @@ export default async function OrgSettingsPage({ params }: OrgSettingsPageProps) 
         orgSlug={orgSlug}
         recordsPublic={org.recordsPublic}
         privateRecordsShowName={org.privateRecordsShowName}
+      />
+      <OrgDepartmentsCard
+        orgSlug={orgSlug}
+        people={people}
+        departments={departments.map((d) => ({
+          id: d.id,
+          name: d.name,
+          memberIds: d.members.map((m) => m.userId),
+          managerIds: d.members.filter((m) => m.isManager).map((m) => m.userId),
+        }))}
       />
       <OrgListingCard orgSlug={orgSlug} listed={org.listed} personal={org.personal} />
       <OrgFloweringEmbedCard
