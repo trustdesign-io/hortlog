@@ -147,11 +147,14 @@ export default async function AdminMembersPage({ searchParams }: AdminMembersPag
                   <td className="px-4 py-3">
                     <div>
                       <div className="flex flex-wrap items-center gap-2">
-                        <p className="font-medium">
-                          {u.name ?? (
-                            <span className="text-muted-foreground italic">Add name</span>
-                          )}
-                        </p>
+                        {/* Admins can open anyone's whole work record, private or not */}
+                        <Link
+                          href={`/admin/members/${u.id}`}
+                          className="font-medium underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-sm"
+                        >
+                          {u.name ?? <span className="text-muted-foreground italic">Add name</span>}
+                          <span className="sr-only"> — view work record</span>
+                        </Link>
                         {u.isAdmin && (
                           <Badge variant="secondary" className="text-xs">Admin</Badge>
                         )}
