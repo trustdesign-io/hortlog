@@ -9,6 +9,7 @@ import { sortTeam } from '@/lib/team'
 import { listPendingInvites } from '@/lib/pending-invites'
 import { roleLabel, type Role, type RoleLabels } from '@/lib/roles'
 import { UserAvatar } from '@/components/user-avatar'
+import { ActionLink } from '@/components/ui/action-link'
 import { cn } from '@/lib/utils'
 
 export const metadata: Metadata = {
@@ -35,7 +36,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
         select: {
           id: true,
           role: true,
-          user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          user: { select: { id: true, name: true, email: true, avatarUrl: true, username: true, recordPublic: true } },
         },
       },
     },
@@ -54,7 +55,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
       id: `invite-${i.userId}`,
       role: i.role,
       pending: true,
-      user: { id: i.userId, name: i.name, email: i.email, avatarUrl: null },
+      user: { id: i.userId, name: i.name, email: i.email, avatarUrl: null, username: null, recordPublic: false },
     }))
 
   const team: TierPerson[] = [...sortTeam(org.memberships), ...invited]
@@ -91,6 +92,7 @@ export default async function TeamPage({ params }: TeamPageProps) {
                 people={tier.people}
                 lead={tier.lead}
                 labels={org}
+                viewerId={viewer.id}
               />
             </Fragment>
           ))}
@@ -115,7 +117,23 @@ interface TierPerson {
   role: Role
   /** Invited and hasn't accepted yet */
   pending?: boolean
-  user: { id: string; name: string | null; email: string; avatarUrl: string | null }
+  user: {
+    id: string
+    name: string | null
+    email: string
+    avatarUrl: string | null
+    username: string | null
+    recordPublic: boolean
+  }
+}
+
+/** Where tapping someone's card goes: their public work record, or why it can't */
+function recordLink(p: TierPerson, viewerId: string): { href: string; unavailable: string | null } {
+  const first = (p.user.name ?? p.user.email.split('@')[0]).trim().split(/\s+/)[0]
+  if (p.pending) return { href: '', unavailable: `${first} hasn’t joined yet, so there’s no work record to show.` }
+  if (p.user.recordPublic && p.user.username) return { href: `/u/${p.user.username}`, unavailable: null }
+  if (p.user.id === viewerId) return { href: '/records', unavailable: null }
+  return { href: '', unavailable: `${first} hasn’t made their work record public.` }
 }
 
 function TeamTier({
@@ -123,12 +141,14 @@ function TeamTier({
   people,
   lead,
   labels,
+  viewerId,
 }: {
   /** Empty when there is only one level: the page heading says enough. */
   label: string
   people: TierPerson[]
   lead: boolean
   labels: RoleLabels
+  viewerId: string
 }) {
   return (
     <section aria-label={label || 'Team'} className="w-full">
@@ -139,27 +159,29 @@ function TeamTier({
       )}
       <ul role="list" className="flex flex-wrap justify-center gap-3">
         {people.map((p) => (
-          <li
-            key={p.id}
-            className={cn(
-              'flex w-[calc(50%-0.375rem)] flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center sm:w-40',
-              lead && 'border-primary/40',
-              p.pending && 'border-dashed bg-muted/40',
-            )}
-          >
-            <UserAvatar
-              user={p.user}
-              className={cn(lead ? 'h-16 w-16' : 'h-12 w-12', p.pending && 'opacity-50 grayscale')}
-              fallbackClassName={lead ? 'text-base' : 'text-sm'}
-            />
-            <p className={cn('w-full truncate text-sm font-medium', p.pending && 'text-muted-foreground')}>
-              {p.user.name ?? p.user.email.split('@')[0]}
-            </p>
-            {/* Title on every card below the directors, so managers are visible without being ranked */}
-            {!lead && <p className="-mt-1.5 text-xs text-muted-foreground">{roleLabel(p.role, labels)}</p>}
-            {p.pending && (
-              <p className="-mt-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground">Invited</p>
-            )}
+          <li key={p.id} className="flex w-[calc(50%-0.375rem)] sm:w-40">
+            <ActionLink
+              {...recordLink(p, viewerId)}
+              className={cn(
+                'flex w-full flex-col items-center gap-2 rounded-xl border bg-card p-4 text-center transition-colors hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                lead && 'border-primary/40',
+                p.pending && 'border-dashed bg-muted/40',
+              )}
+            >
+              <UserAvatar
+                user={p.user}
+                className={cn(lead ? 'h-16 w-16' : 'h-12 w-12', p.pending && 'opacity-50 grayscale')}
+                fallbackClassName={lead ? 'text-base' : 'text-sm'}
+              />
+              <span className={cn('block w-full truncate text-sm font-medium', p.pending && 'text-muted-foreground')}>
+                {p.user.name ?? p.user.email.split('@')[0]}
+              </span>
+              {/* Title on every card below the directors, so managers are visible without being ranked */}
+              {!lead && <span className="block -mt-1.5 text-xs text-muted-foreground">{roleLabel(p.role, labels)}</span>}
+              {p.pending && (
+                <span className="block -mt-1 rounded-full border border-dashed px-2 text-xs text-muted-foreground">Invited</span>
+              )}
+            </ActionLink>
           </li>
         ))}
       </ul>
