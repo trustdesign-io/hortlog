@@ -32,6 +32,7 @@ const record: WorkedRecordData = {
   powoUrl: 'https://powo.science.kew.org/taxon/urn:lsid:ipni.org:names:144220-1',
   userId: 'u1',
   organisation: { slug: 'lullingstone', name: 'Lullingstone Castle and the World Garden', recordsPublic: true },
+  species: null,
   specimen: {
     slug: 'nesocodon-mauritianus',
     species: {

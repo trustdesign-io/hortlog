@@ -146,7 +146,10 @@ export async function syncTaskCare(
 
   const plan = planTaskCare(
     { ...task, specimenIds, assigneeIds: task.assignees.map((a) => a.userId) },
-    task.careEntries.map((e) => ({ id: e.id, userId: e.workRecord.userId, specimenId: e.workRecord.specimenId })),
+    // Care logged from a task is always on a garden's plant, so the specimen is there
+    task.careEntries.flatMap((e) =>
+      e.workRecord.specimenId ? [{ id: e.id, userId: e.workRecord.userId, specimenId: e.workRecord.specimenId }] : [],
+    ),
   )
 
   if (plan.remove.length) {

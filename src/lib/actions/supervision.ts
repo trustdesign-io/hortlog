@@ -52,6 +52,8 @@ export async function signOffEntry(entryId: string, signed: boolean, rawComment 
       select: { workRecord: { select: { userId: true, organisationId: true } } },
     })
     if (!entry) return { success: false, error: 'This entry has been removed.' }
+    // Work at a site not on hortlog has no garden, so no supervisor there to sign it off
+    if (!entry.workRecord.organisationId) return { success: false, error: 'Only work in a hortlog garden can be signed off.' }
     // Only the member's supervisor in that garden can sign their work off
     const supervises = await prisma.supervision.findFirst({
       where: { organisationId: entry.workRecord.organisationId, traineeId: entry.workRecord.userId, supervisorId: user.id },

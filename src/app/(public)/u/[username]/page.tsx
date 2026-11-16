@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { findPublicOwner, getPublicRecordList } from '@/lib/public-record-queries'
 import { hiddenSummaryText } from '@/lib/public-record'
-import { formatRecordDate, formatRecordNo, plantNameHtml, stripTags } from '@/lib/personal-record'
+import { formatRecordDate, formatRecordNo, plantNameHtml, stripTags, recordCommonName, recordPhotoUrl, recordSite } from '@/lib/personal-record'
 import { TaxonName } from '@/components/records/taxon-name'
 import { RecordSearch } from '@/components/records/record-search'
 import { SpecimenImage } from '@/components/ui/specimen-image'
@@ -28,7 +28,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
 
   const { records, hidden } = await getPublicRecordList(owner.id)
   const displayName = owner.name ?? owner.username
-  const sites = new Set(records.map((r) => r.site ?? r.organisation.name))
+  const sites = new Set(records.map((r) => recordSite(r)))
   const hiddenCount = hidden.reduce((n, h) => n + h.count, 0)
 
   return (
@@ -67,10 +67,10 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                   stripTags(plantNameHtml(r)),
                   r.scientificName,
                   r.commonNames,
-                  r.specimen.species.commonName,
+                  recordCommonName(r),
                   r.family,
-                  r.site ?? r.organisation.name,
-                  r.organisation.name,
+                  recordSite(r),
+                  r.organisation?.name,
                   formatRecordNo(r.recordNumber),
                   String(r.recordNumber),
                   formatRecordDate(r.firstWorkedDate),
@@ -82,7 +82,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                   >
                     <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
                       <SpecimenImage
-                        imageUrl={r.specimen.imageUrl ?? r.specimen.species.photoUrl}
+                        imageUrl={recordPhotoUrl(r)}
                         alt=""
                         fill
                         sizes="48px"
@@ -100,7 +100,7 @@ export default async function PublicProfilePage({ params }: PublicProfilePagePro
                         <time dateTime={r.firstWorkedDate.toISOString().slice(0, 10)}>
                           {formatRecordDate(r.firstWorkedDate, 'short')}
                         </time>
-                        {[r.family, (r.site ?? r.organisation.name).split(',')[0]]
+                        {[r.family, (recordSite(r)).split(',')[0]]
                           .filter(Boolean)
                           .map((part) => ` · ${part}`)}
                       </p>

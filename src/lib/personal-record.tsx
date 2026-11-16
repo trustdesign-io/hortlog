@@ -73,3 +73,28 @@ export function parseRecordNumber(raw: string): number | null {
   const n = Number(raw)
   return n > 0 ? n : null
 }
+
+interface RecordPlace {
+  site: string | null
+  organisation: { name: string } | null
+}
+
+/** Where the work was: the site as recorded, else the garden's name */
+export function recordSite(r: RecordPlace): string {
+  return r.site ?? r.organisation?.name ?? ''
+}
+
+interface RecordPlant {
+  specimen: { imageUrl: string | null; species: { photoUrl: string | null; commonName: string } } | null
+  /** A plant worked elsewhere has its species only */
+  species?: { photoUrl: string | null; commonName: string } | null
+}
+
+/** The plant's own photo if it has one, else its species' */
+export function recordPhotoUrl(r: RecordPlant): string | null {
+  return r.specimen?.imageUrl ?? r.specimen?.species.photoUrl ?? r.species?.photoUrl ?? null
+}
+
+export function recordCommonName(r: RecordPlant): string | null {
+  return r.specimen?.species.commonName ?? r.species?.commonName ?? null
+}

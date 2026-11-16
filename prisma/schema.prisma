@@ -168,6 +168,7 @@ model Species {
   updatedAt DateTime @updatedAt
 
   specimens Specimen[]
+  workRecords WorkRecord[]
 }
 
 // ─── Collections ──────────────────────────────────────────────────────────────
@@ -500,11 +501,17 @@ model WorkRecord {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  specimenId String
-  specimen   Specimen @relation(fields: [specimenId], references: [id], onDelete: Cascade)
+  // A plant in a hortlog garden's collection. Null for a plant worked elsewhere,
+  // at a site not on hortlog: then only the species and the site text are kept.
+  specimenId String?
+  specimen   Specimen? @relation(fields: [specimenId], references: [id], onDelete: Cascade)
 
-  organisationId String
-  organisation   Organisation @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+  organisationId String?
+  organisation   Organisation? @relation(fields: [organisationId], references: [id], onDelete: Cascade)
+
+  // The species, for a plant worked elsewhere (its photo and names); garden plants reach it through the specimen
+  speciesId String?
+  species   Species? @relation(fields: [speciesId], references: [id], onDelete: SetNull)
 
   logEntries  WorkLogEntry[]
   editHistory WorkRecordEdit[]
@@ -515,6 +522,7 @@ model WorkRecord {
   @@unique([userId, specimenId])
   @@unique([userId, recordNumber])
   @@index([specimenId])
+  @@index([speciesId])
   @@index([userId])
 }
 

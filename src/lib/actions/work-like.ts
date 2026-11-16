@@ -16,7 +16,8 @@ export async function setWorkLike(entryId: string, liked: boolean): Promise<Acti
       select: { workRecord: { select: { userId: true, organisation: { select: { slug: true } } } } },
     })
     if (!entry) return { success: false, error: 'This entry has been removed.' }
-    const orgSlug = entry.workRecord.organisation.slug
+    const orgSlug = entry.workRecord.organisation?.slug
+    if (!orgSlug) return { success: false, error: 'Only work in a hortlog garden can be liked.' }
     if (entry.workRecord.userId === user.id) return { success: false, error: 'You can’t like your own work.' }
     if (!user.memberships.some((m) => m.organisation.slug === orgSlug)) {
       return { success: false, error: 'Only members of this garden can like its work.' }

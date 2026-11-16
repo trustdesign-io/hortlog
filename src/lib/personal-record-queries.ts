@@ -44,6 +44,17 @@ export const WORKED_RECORD_SELECT = {
       },
     },
   },
+  // A plant worked elsewhere: its species, as the specimen's above
+  species: {
+    select: {
+      commonName: true,
+      powoUrl: true,
+      photoUrl: true,
+      photoAttribution: true,
+      photoLicence: true,
+      photoSourceUrl: true,
+    },
+  },
   logEntries: {
     orderBy: { date: 'asc' as const },
     select: {
