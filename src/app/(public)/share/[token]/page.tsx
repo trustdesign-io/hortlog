@@ -25,7 +25,7 @@ export default async function SharedRecordPage({ params }: SharePageProps) {
     },
   })
 
-  if (!record?.user.recordPublic || !record.user.username || !record.organisation.recordsPublic) {
+  if (!record?.user.recordPublic || !record.user.username || (record.organisation && !record.organisation.recordsPublic)) {
     return notFound()
   }
   redirect(`/u/${record.user.username}/${record.recordNumber}`)

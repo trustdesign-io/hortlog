@@ -77,7 +77,7 @@ export default async function SupervisingPage() {
                         {WORK_ACTION_LABELS[e.action]}
                         {e.actionNote && <span className="font-normal text-muted-foreground"> — {e.actionNote}</span>}
                         {' · '}
-                        <Link href={`/${t.organisation.slug}/specimens/${e.workRecord.specimen.slug}`} className="underline-offset-2 hover:underline">
+                        <Link href={e.workRecord.specimen ? `/${t.organisation.slug}/specimens/${e.workRecord.specimen.slug}` : `/${t.organisation.slug}`} className="underline-offset-2 hover:underline">
                           <i lang="la">{e.workRecord.scientificName}</i>
                         </Link>
                       </p>

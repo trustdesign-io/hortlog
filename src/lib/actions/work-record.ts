@@ -136,7 +136,7 @@ export async function setEntryCoworkers(orgSlug: string, entryId: string, cowork
   }
 
   revalidatePath('/records', 'layout')
-  revalidatePath(`/${orgSlug}/specimens/${entry.workRecord.specimen.slug}`)
+  if (entry.workRecord.specimen) revalidatePath(`/${orgSlug}/specimens/${entry.workRecord.specimen.slug}`)
   revalidatePath('/[org]/[collection]/[scene]/[specimen]', 'page')
   return { success: true }
 }
@@ -339,16 +339,18 @@ export async function addTaggedWorkToMyRecord(entryId: string): Promise<ActionRe
 
   const { entry } = tag
   const source = entry.workRecord as typeof entry.workRecord & Record<(typeof COPIED_RECORD_FIELDS)[number], unknown>
+  if (!source.organisation || !source.specimen) return { success: false, error: 'Only work in a hortlog garden can be added this way.' }
   const orgSlug = source.organisation.slug
+  const specimen = source.specimen
   await requireOrgAccess(orgSlug, 'can_record_work')
 
   try {
     const recordId = await prisma.$transaction(async (tx) => {
       const existed = await tx.workRecord.findUnique({
-        where: { userId_specimenId: { userId: user.id, specimenId: source.specimen.id } },
+        where: { userId_specimenId: { userId: user.id, specimenId: specimen.id } },
         select: { id: true },
       })
-      const record = await ensureWorkRecord(tx, user.id, source.specimen, entry.date)
+      const record = await ensureWorkRecord(tx, user.id, specimen, entry.date)
       if (!existed) {
         const copied = Object.fromEntries(
           COPIED_RECORD_FIELDS.filter((f) => source[f] !== null && source[f] !== undefined).map((f) => [f, source[f]]),
@@ -376,7 +378,7 @@ export async function addTaggedWorkToMyRecord(entryId: string): Promise<ActionRe
     }, { isolationLevel: 'Serializable' })
 
     revalidatePath('/records', 'layout')
-    revalidatePath(`/${orgSlug}/specimens/${source.specimen.slug}`)
+    revalidatePath(`/${orgSlug}/specimens/${specimen.slug}`)
     return { success: true, recordId }
   } catch (err) {
     console.error('[addTaggedWorkToMyRecord] error:', err)

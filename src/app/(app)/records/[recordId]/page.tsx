@@ -42,12 +42,16 @@ export default async function RecordPage({ params }: RecordPageProps) {
     signed.map((e) => [e.id, { at: e.signedOffAt as Date, by: e.signedOffBy?.name ?? 'their supervisor', comment: e.signOffComment }]),
   )
 
-  // The garden's other members, to change who each entry was with
-  const memberships = await prisma.membership.findMany({
-    where: { organisation: { slug: record.organisation.slug }, userId: { not: user.id } },
-    select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
-    orderBy: { user: { name: 'asc' } },
-  })
+  // The garden's other members, to change who each entry was with. A plant worked
+  // elsewhere, at a site not on hortlog, has no garden to tag anyone from.
+  const garden = record.organisation
+  const memberships = garden
+    ? await prisma.membership.findMany({
+        where: { organisation: { slug: garden.slug }, userId: { not: user.id } },
+        select: { user: { select: { id: true, name: true, email: true, avatarUrl: true } } },
+        orderBy: { user: { name: 'asc' } },
+      })
+    : []
   const members = memberships.map((m) => m.user)
 
   return (
@@ -57,14 +61,14 @@ export default async function RecordPage({ params }: RecordPageProps) {
         record={record}
         likes={likes}
         signOffs={signOffs}
-        renderCoworkers={(e) => (
+        renderCoworkers={garden ? (e) => (
           <EntryCoworkers
-            orgSlug={record.organisation.slug}
+            orgSlug={garden.slug}
             entryId={e.id}
             members={members}
             initial={e.coworkers.map((c) => c.user)}
           />
-        )}
+        ) : undefined}
       />
 
       <div className="mb-6 print:hidden">
@@ -80,7 +84,7 @@ export default async function RecordPage({ params }: RecordPageProps) {
               Make your record public
             </Link>
           </>
-        ) : record.organisation.recordsPublic ? (
+        ) : !garden || garden.recordsPublic ? (
           <>
             Public at{' '}
             <Link
@@ -91,7 +95,7 @@ export default async function RecordPage({ params }: RecordPageProps) {
             </Link>
           </>
         ) : (
-          <>Not on your public record: {record.organisation.name} keeps its plants private.</>
+          <>Not on your public record: {garden.name} keeps its plants private.</>
         )}
       </p>
     </div>

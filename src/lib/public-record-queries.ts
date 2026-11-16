@@ -14,7 +14,8 @@ export async function findPublicOwner(username: string) {
 export async function getPublicRecordList(userId: string) {
   const [records, hiddenRows] = await Promise.all([
     prisma.workRecord.findMany({
-      where: { userId, organisation: { recordsPublic: true } },
+      // Plants worked elsewhere have no garden keeping them private
+      where: { userId, OR: [{ organisation: { recordsPublic: true } }, { organisationId: null }] },
       orderBy: [{ firstWorkedDate: 'desc' }, { recordNumber: 'desc' }],
       select: {
         id: true,
@@ -28,6 +29,7 @@ export async function getPublicRecordList(userId: string) {
         commonNames: true,
         organisation: { select: { name: true } },
         specimen: { select: { imageUrl: true, species: { select: { photoUrl: true, commonName: true } } } },
+        species: { select: { photoUrl: true, commonName: true } },
       },
     }),
     prisma.workRecord.groupBy({
@@ -39,7 +41,7 @@ export async function getPublicRecordList(userId: string) {
 
   const hiddenOrgs = hiddenRows.length
     ? await prisma.organisation.findMany({
-        where: { id: { in: hiddenRows.map((r) => r.organisationId) } },
+        where: { id: { in: hiddenRows.flatMap((r) => (r.organisationId ? [r.organisationId] : [])) } },
         select: { id: true, name: true, privateRecordsShowName: true },
       })
     : []
@@ -54,7 +56,7 @@ export async function getPublicRecordList(userId: string) {
 /** One public record, or null if it doesn't exist or its organisation keeps it private. */
 export async function findPublicRecord(userId: string, recordNumber: number) {
   return prisma.workRecord.findFirst({
-    where: { userId, recordNumber, organisation: { recordsPublic: true } },
+    where: { userId, recordNumber, OR: [{ organisation: { recordsPublic: true } }, { organisationId: null }] },
     select: WORKED_RECORD_SELECT,
   })
 }

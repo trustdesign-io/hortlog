@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { requireAuth } from '@/lib/auth/permissions'
 import { prisma } from '@/lib/prisma'
-import { formatRecordDate, formatRecordNo, plantNameHtml, stripTags } from '@/lib/personal-record'
+import { formatRecordDate, formatRecordNo, plantNameHtml, stripTags, recordCommonName, recordPhotoUrl, recordSite } from '@/lib/personal-record'
 import { TaxonName } from '@/components/records/taxon-name'
 import { RecordSearch } from '@/components/records/record-search'
+import { AddWorkElsewhere } from '@/components/records/add-work-elsewhere'
 import { SpecimenImage } from '@/components/ui/specimen-image'
 import { UserAvatar } from '@/components/user-avatar'
 import { AddToMyRecord } from '@/components/add-to-my-record'
@@ -34,6 +35,7 @@ export default async function RecordsPage() {
       site: true,
       commonNames: true,
       location: true,
+      specimenId: true,
       organisation: { select: { name: true } },
       specimen: {
         select: {
@@ -41,6 +43,7 @@ export default async function RecordsPage() {
           species: { select: { photoUrl: true, commonName: true } },
         },
       },
+      species: { select: { photoUrl: true, commonName: true } },
     },
   })
 
@@ -99,7 +102,7 @@ export default async function RecordsPage() {
     ].sort((a, b) => Number(a.invited) - Number(b.invited) || a.name.localeCompare(b.name)),
   }))
 
-  const sites = new Set(records.map((r) => r.site ?? r.organisation.name))
+  const sites = new Set(records.map((r) => recordSite(r)))
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -139,6 +142,11 @@ export default async function RecordsPage() {
             </div>
           </dl>
         )}
+        <div className="mt-4">
+          <AddWorkElsewhere
+            sites={[...new Set(records.filter((r) => !r.specimenId && r.site).map((r) => r.site as string))].sort()}
+          />
+        </div>
       </header>
 
       {records.length === 0 ? (
@@ -176,10 +184,10 @@ export default async function RecordsPage() {
               stripTags(plantNameHtml(r)),
               r.scientificName,
               r.commonNames,
-              r.specimen.species.commonName,
+              recordCommonName(r),
               r.family,
-              r.site ?? r.organisation.name,
-              r.organisation.name,
+              recordSite(r),
+              r.organisation?.name,
               r.location,
               formatRecordNo(r.recordNumber),
               String(r.recordNumber),
@@ -192,7 +200,7 @@ export default async function RecordsPage() {
               >
                 <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted">
                   <SpecimenImage
-                    imageUrl={r.specimen.imageUrl ?? r.specimen.species.photoUrl}
+                    imageUrl={recordPhotoUrl(r)}
                     alt=""
                     fill
                     sizes="48px"
@@ -210,7 +218,7 @@ export default async function RecordsPage() {
                     <time dateTime={r.firstWorkedDate.toISOString().slice(0, 10)}>
                       {formatRecordDate(r.firstWorkedDate, 'short')}
                     </time>
-                    {[r.family, (r.site ?? r.organisation.name).split(',')[0]]
+                    {[r.family, (recordSite(r)).split(',')[0]]
                       .filter(Boolean)
                       .map((part) => ` · ${part}`)}
                   </p>
@@ -232,7 +240,11 @@ export default async function RecordsPage() {
             {workedWith.map((e) => (
               <li key={e.id} className="flex items-center gap-3 px-4 py-3">
                 <Link
-                  href={`/${e.workRecord.organisation.slug}/specimens/${e.workRecord.specimen.slug}`}
+                  href={
+                    e.workRecord.organisation && e.workRecord.specimen
+                      ? `/${e.workRecord.organisation.slug}/specimens/${e.workRecord.specimen.slug}`
+                      : '/records'
+                  }
                   className="min-w-0 flex-1"
                 >
                   <p className="truncate text-sm font-medium">

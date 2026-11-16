@@ -88,26 +88,27 @@ export function WorkedRecordSheet({
   const showLocation = !publicView
   const showNotes = !publicView || publicView.showNotes
   const nameHtml = plantNameHtml(r)
-  const site = r.site ?? r.organisation.name
-  const species = r.specimen.species
+  const site = r.site ?? r.organisation?.name ?? ''
+  // A plant worked elsewhere, at a site not on hortlog, has its species but no specimen or garden
+  const species = r.specimen?.species ?? r.species
 
   return (
     <article aria-label={`Record ${formatRecordNo(r.recordNumber)}`}>
       <RecordHeader kicker="Plant record" titleHtml={nameHtml} recordNo={formatRecordNo(r.recordNumber)}>
         <p className="mt-2 text-sm text-muted-foreground">
-          {privateLinks ? (
+          {privateLinks && r.organisation && r.specimen ? (
             <Link href={`/${r.organisation.slug}/specimens/${r.specimen.slug}`} className={quietLink}>
-              {species.commonName}
+              {species?.commonName}
             </Link>
           ) : (
-            species.commonName
+            (species?.commonName ?? r.commonNames)
           )}
           {' · '}
-          {r.organisation.name}
+          {r.organisation?.name ?? site}
         </p>
       </RecordHeader>
 
-      <ReferencePhoto species={species} name={stripTags(nameHtml)} />
+      {species && <ReferencePhoto species={species} name={stripTags(nameHtml)} />}
 
       <div>
         <FieldGroup>
@@ -209,7 +210,7 @@ export function WorkedRecordSheet({
         <SourcesGroup
           sources={r.sources}
           openQuestions={showNotes ? r.openQuestions : undefined}
-          powoUrl={r.powoUrl ?? species.powoUrl}
+          powoUrl={r.powoUrl ?? species?.powoUrl}
         />
       </div>
     </article>
